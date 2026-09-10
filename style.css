@@ -1809,6 +1809,12 @@ body {
   height: 100%;
 }
 
+.blueprint-workbench {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
 .piece-selector-grid,
 .config-pieces-grid {
   display: grid;
@@ -1945,8 +1951,7 @@ body {
   border: 1px solid var(--border-light);
   border-radius: 12px;
   padding: 16px;
-  margin-top: auto;
-  margin-bottom: 0;
+  margin: 0;
   display: flex;
   flex-direction: column;
   box-sizing: border-box;
@@ -2195,32 +2200,109 @@ select.calc-param-input {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 18px 12px;
+  padding: 14px 10px;
   background: #f8fafc;
   border-radius: var(--radius-sm);
   border: 1px solid var(--border-light);
-  min-height: 200px;
+  min-height: 220px;
   transition: all 0.2s ease;
+  position: relative;
 }
 
 .blueprint-canvas-box:hover .blueprint-cad-wrapper {
   border-color: var(--kronvent-blue);
 }
 
+.blueprint-cad-container {
+  position: relative;
+  width: 100%;
+  max-width: 320px;
+  aspect-ratio: 1 / 1;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.zoom-cad-container {
+  max-width: 520px !important;
+}
+
 .blueprint-cad-img {
+  width: 100%;
+  height: 100%;
   max-width: 100%;
-  height: auto;
-  max-height: 260px;
-  width: auto;
+  max-height: 100%;
   aspect-ratio: 1 / 1;
   object-fit: contain !important;
   border-radius: 10px;
   background: transparent !important;
   transition: transform 0.25s ease;
+  user-select: none;
+  display: block;
 }
 
 .blueprint-canvas-box:hover .blueprint-cad-img {
-  transform: scale(1.03);
+  transform: scale(1.02);
+}
+
+.blueprint-cad-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  overflow: visible;
+  z-index: 5;
+}
+
+/* CAD Technical Dimension Lines, Extensions, Arrows & Badges */
+.cad-ext-line {
+  stroke: #2563eb;
+  stroke-width: 1.8;
+  stroke-dasharray: 4 4;
+  opacity: 0.65;
+  vector-effect: non-scaling-stroke;
+}
+
+.cad-dim-line {
+  stroke: #2563eb;
+  stroke-width: 2.4;
+  stroke-linecap: round;
+  vector-effect: non-scaling-stroke;
+  filter: drop-shadow(0 1px 2px rgba(37, 99, 235, 0.25));
+}
+
+.cad-marker-fill {
+  fill: #2563eb;
+}
+
+.cad-badge-bg {
+  fill: rgba(255, 255, 255, 0.96);
+  stroke: #2563eb;
+  stroke-width: 1.6;
+  rx: 8px;
+  ry: 8px;
+  filter: drop-shadow(0 2px 5px rgba(0, 0, 0, 0.15));
+}
+
+.cad-badge-text {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  user-select: none;
+}
+
+.cad-badge-label {
+  font-size: 28px;
+  font-weight: 800;
+  fill: #1d4ed8;
+  letter-spacing: 0.5px;
+}
+
+.cad-badge-val {
+  font-size: 28px;
+  font-weight: 700;
+  fill: #0f172a;
 }
 
 .blueprint-svg-canvas {
@@ -2258,6 +2340,35 @@ select.calc-param-input {
 [data-theme="dark"] .blueprint-cad-img {
   background: transparent !important;
   box-shadow: none !important;
+}
+
+[data-theme="dark"] .cad-ext-line {
+  stroke: #38bdf8;
+  opacity: 0.6;
+}
+
+[data-theme="dark"] .cad-dim-line {
+  stroke: #38bdf8;
+  filter: drop-shadow(0 0 6px rgba(56, 189, 248, 0.45));
+}
+
+[data-theme="dark"] .cad-marker-fill {
+  fill: #38bdf8;
+}
+
+[data-theme="dark"] .cad-badge-bg {
+  fill: rgba(15, 23, 42, 0.95);
+  stroke: #38bdf8;
+  stroke-width: 1.8;
+  filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.6));
+}
+
+[data-theme="dark"] .cad-badge-label {
+  fill: #38bdf8;
+}
+
+[data-theme="dark"] .cad-badge-val {
+  fill: #f8fafc;
 }
 
 [data-theme="dark"] .blueprint-label-tag {
@@ -2509,16 +2620,19 @@ select.calc-param-input {
   border: 1px solid var(--border-light);
   border-radius: 12px;
   padding: 14px 16px;
-  margin-top: auto;
-  margin-bottom: 0;
+  margin: 0;
   box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
 }
 
 .live-spec-row {
+  flex: 1;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 5px 0;
+  padding: 3px 0;
   font-size: 12px;
   color: var(--text-secondary);
   border-bottom: 1px solid #f1f5f9;

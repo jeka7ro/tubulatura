@@ -1271,6 +1271,7 @@ function renderPieceSelectorGrid() {
     };
     grid.appendChild(card);
   });
+  requestAnimationFrame(alignWorkbenchCards);
 }
 
 // Setup Filters & Search
@@ -2121,11 +2122,9 @@ function renderTable() {
             <div style="max-width: 440px; margin: 0 auto;">
               <svg style="width: 48px; height: 48px; color: var(--text-muted); opacity: 0.5; margin-bottom: 12px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></svg>
               <div style="font-size: 16px; font-weight: 700; color: var(--text-main); margin-bottom: 6px;">Coșul de comandă este gol (0 poziții)</div>
-              <p style="font-size: 13px; line-height: 1.5; color: var(--text-secondary); margin-bottom: 18px;">Puteți adăuga piese din configurator, importa direct un extras Excel de proiect (.xlsx) sau încărca un model demonstrativ de test.</p>
+              <p style="font-size: 13px; line-height: 1.5; color: var(--text-secondary); margin-bottom: 18px;">Puteți adăuga piese configurate direct din panoul tehnic de mai sus.</p>
               <div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
                 <button onclick="document.getElementById('step1-toggle')?.click()" class="k-btn k-btn-primary k-btn-sm" type="button">+ Deschide Configurator</button>
-                <button onclick="document.getElementById('client-excel-input')?.click()" class="k-btn k-btn-secondary k-btn-sm" type="button">📁 Import Excel (.xlsx)</button>
-                <button onclick="window.loadDemoProject()" class="k-btn k-btn-secondary k-btn-sm" type="button" style="font-size: 11px; opacity: 0.85;">Model Demo (51 piese)</button>
               </div>
             </div>
           </td>
@@ -2398,6 +2397,8 @@ function setupBlueprintZoomModal() {
     canvasBox._bound = true;
     canvasBox.addEventListener('click', triggerZoom);
   }
+
+  requestAnimationFrame(alignWorkbenchCards);
 }
 
 function openBlueprintZoomModal(config, params) {
@@ -2412,6 +2413,11 @@ function openBlueprintZoomModal(config, params) {
   if (imgEl) {
     imgEl.src = config.cadImage || 'assets/icons3d/CRD.png';
     imgEl.alt = `${config.code} - ${config.name}`;
+  }
+
+  const zoomCadOverlay = document.getElementById('zoom-cad-overlay');
+  if (zoomCadOverlay && config) {
+    zoomCadOverlay.innerHTML = generateCADDimensionOverlaySVG(config, params, 'zoom');
   }
 
   if (titleEl) {
@@ -2510,9 +2516,329 @@ function updateLiveCalculation() {
   renderCADBlueprint(config, params);
 }
 
+function generateCADDimensionOverlaySVG(config, params, prefix = 'main') {
+  if (!config) return '';
+
+  const p = params || {};
+  const code = config.code || '';
+
+  const getField = (id, fallback) => {
+    if (p[id] !== undefined && p[id] !== null && p[id] !== '') return p[id];
+    const f = config.fields ? config.fields.find(item => item.id === id) : null;
+    return f ? f.default : fallback;
+  };
+
+  const markers = `
+    <defs>
+      <marker id="${prefix}-cad-arr-start" viewBox="0 0 12 12" refX="2" refY="6" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+        <path d="M 11 2 L 2 6 L 11 10 z" class="cad-marker-fill" />
+      </marker>
+      <marker id="${prefix}-cad-arr-end" viewBox="0 0 12 12" refX="10" refY="6" markerWidth="7" markerHeight="7" orient="auto">
+        <path d="M 1 2 L 10 6 L 1 10 z" class="cad-marker-fill" />
+      </marker>
+      <filter id="${prefix}-badge-shadow" x="-20%" y="-20%" width="140%" height="140%">
+        <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#000000" flood-opacity="0.18"/>
+      </filter>
+    </defs>
+  `;
+
+  const drawDim = ({ p1, p2, ext1, ext2, label, value, unit = 'mm', badgePos = null }) => {
+    const x1 = p1[0], y1 = p1[1];
+    const x2 = p2[0], y2 = p2[1];
+
+    let extMarkup = '';
+    if (ext1) {
+      extMarkup += `<line x1="${ext1[0]}" y1="${ext1[1]}" x2="${x1}" y2="${y1}" class="cad-ext-line" />`;
+    }
+    if (ext2) {
+      extMarkup += `<line x1="${ext2[0]}" y1="${ext2[1]}" x2="${x2}" y2="${y2}" class="cad-ext-line" />`;
+    }
+
+    const midX = badgePos ? badgePos[0] : (x1 + x2) / 2;
+    const midY = badgePos ? badgePos[1] : (y1 + y2) / 2;
+
+    const textStr = unit ? `${label}: ${value} ${unit}` : `${label}: ${value}`;
+    const badgeW = Math.max(140, textStr.length * 16 + 36);
+    const badgeH = 50;
+
+    return `
+      <g class="cad-dimension-group">
+        ${extMarkup}
+        <line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" class="cad-dim-line" marker-start="url(#${prefix}-cad-arr-start)" marker-end="url(#${prefix}-cad-arr-end)" />
+        <g class="cad-dim-badge" transform="translate(${midX}, ${midY})">
+          <rect x="${-badgeW / 2}" y="${-badgeH / 2}" width="${badgeW}" height="${badgeH}" rx="8" ry="8" class="cad-badge-bg" filter="url(#${prefix}-badge-shadow)" />
+          <text x="0" y="2" text-anchor="middle" dominant-baseline="central" class="cad-badge-text">
+            <tspan class="cad-badge-label">${label}: </tspan>
+            <tspan class="cad-badge-val">${value}${unit ? ' ' + unit : ''}</tspan>
+          </text>
+        </g>
+      </g>
+    `;
+  };
+
+  let content = markers;
+
+  if (code === 'CRD') {
+    // 1. Inaltime B (stanga, flansa verticala)
+    content += drawDim({
+      p1: [95, 380],
+      p2: [95, 760],
+      ext1: [135, 380],
+      ext2: [135, 760],
+      badgePos: [95, 570],
+      label: 'B',
+      value: getField('dim_B', 500),
+      unit: 'mm'
+    });
+    // 2. Latime A (fata, baza orizontala inclinata)
+    content += drawDim({
+      p1: [80, 810],
+      p2: [360, 965],
+      ext1: [110, 760],
+      ext2: [390, 915],
+      badgePos: [220, 888],
+      label: 'A',
+      value: getField('dim_A', 500),
+      unit: 'mm'
+    });
+    // 3. Lungime L (sus, lungimea canalului spre spate)
+    content += drawDim({
+      p1: [255, 305],
+      p2: [580, 65],
+      ext1: [290, 350],
+      ext2: [615, 110],
+      badgePos: [418, 185],
+      label: 'L',
+      value: getField('dim_L', 1250),
+      unit: 'mm'
+    });
+  } else if (code === 'CR' || code === 'CRDr' || code === 'CRDir') {
+    // Cot rectangular
+    content += drawDim({
+      p1: [65, 600],
+      p2: [225, 830],
+      ext1: [90, 560],
+      ext2: [250, 790],
+      badgePos: [145, 715],
+      label: 'A1',
+      value: getField('dim_A1', 500),
+      unit: 'mm'
+    });
+    content += drawDim({
+      p1: [630, 80],
+      p2: [840, 160],
+      ext1: [650, 115],
+      ext2: [860, 195],
+      badgePos: [735, 120],
+      label: 'A2',
+      value: getField('dim_A2', 500),
+      unit: 'mm'
+    });
+    content += drawDim({
+      p1: [940, 240],
+      p2: [940, 560],
+      ext1: [900, 240],
+      ext2: [900, 560],
+      badgePos: [940, 400],
+      label: 'B',
+      value: getField('dim_B', 300),
+      unit: 'mm'
+    });
+    // Raza & unghi
+    const R = getField('dim_R', 150);
+    const unghi = getField('dim_Unghi', 90);
+    content += `
+      <g class="cad-dim-badge" transform="translate(490, 440)">
+        <rect x="-110" y="-25" width="220" height="50" rx="8" ry="8" class="cad-badge-bg" filter="url(#${prefix}-badge-shadow)" />
+        <text x="0" y="2" text-anchor="middle" dominant-baseline="central" class="cad-badge-text">
+          <tspan class="cad-badge-label">R: </tspan>
+          <tspan class="cad-badge-val">${R} mm (${unghi}°)</tspan>
+        </text>
+      </g>
+    `;
+  } else if (code === 'Red' || code === 'RCC' || code === 'RP' || code === 'R2C') {
+    // Reductii rectangulare
+    content += drawDim({
+      p1: [80, 810],
+      p2: [360, 965],
+      ext1: [110, 760],
+      ext2: [390, 915],
+      badgePos: [220, 888],
+      label: 'A1',
+      value: getField('dim_A1', 600),
+      unit: 'mm'
+    });
+    content += drawDim({
+      p1: [95, 380],
+      p2: [95, 760],
+      ext1: [135, 380],
+      ext2: [135, 760],
+      badgePos: [95, 570],
+      label: 'B1',
+      value: getField('dim_B1', 400),
+      unit: 'mm'
+    });
+    content += drawDim({
+      p1: [620, 110],
+      p2: [790, 190],
+      ext1: [640, 140],
+      ext2: [810, 220],
+      badgePos: [705, 150],
+      label: 'A2',
+      value: getField('dim_A2', 400),
+      unit: 'mm'
+    });
+    content += drawDim({
+      p1: [870, 200],
+      p2: [870, 420],
+      ext1: [830, 200],
+      ext2: [830, 420],
+      badgePos: [870, 310],
+      label: 'B2',
+      value: getField('dim_B2', 300),
+      unit: 'mm'
+    });
+    content += drawDim({
+      p1: [255, 305],
+      p2: [580, 65],
+      ext1: [290, 350],
+      ext2: [615, 110],
+      badgePos: [418, 185],
+      label: 'L',
+      value: getField('dim_L', 500),
+      unit: 'mm'
+    });
+  } else if (code === 'TR' || code === 'TC90') {
+    // Teuri rectangulare
+    content += drawDim({
+      p1: [80, 810],
+      p2: [360, 965],
+      ext1: [110, 760],
+      ext2: [390, 915],
+      badgePos: [220, 888],
+      label: 'A1',
+      value: getField('dim_A1', 500),
+      unit: 'mm'
+    });
+    content += drawDim({
+      p1: [95, 380],
+      p2: [95, 760],
+      ext1: [135, 380],
+      ext2: [135, 760],
+      badgePos: [95, 570],
+      label: 'B1',
+      value: getField('dim_B1', 400),
+      unit: 'mm'
+    });
+    content += drawDim({
+      p1: [620, 110],
+      p2: [790, 190],
+      badgePos: [705, 150],
+      label: 'A2',
+      value: getField('dim_A2', 300),
+      unit: 'mm'
+    });
+    content += drawDim({
+      p1: [255, 305],
+      p2: [580, 65],
+      badgePos: [418, 185],
+      label: 'L',
+      value: getField('dim_L', 600),
+      unit: 'mm'
+    });
+  } else if (code === 'SPIRO' || code === 'NIPC' || code === 'CRC' || code === 'RedCirc' || code === 'TeuCirc') {
+    // Tubulatura circulara Spiro / Accesorii
+    const unitL = config.fields && config.fields.some(f => f.id === 'dim_L_ml') ? 'ml' : 'mm';
+    content += drawDim({
+      p1: [105, 770],
+      p2: [315, 650],
+      ext1: [85, 800],
+      ext2: [335, 620],
+      badgePos: [210, 710],
+      label: 'Ød',
+      value: getField('dim_D', 200),
+      unit: 'mm'
+    });
+    content += drawDim({
+      p1: [230, 430],
+      p2: [750, 180],
+      ext1: [250, 470],
+      ext2: [770, 220],
+      badgePos: [490, 305],
+      label: 'L',
+      value: getField('dim_L_ml', getField('dim_L', 6)),
+      unit: unitL
+    });
+  } else if (code === 'CC90' || code === 'CC45') {
+    // Cot circular
+    content += drawDim({
+      p1: [130, 800],
+      p2: [330, 900],
+      ext1: [110, 770],
+      ext2: [350, 870],
+      badgePos: [230, 850],
+      label: 'Ød',
+      value: getField('dim_D', 200),
+      unit: 'mm'
+    });
+    const unghi = code === 'CC45' ? '45°' : '90°';
+    content += `
+      <g class="cad-dim-badge" transform="translate(510, 450)">
+        <rect x="-75" y="-25" width="150" height="50" rx="8" ry="8" class="cad-badge-bg" filter="url(#${prefix}-badge-shadow)" />
+        <text x="0" y="2" text-anchor="middle" dominant-baseline="central" class="cad-badge-text">
+          <tspan class="cad-badge-label">Unghi: </tspan>
+          <tspan class="cad-badge-val">${unghi}</tspan>
+        </text>
+      </g>
+    `;
+  } else {
+    // Universal Smart Fallback pentru orice alta piesa
+    const fields = config.fields || [];
+    const positions = [
+      { p1: [80, 810], p2: [360, 965], ext1: [110, 760], ext2: [390, 915], badgePos: [220, 888] },
+      { p1: [95, 380], p2: [95, 760], ext1: [135, 380], ext2: [135, 760], badgePos: [95, 570] },
+      { p1: [255, 305], p2: [580, 65], ext1: [290, 350], ext2: [615, 110], badgePos: [418, 185] },
+      { p1: [870, 200], p2: [870, 480], ext1: [830, 200], ext2: [830, 480], badgePos: [870, 340] }
+    ];
+
+    fields.forEach((f, idx) => {
+      const val = p[f.id] !== undefined && p[f.id] !== null && p[f.id] !== '' ? p[f.id] : f.default;
+      const match = f.label.match(/\(([^)]+)\)/);
+      const letter = match ? match[1] : f.id.replace('dim_', '');
+      if (idx < positions.length) {
+        content += drawDim({
+          p1: positions[idx].p1,
+          p2: positions[idx].p2,
+          ext1: positions[idx].ext1,
+          ext2: positions[idx].ext2,
+          badgePos: positions[idx].badgePos,
+          label: letter,
+          value: val,
+          unit: f.unit || 'mm'
+        });
+      } else {
+        const cx = 500;
+        const cy = 480 + (idx - positions.length) * 60;
+        content += `
+          <g class="cad-dim-badge" transform="translate(${cx}, ${cy})">
+            <rect x="-85" y="-25" width="170" height="50" rx="8" ry="8" class="cad-badge-bg" filter="url(#${prefix}-badge-shadow)" />
+            <text x="0" y="2" text-anchor="middle" dominant-baseline="central" class="cad-badge-text">
+              <tspan class="cad-badge-label">${letter}: </tspan>
+              <tspan class="cad-badge-val">${val} ${f.unit || 'mm'}</tspan>
+            </text>
+          </g>
+        `;
+      }
+    });
+  }
+
+  return content;
+}
+
 function renderCADBlueprint(config, params) {
   const cadWrapper = document.getElementById('blueprint-cad-wrapper');
   const cadImg = document.getElementById('blueprint-cad-img');
+  const cadOverlay = document.getElementById('blueprint-cad-overlay');
   const dimBadges = document.getElementById('blueprint-dim-badges');
   const svg = document.getElementById('blueprint-svg');
 
@@ -2523,6 +2849,11 @@ function renderCADBlueprint(config, params) {
     cadImg.style.display = 'block';
     cadImg.src = (config && config.cadImage) ? config.cadImage : 'assets/icons3d/CRD.png';
     cadImg.alt = `${config ? config.code : 'HVAC'} - ${config ? config.name : 'Piesă'}`;
+  }
+
+  // Randare cote tehnice CAD cu sageti direct peste modelul 3D
+  if (cadOverlay && config) {
+    cadOverlay.innerHTML = generateCADDimensionOverlaySVG(config, params, 'main');
   }
 
   if (dimBadges && config && config.fields) {
@@ -2536,6 +2867,56 @@ function renderCADBlueprint(config, params) {
     }).join('');
     dimBadges.style.display = 'flex';
   }
+
+  requestAnimationFrame(alignWorkbenchCards);
+}
+
+function alignWorkbenchCards() {
+  const pieceGrid = document.getElementById('piece-selector-grid');
+  const blueprintBox = document.getElementById('blueprint-canvas-box');
+  const formBox = document.querySelector('.piece-form-box');
+  const priceBox = document.getElementById('live-price-box');
+
+  if (!pieceGrid || !blueprintBox) return;
+
+  if (window.innerWidth <= 1024) {
+    blueprintBox.style.height = '';
+    blueprintBox.style.flex = '1';
+    if (formBox) formBox.style.height = '';
+    if (priceBox) priceBox.style.height = '';
+    return;
+  }
+
+  // 1. Aliniere perfecta a cardurilor superioare (Schița are fix aceeasi inaltime ca selectorul de piese)
+  const gridHeight = pieceGrid.offsetHeight;
+  if (gridHeight > 0) {
+    blueprintBox.style.height = `${gridHeight}px`;
+    blueprintBox.style.flex = 'none';
+  }
+
+  // 2. Aliniere perfecta a cardurilor inferioare (Formularul si Sumarul de pret au fix aceeasi inaltime)
+  if (formBox && priceBox) {
+    formBox.style.height = 'auto';
+    priceBox.style.height = 'auto';
+    const maxBottomH = Math.max(formBox.offsetHeight, priceBox.offsetHeight);
+    if (maxBottomH > 0) {
+      formBox.style.height = `${maxBottomH}px`;
+      priceBox.style.height = `${maxBottomH}px`;
+    }
+  }
+}
+
+window.addEventListener('resize', () => requestAnimationFrame(alignWorkbenchCards));
+window.addEventListener('load', () => setTimeout(alignWorkbenchCards, 80));
+
+if (typeof ResizeObserver !== 'undefined') {
+  const workbenchObserver = new ResizeObserver(() => requestAnimationFrame(alignWorkbenchCards));
+  window.addEventListener('DOMContentLoaded', () => {
+    const elGrid = document.getElementById('piece-selector-grid');
+    if (elGrid) workbenchObserver.observe(elGrid);
+    const elForm = document.querySelector('.piece-form-box');
+    if (elForm) workbenchObserver.observe(elForm);
+  });
 }
 
 function addItemToOrder() {

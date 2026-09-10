@@ -201,7 +201,10 @@
                 <span>Click pentru mărire</span>
               </div>
               <div id="blueprint-cad-wrapper" class="blueprint-cad-wrapper">
-                <img id="blueprint-cad-img" class="blueprint-cad-img" src="assets/icons3d/CRD.png" alt="Model 3D Piesă HVAC">
+                <div id="blueprint-cad-container" class="blueprint-cad-container">
+                  <img id="blueprint-cad-img" class="blueprint-cad-img" src="assets/icons3d/CRD.png" alt="Model 3D Piesă HVAC">
+                  <svg id="blueprint-cad-overlay" class="blueprint-cad-overlay" viewBox="0 0 1000 1000" preserveAspectRatio="xMidYMid meet"></svg>
+                </div>
               </div>
               <div id="blueprint-dim-badges" class="blueprint-dim-badges"></div>
             </div>
@@ -433,12 +436,6 @@
           </div>
 
           <div class="toolbar-right">
-            <input type="file" id="client-excel-input" accept=".xlsx, .xls" style="display: none;">
-            <button id="btn-cart-import-excel-top" class="k-btn k-btn-secondary k-btn-sm" type="button" title="Importă extras de tubulatură dintr-un fișier Excel (.xlsx)">
-              <svg class="icon-svg" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
-              <span>Import Excel (.xlsx)</span>
-            </button>
-
             <button id="btn-quick-add" class="k-btn k-btn-primary k-btn-sm" title="Adaugă o piesă nouă prin configurator">
               <svg class="icon-svg" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
               <span>+ Adaugă Piesă Nouă</span>
@@ -525,11 +522,6 @@
             <button id="btn-back-to-step1-bottom" class="k-btn k-btn-secondary" style="font-size: 13px; font-weight: 600; padding: 10px 18px;" type="button" title="Revino la Configurator pentru a adăuga mai multe piese în comandă">
               <svg class="icon-svg" viewBox="0 0 24 24"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
               <span>← Înapoi la Configurator (Adaugă piese)</span>
-            </button>
-
-            <button id="btn-cart-import-excel" class="k-btn k-btn-secondary" style="font-size: 13px; font-weight: 600; padding: 10px 18px;" type="button" title="Încarcă extras de tubulatură dintr-un fișier Excel (.xlsx)">
-              <svg class="icon-svg" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
-              <span>Import Excel (.xlsx)</span>
             </button>
 
             <button id="btn-cart-export-excel" class="k-btn k-btn-success" style="font-size: 13px; font-weight: 600; padding: 10px 18px;" title="Descarcă specificația tehnică a comenzii în format Excel (.xlsx)">
@@ -652,8 +644,11 @@
       </div>
 
       <div class="zoom-modal-body">
-        <div class="zoom-img-container">
-          <img id="zoom-modal-img" src="assets/icons3d/CRD.png" alt="Schiță Mărită Piesă HVAC" class="zoom-large-img">
+        <div class="zoom-img-container" style="position: relative;">
+          <div class="blueprint-cad-container zoom-cad-container" style="max-width: 100%; aspect-ratio: 1 / 1;">
+            <img id="zoom-modal-img" src="assets/icons3d/CRD.png" alt="Schiță Mărită Piesă HVAC" class="zoom-large-img">
+            <svg id="zoom-cad-overlay" class="blueprint-cad-overlay" viewBox="0 0 1000 1000" preserveAspectRatio="xMidYMid meet"></svg>
+          </div>
         </div>
         <div class="zoom-modal-specs">
           <div class="zoom-specs-heading">DIMENSIUNI & COTE DINAMICE SELECTATE</div>
