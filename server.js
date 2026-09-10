@@ -7,6 +7,45 @@ const url = require('url');
 const PORT = parseInt(process.env.PORT, 10) || 5181;
 const DATA_FILE = path.join(__dirname, 'tubulatura_saved_data.json');
 const INITIAL_DATA_FILE = path.join(__dirname, 'tubulatura_initial_data.json');
+const YEARS_DATA_FILE = path.join(__dirname, 'tubulatura_years_data.json');
+
+// Supabase / PostgreSQL Integration
+let pgPool = null;
+if (process.env.DATABASE_URL) {
+  try {
+    const { Pool } = require('pg');
+    pgPool = new Pool({
+      connectionString: process.env.DATABASE_URL,
+      ssl: { rejectUnauthorized: false }
+    });
+    console.log('[DATABASE] Inițializare conexiune PostgreSQL (Supabase)...');
+    
+    // Auto-create storage table and load state
+    pgPool.query(`
+      CREATE TABLE IF NOT EXISTS kv_store (
+        key TEXT PRIMARY KEY,
+        data JSONB NOT NULL,
+        updated_at TIMESTAMPTZ DEFAULT NOW()
+      );
+    `).then(() => {
+      console.log('[DATABASE] Tabel kv_store verificat/creat cu succes.');
+      return pgPool.query("SELECT data FROM kv_store WHERE key = 'years_data'");
+    }).then(res => {
+      if (res.rows && res.rows.length > 0 && res.rows[0].data) {
+        fs.writeFileSync(YEARS_DATA_FILE, JSON.stringify(res.rows[0].data, null, 2), 'utf-8');
+        console.log('[DATABASE] Datele au fost restaurate din Supabase PostgreSQL în fișierul local.');
+      } else if (fs.existsSync(YEARS_DATA_FILE)) {
+        const localData = JSON.parse(fs.readFileSync(YEARS_DATA_FILE, 'utf-8'));
+        return pgPool.query("INSERT INTO kv_store (key, data) VALUES ('years_data', $1) ON CONFLICT (key) DO UPDATE SET data = $1", [localData])
+          .then(() => console.log('[DATABASE] Datele inițiale au fost migrate în Supabase PostgreSQL!'));
+      }
+    }).catch(err => {
+      console.error('[DATABASE ERROR] Eroare la inițializarea Supabase:', err.message);
+    });
+  } catch (e) {
+    console.error('[DATABASE ERROR] Modulul pg nu a putut fi încărcat:', e.message);
+  }
+}
 
 // BNR Live Exchange Rate Cache (30 min TTL)
 let bnrCache = null;
@@ -180,7 +219,6 @@ const server = http.createServer((req, res) => {
   // ====================================================================
   // MULTI-YEAR ARCHITECTURE & IMMUTABLE ORDER SNAPSHOTS API
   // ====================================================================
-  const YEARS_DATA_FILE = path.join(__dirname, 'tubulatura_years_data.json');
   function getYearsData() {
     if (fs.existsSync(YEARS_DATA_FILE)) {
       try {
@@ -193,6 +231,12 @@ const server = http.createServer((req, res) => {
   }
   function saveYearsData(d) {
     fs.writeFileSync(YEARS_DATA_FILE, JSON.stringify(d, null, 2), 'utf-8');
+    if (pgPool) {
+      pgPool.query(
+        "INSERT INTO kv_store (key, data, updated_at) VALUES ('years_data', $1, NOW()) ON CONFLICT (key) DO UPDATE SET data = $1, updated_at = NOW()",
+        [d]
+      ).catch(e => console.error('[DATABASE SAVE ERROR]:', e.message));
+    }
   }
 
   if (pathname === '/api/years') {

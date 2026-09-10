@@ -6,7 +6,15 @@
   "scripts": {
     "start": "node server.js"
   },
-  "keywords": ["hvac", "tubulatura", "calcul", "ventilatie"],
+  "keywords": [
+    "hvac",
+    "tubulatura",
+    "calcul",
+    "ventilatie"
+  ],
   "author": "Universal Comp Prod",
-  "license": "ISC"
+  "license": "ISC",
+  "dependencies": {
+    "pg": "^8.23.0"
+  }
 }
