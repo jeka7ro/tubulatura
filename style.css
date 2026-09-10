@@ -4527,5 +4527,38 @@ select.calc-param-input {
   margin: 0 !important;
 }
 
+/* Professional Enterprise Table Footers & Totals */
+tfoot {
+  background: #f8fafc;
+}
+
+tfoot td {
+  border-top: 1px solid var(--border-main);
+  vertical-align: middle;
+}
+
+.tfoot-total-row {
+  background: #f1f5f9;
+  border-top: 2px solid var(--border-dark);
+}
+
+.tfoot-subtotal-row {
+  background: #f8fafc;
+  border-top: 1px solid var(--border-main);
+}
+
+[data-theme="dark"] tfoot {
+  background: #0f172a;
+}
+
+[data-theme="dark"] tfoot td {
+  border-color: #334155;
+}
+
+[data-theme="dark"] .tfoot-total-row {
+  background: #1e293b;
+  border-top-color: #475569;
+}
+
 
 

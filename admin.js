@@ -30,6 +30,18 @@ const adminState = {
   filters: {
     search: '',
     category: 'all'
+  },
+  dashPagination: {
+    page: 1,
+    rowsPerPage: 15
+  },
+  aniPagination: {
+    page: 1,
+    rowsPerPage: 15
+  },
+  itemsPagination: {
+    page: 1,
+    rowsPerPage: 'all'
   }
 };
 
@@ -866,12 +878,29 @@ function renderAdminTable() {
 
   let totCant = 0, totSup = 0, totVal = 0, totGreut = 0;
 
-  filtered.forEach(({ it, originalIdx }) => {
+  filtered.forEach(({ it }) => {
     totCant += parseFloat(it.cantitate) || 0;
     totSup += parseFloat(it.suprafata) || 0;
     totVal += parseFloat(it.valoareTotala) || 0;
     totGreut += parseFloat(it.greutate) || 0;
+  });
 
+  // Pagination logic
+  const rpp = adminState.itemsPagination.rowsPerPage;
+  const isAll = rpp === 'all';
+  const rppNum = isAll ? filtered.length : parseInt(rpp, 10);
+  const totalPages = isAll || filtered.length === 0 ? 1 : Math.ceil(filtered.length / rppNum);
+
+  if (adminState.itemsPagination.page > totalPages) adminState.itemsPagination.page = totalPages;
+  if (adminState.itemsPagination.page < 1) adminState.itemsPagination.page = 1;
+  const curPage = adminState.itemsPagination.page;
+
+  const startIdx = isAll || filtered.length === 0 ? 0 : (curPage - 1) * rppNum;
+  const endIdx = isAll ? filtered.length : Math.min(startIdx + rppNum, filtered.length);
+  const pageItems = filtered.slice(startIdx, endIdx);
+
+  tbody.innerHTML = '';
+  pageItems.forEach(({ it, originalIdx }) => {
     const tr = document.createElement('tr');
     tr.id = `admin-row-${originalIdx}`;
 
@@ -949,7 +978,60 @@ function renderAdminTable() {
   if (footVal) footVal.textContent = `${totVal.toFixed(2)} € (${(totVal * adminState.settings.cursEur).toFixed(2)} RON)`;
   const footGreut = document.getElementById('admin-foot-greutate');
   if (footGreut) footGreut.textContent = `Greutate: ${totGreut.toFixed(1)} kg`;
+
+  renderAdminTablePaginationBar(startIdx + 1, endIdx, filtered.length, adminState.items.length, curPage, totalPages);
 }
+
+function renderAdminTablePaginationBar(start, end, filteredCount, totalCount, curPage, totalPages) {
+  const info = document.getElementById('admin-table-pagination-info');
+  const countEl = document.getElementById('admin-table-total-count');
+  const controls = document.getElementById('admin-table-pagination-controls');
+  const select = document.getElementById('admin-items-rows-per-page');
+
+  if (info) {
+    info.textContent = filteredCount === 0 ? '0 poziții' : `Se afișează ${start} - ${end} din ${filteredCount} poziții`;
+  }
+  if (countEl) countEl.textContent = `${totalCount}`;
+  if (select) select.value = adminState.itemsPagination.rowsPerPage;
+  if (!controls) return;
+  controls.innerHTML = '';
+  if (totalPages <= 1) return;
+
+  const prevBtn = document.createElement('button');
+  prevBtn.className = 'page-pill';
+  prevBtn.innerHTML = '&laquo;';
+  prevBtn.disabled = curPage === 1;
+  prevBtn.onclick = () => window.setAdminItemsPage(curPage - 1);
+  controls.appendChild(prevBtn);
+
+  for (let p = 1; p <= totalPages; p++) {
+    if (p === 1 || p === totalPages || (p >= curPage - 2 && p <= curPage + 2)) {
+      const btn = document.createElement('button');
+      btn.className = `page-pill ${p === curPage ? 'active' : ''}`;
+      btn.textContent = p;
+      btn.onclick = () => window.setAdminItemsPage(p);
+      controls.appendChild(btn);
+    }
+  }
+
+  const nextBtn = document.createElement('button');
+  nextBtn.className = 'page-pill';
+  nextBtn.innerHTML = '&raquo;';
+  nextBtn.disabled = curPage === totalPages;
+  nextBtn.onclick = () => window.setAdminItemsPage(curPage + 1);
+  controls.appendChild(nextBtn);
+}
+
+window.changeAdminItemsRowsPerPage = function(val) {
+  adminState.itemsPagination.rowsPerPage = val === 'all' ? 'all' : parseInt(val, 10);
+  adminState.itemsPagination.page = 1;
+  renderAdminTable();
+};
+
+window.setAdminItemsPage = function(page) {
+  adminState.itemsPagination.page = page;
+  renderAdminTable();
+};
 
 // Global update handler for inline table editing
 window.updateItemField = function(idx, field, value) {
@@ -1618,15 +1700,50 @@ function renderOrdersTable() {
   const tbody = document.getElementById('admin-orders-tbody');
   if (!tbody) return;
 
-  tbody.innerHTML = '';
   const orders = adminState.yearsData.orders || [];
 
+  // Calculate totals
+  let totMp = 0, totPiese = 0, totEur = 0, totRon = 0;
+  orders.forEach(o => {
+    totMp += (parseFloat(o.totalMp) || 0);
+    totPiese += (parseInt(o.totalPiese, 10) || (o.items ? o.items.length : 0));
+    totEur += (parseFloat(o.totalEur) || 0);
+    totRon += (parseFloat(o.totalRon) || 0);
+  });
+
+  // Pagination logic
+  const rpp = adminState.aniPagination.rowsPerPage;
+  const isAll = rpp === 'all';
+  const rppNum = isAll ? orders.length : parseInt(rpp, 10);
+  const totalPages = isAll || orders.length === 0 ? 1 : Math.ceil(orders.length / rppNum);
+
+  if (adminState.aniPagination.page > totalPages) adminState.aniPagination.page = totalPages;
+  if (adminState.aniPagination.page < 1) adminState.aniPagination.page = 1;
+  const curPage = adminState.aniPagination.page;
+
+  const startIdx = isAll || orders.length === 0 ? 0 : (curPage - 1) * rppNum;
+  const endIdx = isAll ? orders.length : Math.min(startIdx + rppNum, orders.length);
+  const pageOrders = orders.slice(startIdx, endIdx);
+
+  // Page subtotal
+  let pageMp = 0, pagePiese = 0, pageEur = 0, pageRon = 0;
+  pageOrders.forEach(o => {
+    pageMp += (parseFloat(o.totalMp) || 0);
+    pagePiese += (parseInt(o.totalPiese, 10) || (o.items ? o.items.length : 0));
+    pageEur += (parseFloat(o.totalEur) || 0);
+    pageRon += (parseFloat(o.totalRon) || 0);
+  });
+
+  tbody.innerHTML = '';
   if (orders.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="10" style="text-align: center; color: var(--text-muted); padding: 20px;">Nicio comandă salvată încă în registrul pe ani.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="10" style="text-align: center; color: var(--text-muted); padding: 24px;">Nicio comandă salvată încă în registrul pe ani.</td></tr>`;
+    renderAniTfoot(0, 0, 0, 0, 0, 0, 0, 0, 0, false);
+    renderAniPaginationBar(0, 0, 0, 1, 1);
     return;
   }
 
-  orders.forEach((o, idx) => {
+  pageOrders.forEach((o, pageIdx) => {
+    const globalIdx = startIdx + pageIdx;
     const tr = document.createElement('tr');
     tr.innerHTML = `
       <td><strong>${o.orderNumber || o.id}</strong></td>
@@ -1640,7 +1757,7 @@ function renderOrdersTable() {
       <td style="text-align: right;">${o.totalRon ? o.totalRon.toFixed(2) : '-'} RON</td>
       <td style="text-align: center;">
         <div style="display: inline-flex; gap: 6px; justify-content: center;">
-          <button class="k-btn k-btn-secondary k-btn-icon-only" onclick="inspectOrderDetails(${idx})" title="Vezi repere tehnice & piese" aria-label="Detalii Comandă">
+          <button class="k-btn k-btn-secondary k-btn-icon-only" onclick="inspectOrderDetails(${globalIdx})" title="Vezi repere tehnice & piese" aria-label="Detalii Comandă">
             <svg class="icon-svg" viewBox="0 0 24 24" style="width: 15px; height: 15px; stroke: currentColor;"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
           </button>
           <button class="k-btn k-btn-primary k-btn-icon-only" onclick="loadOrderIntoCentralizer('${o.id}')" title="Încarcă în atelier pentru debitare" aria-label="Trimite în Atelier">
@@ -1651,7 +1768,92 @@ function renderOrdersTable() {
     `;
     tbody.appendChild(tr);
   });
+
+  renderAniTfoot(pageMp, pagePiese, pageEur, pageRon, totMp, totPiese, totEur, totRon, orders.length, totalPages > 1);
+  renderAniPaginationBar(startIdx + 1, endIdx, orders.length, curPage, totalPages);
 }
+
+function renderAniTfoot(pMp, pPiese, pEur, pRon, tMp, tPiese, tEur, tRon, count, showSubtotal) {
+  const tfoot = document.getElementById('admin-orders-tfoot');
+  if (!tfoot) return;
+  let html = '';
+  if (showSubtotal) {
+    html += `
+      <tr style="background: #f8fafc; border-top: 1px solid var(--border-main); font-size: 11.5px;">
+        <td colspan="5" style="text-align: right; font-weight: 700; color: var(--text-secondary); padding: 8px 12px;">SUBTOTAL PAGINĂ:</td>
+        <td style="text-align: right; font-weight: 700; color: var(--kronvent-blue); padding: 8px 10px;">${pMp.toFixed(2)} m²</td>
+        <td style="text-align: right; font-weight: 700; color: var(--text-main); padding: 8px 10px;">${pPiese} buc</td>
+        <td style="text-align: right; font-weight: 800; color: var(--industrial-green); padding: 8px 10px;">${pEur.toFixed(2)} €</td>
+        <td style="text-align: right; font-weight: 700; color: var(--text-main); padding: 8px 10px;">${pRon.toFixed(2)} RON</td>
+        <td style="background: transparent;"></td>
+      </tr>
+    `;
+  }
+  html += `
+    <tr style="background: #f1f5f9; border-top: 2px solid var(--border-main); font-size: 12.5px;">
+      <td colspan="5" style="text-align: right; font-weight: 800; color: var(--text-main); padding: 10px 12px; text-transform: uppercase;">
+        TOTAL GENERAL REGISTRU (${count} COMENZI):
+      </td>
+      <td style="text-align: right; font-weight: 800; color: var(--kronvent-blue); font-size: 13px; padding: 10px 10px;">${tMp.toFixed(2)} m²</td>
+      <td style="text-align: right; font-weight: 800; color: var(--text-main); font-size: 13px; padding: 10px 10px;">${tPiese} buc</td>
+      <td style="text-align: right; font-weight: 900; color: var(--industrial-green); font-size: 13.5px; padding: 10px 10px;">${tEur.toFixed(2)} €</td>
+      <td style="text-align: right; font-weight: 800; color: var(--text-main); font-size: 13px; padding: 10px 10px;">${tRon.toFixed(2)} RON</td>
+      <td style="background: transparent;"></td>
+    </tr>
+  `;
+  tfoot.innerHTML = html;
+}
+
+function renderAniPaginationBar(start, end, totalCount, curPage, totalPages) {
+  const info = document.getElementById('ani-pagination-info');
+  const countEl = document.getElementById('ani-total-records-count');
+  const controls = document.getElementById('ani-pagination-controls');
+  const select = document.getElementById('ani-rows-per-page');
+
+  if (info) {
+    info.textContent = totalCount === 0 ? '0 comenzi' : `Se afișează ${start} - ${end} din ${totalCount} comenzi`;
+  }
+  if (countEl) countEl.textContent = `${totalCount}`;
+  if (select) select.value = adminState.aniPagination.rowsPerPage;
+  if (!controls) return;
+  controls.innerHTML = '';
+  if (totalPages <= 1) return;
+
+  const prevBtn = document.createElement('button');
+  prevBtn.className = 'page-pill';
+  prevBtn.innerHTML = '&laquo;';
+  prevBtn.disabled = curPage === 1;
+  prevBtn.onclick = () => window.setAniPage(curPage - 1);
+  controls.appendChild(prevBtn);
+
+  for (let p = 1; p <= totalPages; p++) {
+    if (p === 1 || p === totalPages || (p >= curPage - 2 && p <= curPage + 2)) {
+      const btn = document.createElement('button');
+      btn.className = `page-pill ${p === curPage ? 'active' : ''}`;
+      btn.textContent = p;
+      btn.onclick = () => window.setAniPage(p);
+      controls.appendChild(btn);
+    }
+  }
+
+  const nextBtn = document.createElement('button');
+  nextBtn.className = 'page-pill';
+  nextBtn.innerHTML = '&raquo;';
+  nextBtn.disabled = curPage === totalPages;
+  nextBtn.onclick = () => window.setAniPage(curPage + 1);
+  controls.appendChild(nextBtn);
+}
+
+window.changeAniRowsPerPage = function(val) {
+  adminState.aniPagination.rowsPerPage = val === 'all' ? 'all' : parseInt(val, 10);
+  adminState.aniPagination.page = 1;
+  renderOrdersTable();
+};
+
+window.setAniPage = function(page) {
+  adminState.aniPagination.page = page;
+  renderOrdersTable();
+};
 
 // ====================================================================
 // EXECUTIVE DASHBOARD, CRM ORDERS & FACTORY REPORTS LOGIC
@@ -2243,15 +2445,50 @@ function renderDashOrdersTable() {
     return true;
   });
 
+  // Calculate TOTALURI GENERALE FILTRATE
+  let totFilteredMp = 0, totFilteredPiese = 0, totFilteredEur = 0, totFilteredRon = 0;
+  filtered.forEach(o => {
+    totFilteredMp += (parseFloat(o.totalMp) || 0);
+    totFilteredPiese += (parseInt(o.totalPiese, 10) || (o.items ? o.items.length : 0));
+    totFilteredEur += (parseFloat(o.totalEur) || 0);
+    totFilteredRon += (parseFloat(o.totalRon) || 0);
+  });
+
+  // Pagination logic
+  const rpp = adminState.dashPagination.rowsPerPage;
+  const isAll = rpp === 'all';
+  const rppNum = isAll ? filtered.length : parseInt(rpp, 10);
+  const totalPages = isAll || filtered.length === 0 ? 1 : Math.ceil(filtered.length / rppNum);
+
+  if (adminState.dashPagination.page > totalPages) adminState.dashPagination.page = totalPages;
+  if (adminState.dashPagination.page < 1) adminState.dashPagination.page = 1;
+  const curPage = adminState.dashPagination.page;
+
+  const startIdx = isAll || filtered.length === 0 ? 0 : (curPage - 1) * rppNum;
+  const endIdx = isAll ? filtered.length : Math.min(startIdx + rppNum, filtered.length);
+  const pageOrders = filtered.slice(startIdx, endIdx);
+
+  // Subtotal current page
+  let pageMp = 0, pagePiese = 0, pageEur = 0, pageRon = 0;
+  pageOrders.forEach(o => {
+    pageMp += (parseFloat(o.totalMp) || 0);
+    pagePiese += (parseInt(o.totalPiese, 10) || (o.items ? o.items.length : 0));
+    pageEur += (parseFloat(o.totalEur) || 0);
+    pageRon += (parseFloat(o.totalRon) || 0);
+  });
+
   if (filtered.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="11" style="text-align: center; color: var(--text-muted); padding: 24px;">Nicio comandă găsită conform filtrelor selectate.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="11" style="text-align: center; color: var(--text-muted); padding: 28px;">Nicio comandă găsită conform filtrelor selectate.</td></tr>`;
+    renderDashTfoot(0, 0, 0, 0, 0, 0, 0, 0, 0, false);
+    renderDashPaginationBar(0, 0, 0, orders.length, 1, 1);
     return;
   }
 
   tbody.innerHTML = '';
-  filtered.forEach((o, idx) => {
+  pageOrders.forEach((o, pageIdx) => {
     const tr = document.createElement('tr');
     const orderIndexInAll = orders.indexOf(o);
+    const rowNum = startIdx + pageIdx + 1;
 
     const st = (o.status || 'NOUA').toUpperCase();
     let badgeClass = 'status-badge-noua';
@@ -2260,7 +2497,7 @@ function renderDashOrdersTable() {
     else if (st === 'FINALIZATA' || st === 'CONFIRMED') badgeClass = 'status-badge-finalizata';
 
     tr.innerHTML = `
-      <td style="text-align: center; color: var(--text-muted); font-size: 11px;">${idx + 1}</td>
+      <td style="text-align: center; color: var(--text-muted); font-size: 11px; font-weight: 600;">${rowNum}</td>
       <td>
         <strong style="color: var(--kronvent-blue); font-weight: 700; font-size: 12.5px; letter-spacing: -0.01em;">${o.orderNumber || o.id}</strong>
       </td>
@@ -2295,7 +2532,127 @@ function renderDashOrdersTable() {
     `;
     tbody.appendChild(tr);
   });
+
+  renderDashTfoot(pageMp, pagePiese, pageEur, pageRon, totFilteredMp, totFilteredPiese, totFilteredEur, totFilteredRon, filtered.length, totalPages > 1);
+  renderDashPaginationBar(startIdx + 1, endIdx, filtered.length, orders.length, curPage, totalPages);
 }
+
+function renderDashTfoot(pMp, pPiese, pEur, pRon, tMp, tPiese, tEur, tRon, count, showSubtotal) {
+  const tfoot = document.getElementById('dash-orders-tfoot');
+  if (!tfoot) return;
+
+  let html = '';
+  if (showSubtotal) {
+    html += `
+      <tr style="background: #f8fafc; border-top: 1px solid var(--border-main); font-size: 11.5px;">
+        <td colspan="5" style="text-align: right; font-weight: 700; color: var(--text-secondary); padding: 8px 12px;">SUBTOTAL PAGINĂ CURENTĂ:</td>
+        <td style="text-align: right; font-weight: 700; color: var(--kronvent-blue); padding: 8px 10px;">${pMp.toFixed(2)} m²</td>
+        <td style="text-align: right; font-weight: 700; color: var(--text-main); padding: 8px 10px;">${pPiese} buc</td>
+        <td style="text-align: right; font-weight: 800; color: var(--industrial-green); padding: 8px 10px;">${pEur.toLocaleString('ro-RO', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €</td>
+        <td style="text-align: right; font-weight: 700; color: var(--text-main); padding: 8px 10px;">${pRon.toLocaleString('ro-RO', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} RON</td>
+        <td colspan="2" style="background: transparent;"></td>
+      </tr>
+    `;
+  }
+  html += `
+    <tr style="background: #f1f5f9; border-top: 2px solid var(--border-main); font-size: 12.5px;">
+      <td colspan="5" style="text-align: right; font-weight: 800; color: var(--text-main); padding: 10px 12px; text-transform: uppercase; letter-spacing: -0.01em;">
+        TOTAL GENERAL (${count} COMENZI FILTRATE):
+      </td>
+      <td style="text-align: right; font-weight: 800; color: var(--kronvent-blue); font-size: 13px; padding: 10px 10px;">${tMp.toFixed(2)} m²</td>
+      <td style="text-align: right; font-weight: 800; color: var(--text-main); font-size: 13px; padding: 10px 10px;">${tPiese} buc</td>
+      <td style="text-align: right; font-weight: 900; color: var(--industrial-green); font-size: 13.5px; padding: 10px 10px;">${tEur.toLocaleString('ro-RO', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €</td>
+      <td style="text-align: right; font-weight: 800; color: var(--text-main); font-size: 13px; padding: 10px 10px;">${tRon.toLocaleString('ro-RO', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} RON</td>
+      <td colspan="2" style="background: transparent;"></td>
+    </tr>
+  `;
+  tfoot.innerHTML = html;
+}
+
+function renderDashPaginationBar(start, end, filteredCount, totalCount, curPage, totalPages) {
+  const info = document.getElementById('dash-pagination-info');
+  const countEl = document.getElementById('dash-total-records-count');
+  const controls = document.getElementById('dash-pagination-controls');
+  const select = document.getElementById('dash-rows-per-page');
+
+  if (info) {
+    info.textContent = filteredCount === 0 
+      ? '0 comenzi' 
+      : `Se afișează ${start} - ${end} din ${filteredCount} comenzi`;
+  }
+  if (countEl) countEl.textContent = `${totalCount}`;
+
+  if (select) {
+    select.value = adminState.dashPagination.rowsPerPage;
+  }
+
+  if (!controls) return;
+  controls.innerHTML = '';
+
+  if (totalPages <= 1) return;
+
+  // First & Prev
+  const firstBtn = document.createElement('button');
+  firstBtn.className = 'page-pill';
+  firstBtn.innerHTML = '&laquo;';
+  firstBtn.title = 'Prima pagină';
+  firstBtn.disabled = curPage === 1;
+  firstBtn.onclick = () => window.setDashPage(1);
+  controls.appendChild(firstBtn);
+
+  const prevBtn = document.createElement('button');
+  prevBtn.className = 'page-pill';
+  prevBtn.innerHTML = '&lsaquo;';
+  prevBtn.title = 'Pagina anterioară';
+  prevBtn.disabled = curPage === 1;
+  prevBtn.onclick = () => window.setDashPage(curPage - 1);
+  controls.appendChild(prevBtn);
+
+  // Page numbers with window
+  for (let p = 1; p <= totalPages; p++) {
+    if (p === 1 || p === totalPages || (p >= curPage - 2 && p <= curPage + 2)) {
+      const btn = document.createElement('button');
+      btn.className = `page-pill ${p === curPage ? 'active' : ''}`;
+      btn.textContent = p;
+      btn.onclick = () => window.setDashPage(p);
+      controls.appendChild(btn);
+    } else if (p === curPage - 3 || p === curPage + 3) {
+      const dots = document.createElement('span');
+      dots.style.padding = '0 4px';
+      dots.style.color = 'var(--text-muted)';
+      dots.textContent = '...';
+      controls.appendChild(dots);
+    }
+  }
+
+  // Next & Last
+  const nextBtn = document.createElement('button');
+  nextBtn.className = 'page-pill';
+  nextBtn.innerHTML = '&rsaquo;';
+  nextBtn.title = 'Pagina următoare';
+  nextBtn.disabled = curPage === totalPages;
+  nextBtn.onclick = () => window.setDashPage(curPage + 1);
+  controls.appendChild(nextBtn);
+
+  const lastBtn = document.createElement('button');
+  lastBtn.className = 'page-pill';
+  lastBtn.innerHTML = '&raquo;';
+  lastBtn.title = 'Ultima pagină';
+  lastBtn.disabled = curPage === totalPages;
+  lastBtn.onclick = () => window.setDashPage(totalPages);
+  controls.appendChild(lastBtn);
+}
+
+window.changeDashRowsPerPage = function(val) {
+  adminState.dashPagination.rowsPerPage = val === 'all' ? 'all' : parseInt(val, 10);
+  adminState.dashPagination.page = 1;
+  renderDashOrdersTable();
+};
+
+window.setDashPage = function(page) {
+  adminState.dashPagination.page = page;
+  renderDashOrdersTable();
+};
 
 window.inspectOrderDetails = function(orderIndexInAll) {
   const orders = adminState.yearsData.orders || [];
@@ -2328,25 +2685,42 @@ window.inspectOrderDetails = function(orderIndexInAll) {
   const tbody = document.getElementById('order-modal-items-tbody');
   if (tbody) {
     tbody.innerHTML = '';
-    const items = o.items || [];
+    let mTotBuc = 0, mTotMp = 0, mTotVal = 0;
     if (items.length === 0) {
       tbody.innerHTML = `<tr><td colspan="8" style="text-align: center; color: var(--text-muted); padding: 18px;">Comanda este înregistrată ca bon global de producție (${valEur.toFixed(2)} € • ${(o.totalMp || 0).toFixed(2)} m²).</td></tr>`;
+      mTotMp = o.totalMp || 0;
+      mTotVal = valEur;
+      mTotBuc = o.totalPiese || 1;
     } else {
       items.forEach((it, idx) => {
+        const cant = parseInt(it.cantitate, 10) || 1;
+        const sup = parseFloat(it.suprafata) || 0;
+        const val = parseFloat(it.valoareTotala) || 0;
+        mTotBuc += cant;
+        mTotMp += sup;
+        mTotVal += val;
+
         const tr = document.createElement('tr');
         tr.innerHTML = `
           <td style="text-align: center; color: var(--text-muted);">${idx + 1}</td>
           <td><strong>${it.eticheta || it.categorie || 'Tubulatură'}</strong></td>
           <td style="font-size: 11px; color: var(--text-secondary);">${it.dimensiuni || '-'}</td>
-          <td style="text-align: right; font-weight: 600;">${it.cantitate || 1}</td>
-          <td style="text-align: right;">${(it.suprafata || 0).toFixed(2)} m²</td>
+          <td style="text-align: right; font-weight: 600;">${cant}</td>
+          <td style="text-align: right;">${sup.toFixed(2)} m²</td>
           <td style="text-align: center;"><span class="k-badge" style="font-size: 10px;">${it.flansa || 'FL20'}</span></td>
           <td style="text-align: center;">${it.grosime || '0.8'} mm</td>
-          <td style="text-align: right; font-weight: 700; color: var(--industrial-green);">${(it.valoareTotala || 0).toFixed(2)} €</td>
+          <td style="text-align: right; font-weight: 700; color: var(--industrial-green);">${val.toFixed(2)} €</td>
         `;
         tbody.appendChild(tr);
       });
     }
+
+    const footBuc = document.getElementById('order-modal-foot-buc');
+    const footMp = document.getElementById('order-modal-foot-mp');
+    const footVal = document.getElementById('order-modal-foot-val');
+    if (footBuc) footBuc.textContent = `${mTotBuc} buc`;
+    if (footMp) footMp.textContent = `${mTotMp.toFixed(2)} m²`;
+    if (footVal) footVal.textContent = `${mTotVal.toFixed(2)} €`;
   }
 
   // Setup buttons

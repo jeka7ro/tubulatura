@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=2026-icon-buttons-v11">
+  <link rel="stylesheet" href="style.css?v=2026-table-profi-v12">
 </head>
 <body>
 
@@ -329,13 +329,39 @@
                     <th style="text-align: right; width: 115px;">Valoare EUR</th>
                     <th style="text-align: right; width: 125px;">Valoare RON</th>
                     <th style="width: 155px; text-align: center;">Status Producție</th>
-                    <th style="width: 180px; text-align: center;">Acțiuni</th>
+                    <th style="width: 140px; text-align: center;">Acțiuni</th>
                   </tr>
                 </thead>
                 <tbody id="dash-orders-tbody">
                   <!-- Populated by admin.js -->
                 </tbody>
+                <tfoot id="dash-orders-tfoot">
+                  <!-- Populated by admin.js with column sums -->
+                </tfoot>
               </table>
+            </div>
+
+            <!-- Table Pagination & Total Footer Bar -->
+            <div class="grid-pagination-bar" id="dash-orders-pagination-bar">
+              <div class="pagination-left">
+                <span class="pagination-info" id="dash-pagination-info">Se afișează 0 - 0 din 0 înregistrări</span>
+                <span class="pagination-filter-count">• Total comenzi: <strong id="dash-total-records-count">0</strong></span>
+              </div>
+
+              <div class="pagination-controls" id="dash-pagination-controls">
+                <!-- Page buttons rendered via JS -->
+              </div>
+
+              <div class="pagination-right">
+                <label for="dash-rows-per-page" class="pagination-rows-label">Rânduri pe pagină:</label>
+                <select id="dash-rows-per-page" class="pagination-rows-select" onchange="changeDashRowsPerPage(this.value)">
+                  <option value="10">10</option>
+                  <option value="15" selected>15</option>
+                  <option value="25">25</option>
+                  <option value="50">50</option>
+                  <option value="all">Toate</option>
+                </select>
+              </div>
             </div>
           </div>
         </div>
@@ -496,6 +522,26 @@
               </tr>
             </tfoot>
           </table>
+        </div>
+
+        <!-- Table Pagination & Total Footer Bar for Excel Editor -->
+        <div class="grid-pagination-bar" id="admin-table-pagination-bar">
+          <div class="pagination-left">
+            <span class="pagination-info" id="admin-table-pagination-info">Se afișează 1 - 51 din 51 poziții</span>
+            <span class="pagination-filter-count">• Total poziții: <strong id="admin-table-total-count">51</strong></span>
+          </div>
+          <div class="pagination-controls" id="admin-table-pagination-controls">
+            <!-- Buttons rendered via JS -->
+          </div>
+          <div class="pagination-right">
+            <label for="admin-items-rows-per-page" class="pagination-rows-label">Rânduri pe pagină:</label>
+            <select id="admin-items-rows-per-page" class="pagination-rows-select" onchange="changeAdminItemsRowsPerPage(this.value)">
+              <option value="15">15</option>
+              <option value="25">25</option>
+              <option value="50">50</option>
+              <option value="all" selected>Toate</option>
+            </select>
+          </div>
         </div>
       </div>
     </div>
@@ -885,13 +931,39 @@
                 <th style="width: 80px; text-align: right;">Piese [buc]</th>
                 <th style="width: 100px; text-align: right;">Total [€]</th>
                 <th style="width: 110px; text-align: right;">Total [RON]</th>
-                <th style="width: 160px; text-align: center;">Snapshot Imuabil</th>
+                <th style="width: 120px; text-align: center;">Acțiuni</th>
               </tr>
             </thead>
             <tbody id="admin-orders-tbody">
               <!-- Populated dynamically via JS -->
             </tbody>
+            <tfoot id="admin-orders-tfoot">
+              <!-- Populated dynamically via JS -->
+            </tfoot>
           </table>
+        </div>
+
+        <!-- Table Pagination & Total Footer Bar for Historical Register -->
+        <div class="grid-pagination-bar" id="ani-orders-pagination-bar">
+          <div class="pagination-left">
+            <span class="pagination-info" id="ani-pagination-info">Se afișează 0 - 0 din 0 comenzi</span>
+            <span class="pagination-filter-count">• Total înregistrări: <strong id="ani-total-records-count">0</strong></span>
+          </div>
+
+          <div class="pagination-controls" id="ani-pagination-controls">
+            <!-- Buttons rendered via JS -->
+          </div>
+
+          <div class="pagination-right">
+            <label for="ani-rows-per-page" class="pagination-rows-label">Rânduri pe pagină:</label>
+            <select id="ani-rows-per-page" class="pagination-rows-select" onchange="changeAniRowsPerPage(this.value)">
+              <option value="10">10</option>
+              <option value="15" selected>15</option>
+              <option value="25">25</option>
+              <option value="50">50</option>
+              <option value="all">Toate</option>
+            </select>
+          </div>
         </div>
       </div>
     </div>
@@ -956,6 +1028,15 @@
               <tbody id="order-modal-items-tbody">
                 <!-- Populated dynamically -->
               </tbody>
+              <tfoot id="order-modal-items-tfoot" style="background: #f8fafc; font-weight: 700; border-top: 2px solid var(--border-main);">
+                <tr>
+                  <td colspan="3" style="text-align: right; padding: 8px 10px; font-weight: 800; color: var(--text-main);">TOTAL REPERE:</td>
+                  <td id="order-modal-foot-buc" style="text-align: right; padding: 8px 6px; font-weight: 800;">0 buc</td>
+                  <td id="order-modal-foot-mp" style="text-align: right; padding: 8px 6px; font-weight: 800; color: var(--kronvent-blue);">0.00 m²</td>
+                  <td colspan="2"></td>
+                  <td id="order-modal-foot-val" style="text-align: right; padding: 8px 6px; font-weight: 800; color: var(--industrial-green);">0.00 €</td>
+                </tr>
+              </tfoot>
             </table>
           </div>
         </div>
@@ -998,6 +1079,6 @@
 
   <script src="apexcharts.min.js"></script>
   <script src="xlsx.full.min.js"></script>
-  <script src="admin.js?v=2026-icon-buttons-v11"></script>
+  <script src="admin.js?v=2026-table-profi-v12"></script>
 </body>
 </html>
