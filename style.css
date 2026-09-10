@@ -1930,8 +1930,10 @@ body {
 .form-inputs-grid,
 .dim-inputs-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
-  gap: 12px;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 1fr);
+  gap: 8px;
+  width: 100%;
 }
 
 .input-field-group,
@@ -1939,6 +1941,7 @@ body {
   display: flex;
   flex-direction: column;
   gap: 4px;
+  min-width: 0;
 }
 
 .workbench-panel-header {
@@ -1965,24 +1968,39 @@ body {
 
 .input-field-group label,
 .form-group label {
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 700;
   color: var(--text-secondary);
   text-transform: uppercase;
-  letter-spacing: 0.03em;
-  min-height: 28px;
+  letter-spacing: 0.02em;
+  min-height: 22px;
   display: flex;
-  align-items: flex-end;
+  align-items: center;
   justify-content: space-between;
-  gap: 4px;
-  line-height: 1.25;
+  gap: 3px;
+  line-height: 1.2;
   margin-bottom: 2px;
+  min-width: 0;
+}
+
+.calc-param-input {
+  padding: 8px 4px !important;
+  text-align: center !important;
+  font-size: 12.5px !important;
+  min-width: 0 !important;
+}
+
+select.calc-param-input {
+  padding: 7px 3px !important;
+  text-align: left !important;
+  font-size: 11.5px !important;
 }
 
 .field-title {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  min-width: 0;
 }
 
 .unit-pill {

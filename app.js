@@ -2032,11 +2032,16 @@ function renderPieceForm() {
     group.className = 'input-field-group';
 
     if (f.type === 'select') {
-      const optionsHtml = f.options.map(opt => `<option value="${opt}" ${opt === f.default ? 'selected' : ''}>Ø ${opt} mm</option>`).join('');
+      const isDiam = f.id === 'dim_D' || f.id === 'dim_D1' || f.id === 'dim_D2' || f.label.includes('Ø') || f.label.toLowerCase().includes('diametru');
+      const unitLabel = f.unit || (isDiam ? 'mm' : 'buc');
+      const optionsHtml = f.options.map(opt => {
+        const text = isDiam ? `Ø ${opt} mm` : `${opt} ${unitLabel}`;
+        return `<option value="${opt}" ${opt === f.default ? 'selected' : ''}>${text}</option>`;
+      }).join('');
       group.innerHTML = `
         <label for="${f.id}">
-          <span class="field-title">${f.label}</span>
-          <span class="unit-pill">select</span>
+          <span class="field-title" title="${f.label}">${f.label}</span>
+          <span class="unit-pill">${f.unit || (isDiam ? 'mm' : 'buc')}</span>
         </label>
         <select id="${f.id}" class="mac-input calc-param-input">${optionsHtml}</select>
       `;
