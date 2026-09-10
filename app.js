@@ -14,11 +14,11 @@ const state = {
     tva: 21                   // Cota standard TVA România (21%)
   },
   meta: {
-    furnizor: 'Universal Comp Prod',
-    client: 'RADOIA ISOLIRUNG',
-    subiect: 'Oferta HVAC HOTEL VALIUG',
-    numar: 'CMD-2023/45',
-    data: '21.03.2023'
+    furnizor: 'KronVent Brașov',
+    client: '',
+    subiect: '',
+    numar: '',
+    data: ''
   },
   activeCategoryMode: 'RECTANGULAR', // 'RECTANGULAR' or 'CIRCULAR'
   items: [],
@@ -1323,6 +1323,26 @@ function setupActionButtons() {
   const btnCartExport = document.getElementById('btn-cart-export-excel');
   if (btnCartExport) btnCartExport.addEventListener('click', exportToExcel);
 
+  // Client Excel Import Handlers
+  const fileInput = document.getElementById('client-excel-input');
+  const btnImportCart = document.getElementById('btn-cart-import-excel');
+  const btnImportTop = document.getElementById('btn-cart-import-excel-top');
+
+  if (btnImportCart && fileInput) {
+    btnImportCart.addEventListener('click', () => fileInput.click());
+  }
+  if (btnImportTop && fileInput) {
+    btnImportTop.addEventListener('click', () => fileInput.click());
+  }
+  if (fileInput) {
+    fileInput.addEventListener('change', (e) => {
+      if (e.target.files && e.target.files.length > 0) {
+        handleClientExcelImport(e.target.files[0]);
+        e.target.value = ''; // Reset input so same file can be re-uploaded if needed
+      }
+    });
+  }
+
   // Generate clean publication-grade official Technical Specification & Commercial Offer
   window.prepareOfficialPrintDocument = function() {
     const container = document.getElementById('print-official-document');
@@ -1558,38 +1578,110 @@ function setupActionButtons() {
   const btnSubmit = document.getElementById('btn-submit-order');
   if (btnSubmit) {
     btnSubmit.addEventListener('click', async () => {
-      const clientName = document.getElementById('order-client')?.value || 'Client B2B';
-      const projectName = document.getElementById('order-proiect')?.value || 'Oferta HVAC Proiect';
-      const tel = document.getElementById('order-contact-tel')?.value || '';
-      const email = document.getElementById('order-contact-email')?.value || '';
-      const adresa = document.getElementById('order-adresa')?.value || '';
+      if (!state.items || state.items.length === 0) {
+        showToast('Coșul de comandă este gol. Vă rugăm adăugați piese din configurator sau importați un fișier Excel!', 'warning');
+        return;
+      }
+
+      const clientName = document.getElementById('order-client')?.value?.trim() || 'Beneficiar Nespecificat';
+      const projectName = document.getElementById('order-proiect')?.value?.trim() || 'Proiect Tubulatură HVAC';
+      const tel = document.getElementById('order-contact-tel')?.value?.trim() || '';
+      const email = document.getElementById('order-contact-email')?.value?.trim() || '';
+      const adresa = document.getElementById('order-adresa')?.value?.trim() || '';
+      const orderNum = document.getElementById('order-numar')?.value?.trim() || `CMD-${new Date().getFullYear()}/${Math.floor(1000 + Math.random() * 9000)}`;
+      const orderDate = document.getElementById('order-data')?.value?.trim() || new Date().toLocaleDateString('ro-RO');
 
       state.meta.client = clientName;
       state.meta.subiect = projectName;
       state.meta.telefon = tel;
       state.meta.email = email;
       state.meta.adresa = adresa;
-
-      const cmdNum = `CMD-${new Date().getFullYear()}/${Math.floor(1000 + Math.random() * 9000)}`;
-      state.meta.numar = cmdNum;
-
-      await saveProjectToServer();
+      state.meta.numar = orderNum;
+      state.meta.data = orderDate;
 
       const totalValoareEur = state.items.reduce((acc, it) => acc + (parseFloat(it.valoareTotala) || 0), 0);
       const totalPieces = state.items.reduce((acc, it) => acc + (parseFloat(it.cantitate) || 0), 0);
       const totalSurface = state.items.reduce((acc, it) => acc + (parseFloat(it.suprafata) || 0), 0);
+      const totalRon = totalValoareEur * (state.settings.cursEur || 5.2542);
 
-      const elNum = document.getElementById('success-cmd-num');
-      if (elNum) elNum.textContent = cmdNum;
-      const elP = document.getElementById('success-cmd-pieces');
-      if (elP) elP.textContent = `${Math.round(totalPieces)} bucăți`;
-      const elS = document.getElementById('success-cmd-surface');
-      if (elS) elS.textContent = `${totalSurface.toFixed(2)} m²`;
-      const elV = document.getElementById('success-cmd-val');
-      if (elV) elV.textContent = `${totalValoareEur.toFixed(2)} € (${(totalValoareEur * state.settings.cursEur).toFixed(2)} RON)`;
+      const orderPayload = {
+        client: clientName,
+        project: projectName,
+        date: orderDate,
+        totalEur: parseFloat(totalValoareEur.toFixed(2)),
+        totalRon: parseFloat(totalRon.toFixed(2)),
+        totalMp: parseFloat(totalSurface.toFixed(2)),
+        totalPiese: totalPieces,
+        calculation_snapshot: {
+          timestamp: new Date().toISOString(),
+          settings: JSON.parse(JSON.stringify(state.settings)),
+          cursEur: state.settings.cursEur,
+          pretMpRectangular: state.settings.pretMpRectangular,
+          tva: state.settings.tva,
+          itemsCount: state.items.length
+        },
+        items: state.items.map(it => ({
+          nr: it.nr,
+          eticheta: it.eticheta,
+          categorie: it.categorie,
+          cod: it.cod,
+          dimensiuni: it.dimensiuni,
+          cantitate: it.cantitate,
+          sUnit: it.sUnit,
+          suprafata: it.suprafata,
+          pretUnitar: it.pretUnitar,
+          valoareTotala: it.valoareTotala,
+          flansa: it.flansa,
+          grosime: it.grosime,
+          greutate: it.greutate
+        }))
+      };
 
-      const modalSuccess = document.getElementById('order-success-modal');
-      if (modalSuccess) modalSuccess.classList.add('open');
+      try {
+        const resOrder = await fetch('/api/orders', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(orderPayload)
+        });
+
+        const result = await resOrder.json();
+        if (result.success) {
+          const registeredNum = result.order?.id || result.order?.orderNumber || orderNum;
+
+          const elNum = document.getElementById('success-cmd-num');
+          if (elNum) elNum.textContent = registeredNum;
+          const elP = document.getElementById('success-cmd-pieces');
+          if (elP) elP.textContent = `${Math.round(totalPieces)} bucăți`;
+          const elS = document.getElementById('success-cmd-surface');
+          if (elS) elS.textContent = `${totalSurface.toFixed(2)} m²`;
+          const elV = document.getElementById('success-cmd-val');
+          if (elV) elV.textContent = `${totalValoareEur.toFixed(2)} € (${totalRon.toFixed(2)} RON)`;
+
+          const modalSuccess = document.getElementById('order-success-modal');
+          if (modalSuccess) modalSuccess.classList.add('open');
+
+          // Reset local cart to clean state after successful order transmission
+          state.items = [];
+          localStorage.removeItem('kronvent_client_cart');
+          applyFiltersAndRender();
+          updateKPICards();
+          updateAtelierTab();
+
+          // Realtime notify factory admin panel
+          if (typeof BroadcastChannel !== 'undefined') {
+            try {
+              const syncChannel = new BroadcastChannel('kronvent_sync');
+              syncChannel.postMessage({ type: 'NEW_ORDER', order: result.order });
+            } catch (e) {}
+          }
+
+          showToast(`Comanda ${registeredNum} a fost transmisă fabricii cu succes!`, 'success');
+        } else {
+          showToast('Eroare la transmiterea comenzii: ' + (result.error || 'Server error'), 'error');
+        }
+      } catch (err) {
+        showToast('Eroare rețea la transmiterea comenzii: ' + err.message, 'error');
+      }
     });
   }
 
@@ -1633,9 +1725,47 @@ function setupActionButtons() {
 // ====================================================================
 // DATA LOADING & ENRICHMENT WITH 15 €/m²
 // ====================================================================
+// Helper pentru persistența sigură a coșului clientului în localStorage
+function saveCartToStorage() {
+  try {
+    localStorage.setItem('kronvent_client_cart', JSON.stringify(state.items));
+  } catch (e) {
+    console.warn('Nu s-a putut salva coșul local:', e);
+  }
+}
+
+// Încărcare la cerere a proiectului demonstrativ (51 piese)
+window.loadDemoProject = async function() {
+  try {
+    showToast('Se încarcă modelul demonstrativ (51 piese)...', 'info');
+    const res = await fetch('/api/data');
+    if (!res.ok) throw new Error('Nu s-au putut încărca datele demo');
+    const data = await res.json();
+    
+    if (data.meta) {
+      const elClient = document.getElementById('order-client');
+      if (elClient) elClient.value = data.meta.client || 'RADOIA ISOLIRUNG';
+      const elProiect = document.getElementById('order-proiect');
+      if (elProiect) elProiect.value = data.meta.subiect || 'Oferta HVAC HOTEL VALIUG';
+    }
+
+    state.items = (data.items || []).map((it, idx) => enrichItemData(it, idx + 1));
+    saveCartToStorage();
+    applyFiltersAndRender();
+    updateKPICards();
+    updateAtelierTab();
+    showToast(`Modelul demonstrativ cu ${state.items.length} poziții a fost încărcat în coș!`, 'success');
+  } catch (err) {
+    showToast('Eroare la încărcarea modelului demo: ' + err.message, 'error');
+  }
+};
+
+// ====================================================================
+// DATA LOADING & SESSION RESTORE (CLEAN CLIENT CART BY DEFAULT)
+// ====================================================================
 async function loadInitialData() {
   try {
-    // Dynamic Active Year Parameters from Backend
+    // 1. Dynamic Active Year Parameters from Backend
     try {
       const resParams = await fetch('/api/parameters');
       if (resParams.ok) {
@@ -1648,101 +1778,94 @@ async function loadInitialData() {
       console.warn('Nu s-au putut încărca parametrii dinamici:', e);
     }
 
-    const res = await fetch('/api/data');
-    if (!res.ok) throw new Error('Nu s-au putut încărca datele');
-    const data = await res.json();
+    // 2. Data curentă oficială și număr secvențial de comandă
+    const today = new Date();
+    const dd = String(today.getDate()).padStart(2, '0');
+    const mm = String(today.getMonth() + 1).padStart(2, '0');
+    const yyyy = today.getFullYear();
+    const todayStr = `${dd}.${mm}.${yyyy}`;
 
-    if (data.meta) {
-      state.meta = { ...state.meta, ...data.meta };
-      const cleanMetaText = (s) => (s ? String(s).replace(/^(Pentru|Subiect|Numar|Data|De la)\s*:\s*/i, '').trim() : '');
-      
-      const elClient = document.getElementById('order-client');
-      if (elClient) elClient.value = cleanMetaText(state.meta.client) || 'RADOIA ISOLIRUNG';
-      
-      const elProiect = document.getElementById('order-proiect');
-      if (elProiect) elProiect.value = cleanMetaText(state.meta.subiect) || 'Oferta HVAC HOTEL VALIUG';
-      
-      const elNumar = document.getElementById('order-numar');
-      if (elNumar) {
-        const nr = cleanMetaText(state.meta.numar);
-        elNumar.value = (nr && nr.toLowerCase() !== 'xxxx') ? nr : 'CMD-2023/45';
+    let nextOrderNum = `CMD-${yyyy}-00001`;
+    try {
+      const resOrders = await fetch('/api/orders');
+      if (resOrders.ok) {
+        const orders = await resOrders.json();
+        const nextIdx = (Array.isArray(orders) ? orders.length : 0) + 1;
+        nextOrderNum = `CMD-${yyyy}-${String(nextIdx).padStart(5, '0')}`;
       }
-      
-      const elData = document.getElementById('order-data');
-      if (elData) elData.value = cleanMetaText(state.meta.data) || '21.03.2023';
-      
-      const elTel = document.getElementById('order-contact-tel');
-      if (elTel && state.meta.telefon) elTel.value = state.meta.telefon;
-      
-      const elEmail = document.getElementById('order-contact-email');
-      if (elEmail && state.meta.email) elEmail.value = state.meta.email;
-      
-      const elAdresa = document.getElementById('order-adresa');
-      if (elAdresa && state.meta.adresa) elAdresa.value = state.meta.adresa;
+    } catch (e) {
+      console.warn('Eroare determinare număr secvențial comandă:', e);
     }
 
-    state.items = (data.items || []).map((it, idx) => enrichItemData(it, idx + 1));
+    state.meta = {
+      furnizor: 'KronVent Brașov',
+      client: '',
+      subiect: '',
+      numar: nextOrderNum,
+      data: todayStr,
+      telefon: '',
+      email: '',
+      adresa: ''
+    };
+
+    const elNumar = document.getElementById('order-numar');
+    if (elNumar && !elNumar.value) elNumar.value = nextOrderNum;
+
+    const elData = document.getElementById('order-data');
+    if (elData && !elData.value) elData.value = todayStr;
+
+    // 3. Restaurare coș din sesiunea locală a utilizatorului (sau inițializare cu coș gol)
+    const savedCartJson = localStorage.getItem('kronvent_client_cart');
+    if (savedCartJson) {
+      try {
+        const savedItems = JSON.parse(savedCartJson);
+        if (Array.isArray(savedItems) && savedItems.length > 0) {
+          state.items = savedItems.map((it, idx) => enrichItemData(it, idx + 1));
+        } else {
+          state.items = [];
+        }
+      } catch (e) {
+        state.items = [];
+      }
+    } else {
+      state.items = []; // Coș curat pentru clienți noi!
+    }
+
     applyFiltersAndRender();
     updateKPICards();
     updateAtelierTab();
   } catch (err) {
-    console.error('Error loading data:', err);
+    console.error('Error loading initial data:', err);
   }
 }
 
-// Sincronizare în timp real cu Panoul de Administrare Fabrică
+// Sincronizare în timp real între ferestre (fără a suprascrie coșul clientului)
 function setupRealtimeSync() {
-  // 1. BroadcastChannel pentru comunicare instantă între tab-uri (sub 5ms)
   if (typeof BroadcastChannel !== 'undefined') {
     try {
       const syncChannel = new BroadcastChannel('kronvent_sync');
       syncChannel.onmessage = async (e) => {
-        if (e.data && e.data.type === 'DATA_UPDATED') {
-          console.log('[SYNC INSTANT] Actualizare primită din panoul fabricii!');
-          await loadInitialData();
-          showToast('Datele comenzii au fost actualizate din panoul fabricii!', 'info');
+        if (e.data && e.data.type === 'PARAMETERS_UPDATED') {
+          console.log('[SYNC] Parametrii comerciali s-au actualizat de către fabrică!');
+          try {
+            const resParams = await fetch('/api/parameters');
+            if (resParams.ok) {
+              const pData = await resParams.json();
+              if (pData.settings) {
+                Object.assign(state.settings, pData.settings);
+                state.items = state.items.map((it, idx) => enrichItemData(it, idx + 1));
+                applyFiltersAndRender();
+                updateKPICards();
+                updateAtelierTab();
+              }
+            }
+          } catch (err) {}
         }
       };
     } catch (e) {
       console.warn('BroadcastChannel error:', e);
     }
   }
-
-  // 2. Storage event ca fallback multi-tab
-  window.addEventListener('storage', async (e) => {
-    if (e.key === 'kronvent_sync_timestamp') {
-      console.log('[STORAGE SYNC] Actualizare detectată!');
-      await loadInitialData();
-    }
-  });
-
-  // 3. Tab focus event (când clientul revine pe tab)
-  window.addEventListener('focus', async () => {
-    await loadInitialData();
-  });
-
-  // 4. Heartbeat poll de verificare automată la fiecare 3 secunde
-  let lastDataChecksum = '';
-  setInterval(async () => {
-    try {
-      const res = await fetch('/api/data', { cache: 'no-store' });
-      if (res.ok) {
-        const data = await res.json();
-        const items = data.items || [];
-        const checksum = `${items.length}_${items.reduce((acc, it) => acc + (it.cantitate || 0) + (it.suprafata || 0), 0).toFixed(2)}`;
-        if (lastDataChecksum && lastDataChecksum !== checksum) {
-          console.log('[HEARTBEAT SYNC] Datele serverului s-au modificat, actualizăm automat!');
-          state.items = items.map((it, idx) => enrichItemData(it, idx + 1));
-          applyFiltersAndRender();
-          updateKPICards();
-          updateAtelierTab();
-        }
-        lastDataChecksum = checksum;
-      }
-    } catch (err) {
-      // silent
-    }
-  }, 3000);
 }
 
 function enrichItemData(it, nr) {
@@ -1845,13 +1968,32 @@ function renderTable() {
 
   const total = state.filteredItems.length;
   if (total === 0) {
-    tbody.innerHTML = `
-      <tr>
-        <td colspan="14" style="text-align: center; padding: 40px; color: var(--text-muted);">
-          Nu a fost găsită nicio piesă conform filtrelor selectate.
-        </td>
-      </tr>
-    `;
+    if (!state.items || state.items.length === 0) {
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="14" style="text-align: center; padding: 48px 20px; color: var(--text-muted);">
+            <div style="max-width: 440px; margin: 0 auto;">
+              <svg style="width: 48px; height: 48px; color: var(--text-muted); opacity: 0.5; margin-bottom: 12px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></svg>
+              <div style="font-size: 16px; font-weight: 700; color: var(--text-main); margin-bottom: 6px;">Coșul de comandă este gol (0 poziții)</div>
+              <p style="font-size: 13px; line-height: 1.5; color: var(--text-secondary); margin-bottom: 18px;">Puteți adăuga piese din configurator, importa direct un extras Excel de proiect (.xlsx) sau încărca un model demonstrativ de test.</p>
+              <div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
+                <button onclick="document.getElementById('step1-toggle')?.click()" class="k-btn k-btn-primary k-btn-sm" type="button">+ Deschide Configurator</button>
+                <button onclick="document.getElementById('client-excel-input')?.click()" class="k-btn k-btn-secondary k-btn-sm" type="button">📁 Import Excel (.xlsx)</button>
+                <button onclick="window.loadDemoProject()" class="k-btn k-btn-secondary k-btn-sm" type="button" style="font-size: 11px; opacity: 0.85;">Model Demo (51 piese)</button>
+              </div>
+            </div>
+          </td>
+        </tr>
+      `;
+    } else {
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="14" style="text-align: center; padding: 40px; color: var(--text-muted);">
+            Nu a fost găsită nicio piesă conform căutării sau filtrelor selectate.
+          </td>
+        </tr>
+      `;
+    }
     return;
   }
 
@@ -2279,6 +2421,7 @@ function addItemToOrder() {
   };
 
   state.items.push(newItem);
+  saveCartToStorage();
   applyFiltersAndRender();
   updateKPICards();
   updateAtelierTab();
@@ -2631,6 +2774,7 @@ function setupModal() {
     if (elPret) state.items[idx].valoareTotala = parseFloat(elPret.value) || 0;
 
     modal.classList.remove('open');
+    saveCartToStorage();
     applyFiltersAndRender();
     updateKPICards();
     updateAtelierTab();
@@ -2673,10 +2817,10 @@ window.deleteItem = function(index) {
     state.currentPage = maxPage;
   }
 
+  saveCartToStorage();
   applyFiltersAndRender();
   updateKPICards();
   updateAtelierTab();
-  saveProjectToServer();
   showToast(`Piesa "${label}" a fost ștearsă din comandă.`);
 };
 
@@ -2686,97 +2830,224 @@ window.clearCart = function() {
     return;
   }
 
-  const count = state.items.length;
-  state.items = [];
-  state.currentPage = 1;
-  applyFiltersAndRender();
-  updateKPICards();
-  updateAtelierTab();
-  saveProjectToServer();
-  showToast(`Toate cele ${count} piese au fost șterse din comandă. Coșul este gol.`);
+  showAppConfirm(
+    'Golire Coș de Comandă',
+    'Sunteți sigur că doriți să ștergeți toate piesele din coșul curent?',
+    () => {
+      const count = state.items.length;
+      state.items = [];
+      state.currentPage = 1;
+      localStorage.removeItem('kronvent_client_cart');
+      applyFiltersAndRender();
+      updateKPICards();
+      updateAtelierTab();
+      showToast(`Toate cele ${count} piese au fost șterse din comandă. Coșul este gol.`);
+    },
+    null,
+    'Da, Golește Coșul',
+    'Renunță',
+    true
+  );
 };
 
-// ====================================================================
-// SERVER SYNC & EXCEL EXPORT
-// ====================================================================
-async function saveProjectToServer() {
-  const clientName = document.getElementById('order-client')?.value?.trim() || state.meta.client || 'Client B2B';
-  const projectName = document.getElementById('order-proiect')?.value?.trim() || state.meta.subiect || 'Proiect HVAC';
-  const orderNum = document.getElementById('order-numar')?.value?.trim() || state.meta.numar || 'CMD-2023/45';
-  const orderDate = document.getElementById('order-data')?.value?.trim() || state.meta.data || new Date().toLocaleDateString('ro-RO');
-
-  const totalEur = state.items.reduce((acc, it) => acc + (it.valoareTotala || 0), 0);
-  const totalRon = totalEur * (state.settings.cursEur || 5.2542);
-  const totalMp = state.items.reduce((acc, it) => acc + (it.suprafata || 0), 0);
-  const totalPiese = state.items.reduce((acc, it) => acc + (it.cantitate || 0), 0);
-
-  const payload = {
-    settings: state.settings,
-    meta: {
-      furnizor: 'KronVent Brașov',
-      client: clientName,
-      subiect: projectName,
-      numar: orderNum,
-      data: orderDate
-    },
-    items: state.items
-  };
-
-  const snapshotPayload = {
-    client: clientName,
-    project: projectName,
-    date: orderDate,
-    totalEur: parseFloat(totalEur.toFixed(2)),
-    totalRon: parseFloat(totalRon.toFixed(2)),
-    totalMp: parseFloat(totalMp.toFixed(2)),
-    totalPiese: totalPiese,
-    calculation_snapshot: {
-      timestamp: new Date().toISOString(),
-      settings: JSON.parse(JSON.stringify(state.settings)),
-      cursEur: state.settings.cursEur,
-      pretMpRectangular: state.settings.pretMpRectangular,
-      tva: state.settings.tva,
-      itemsCount: state.items.length
-    },
-    items: state.items.map(it => ({
-      nr: it.nr,
-      eticheta: it.eticheta,
-      categorie: it.categorie,
-      cod: it.cod,
-      dimensiuni: it.dimensiuni,
-      cantitate: it.cantitate,
-      sUnit: it.sUnit,
-      suprafata: it.suprafata,
-      pretUnitar: it.pretUnitar,
-      valoareTotala: it.valoareTotala,
-      flansa: it.flansa,
-      grosime: it.grosime,
-      greutate: it.greutate
-    }))
-  };
-
-  try {
-    const [resData, resOrder] = await Promise.all([
-      fetch('/api/data', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      }),
-      fetch('/api/orders', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(snapshotPayload)
-      })
-    ]);
-
-    const result = await resData.json();
-    if (result.success) {
-      showToast('Comanda a fost salvată cu succes pe server cu Snapshot Imuabil!', 'success');
-    }
-  } catch (e) {
-    showToast('Eroare la salvare: ' + e.message, 'error');
-  }
+// Salvare stare proiect în stocarea locală
+function saveProjectToServer() {
+  saveCartToStorage();
+  showToast('Specificația tehnică a fost salvată în sesiunea locală!', 'success');
 }
+
+// ====================================================================
+// IMPORT EXCEL (.XLSX) PENTRU PORTALUL CLIENTULUI
+// ====================================================================
+function handleClientExcelImport(file) {
+  if (!file) return;
+  if (typeof XLSX === 'undefined') {
+    showToast('Biblioteca XLSX nu este încărcată.', 'error');
+    return;
+  }
+
+  showToast(`Se citește fișierul Excel "${file.name}"...`, 'info');
+
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      const data = new Uint8Array(e.target.result);
+      const workbook = XLSX.read(data, { type: 'array' });
+      
+      const sheetName = workbook.SheetNames.find(s => s.toLowerCase().includes('comanda')) || workbook.SheetNames[0];
+      const worksheet = workbook.Sheets[sheetName];
+      const jsonRows = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+
+      if (!jsonRows || jsonRows.length < 2) {
+        showToast('Fișierul Excel nu conține rânduri valide de date.', 'error');
+        return;
+      }
+
+      // 1. Detectare metadate client/proiect în primele rânduri
+      for (let r = 0; r < Math.min(jsonRows.length, 6); r++) {
+        const row = jsonRows[r];
+        if (!Array.isArray(row)) continue;
+        const line = row.map(c => String(c || '').trim()).join(' ');
+        const clientMatch = line.match(/Client\s*:\s*([^;,\n]+)/i);
+        if (clientMatch && clientMatch[1]) {
+          const el = document.getElementById('order-client');
+          if (el && !el.value) el.value = clientMatch[1].trim();
+        }
+        const projMatch = line.match(/(?:Proiect|Subiect|Obiectiv)\s*:\s*([^;,\n]+)/i);
+        if (projMatch && projMatch[1]) {
+          const el = document.getElementById('order-proiect');
+          if (el && !el.value) el.value = projMatch[1].trim();
+        }
+      }
+
+      // 2. Mapare inteligentă a coloanelor
+      let headerRowIdx = -1;
+      let colMap = {
+        nr: -1,
+        eticheta: -1,
+        categorie: -1,
+        cod: -1,
+        dimensiuni: -1,
+        cantitate: -1,
+        um: -1,
+        sUnit: -1,
+        suprafata: -1,
+        pretUnitar: -1,
+        valoareTotala: -1,
+        flansa: -1,
+        grosime: -1
+      };
+
+      for (let r = 0; r < Math.min(jsonRows.length, 12); r++) {
+        const row = jsonRows[r];
+        if (!Array.isArray(row)) continue;
+        const rowStr = row.map(c => String(c || '').toLowerCase().trim());
+        
+        rowStr.forEach((cell, cIdx) => {
+          if (cell === 'nr' || cell === 'nr.' || cell === 'nr crt' || cell === 'crt' || cell === 'poz') colMap.nr = cIdx;
+          else if (cell.includes('etichet') || cell.includes('denumire') || cell.includes('reper') || cell.includes('descriere') || cell === 'nume') colMap.eticheta = cIdx;
+          else if (cell.includes('categ') || cell.includes('tip piesa') || cell === 'tip') colMap.categorie = cIdx;
+          else if (cell === 'cod' || cell.includes('simbol')) colMap.cod = cIdx;
+          else if (cell.includes('dimens') || cell.includes('dim') || cell.includes('marime') || cell.includes('gabari')) colMap.dimensiuni = cIdx;
+          else if (cell.includes('cant') || cell.includes('buc') || cell === 'qty' || cell === 'bucati') colMap.cantitate = cIdx;
+          else if (cell === 'um' || cell === 'u.m.' || cell === 'unitate') colMap.um = cIdx;
+          else if (cell.includes('unit') && (cell.includes('sup') || cell.includes('mp') || cell.includes('s.'))) colMap.sUnit = cIdx;
+          else if (cell.includes('supraf') || cell.includes('mp') || cell === 's.tot' || cell === 'arie') colMap.suprafata = cIdx;
+          else if (cell.includes('pret') || cell.includes('p.u') || cell.includes('tarif')) colMap.pretUnitar = cIdx;
+          else if (cell.includes('valoare') || cell.includes('total') || cell === 'val') colMap.valoareTotala = cIdx;
+          else if (cell.includes('flans')) colMap.flansa = cIdx;
+          else if (cell.includes('grosim')) colMap.grosime = cIdx;
+        });
+
+        if (colMap.dimensiuni !== -1 || colMap.eticheta !== -1 || (colMap.cantitate !== -1 && colMap.cod !== -1)) {
+          headerRowIdx = r;
+          break;
+        }
+      }
+
+      // Format standard KronVent ca fallback
+      if (headerRowIdx === -1 && jsonRows[0] && jsonRows[0].length >= 5) {
+        colMap = {
+          nr: 0, eticheta: 1, categorie: 2, cod: 3, dimensiuni: 4,
+          cantitate: 5, um: 6, sUnit: 7, suprafata: 8, pretUnitar: 9,
+          valoareTotala: 10, flansa: 11, grosime: 12
+        };
+        headerRowIdx = 0;
+      }
+
+      const importedItems = [];
+      const startR = (headerRowIdx !== -1) ? headerRowIdx + 1 : 1;
+
+      for (let r = startR; r < jsonRows.length; r++) {
+        const row = jsonRows[r];
+        if (!row || !Array.isArray(row) || row.length === 0) continue;
+
+        const eticheta = colMap.eticheta !== -1 ? String(row[colMap.eticheta] || '').trim() : '';
+        const dimensiuni = colMap.dimensiuni !== -1 ? String(row[colMap.dimensiuni] || '').trim() : '';
+        const cant = colMap.cantitate !== -1 ? (parseFloat(row[colMap.cantitate]) || 1) : 1;
+
+        if (!eticheta && !dimensiuni) continue;
+        if (eticheta.toLowerCase().includes('total') || eticheta.toLowerCase().includes('subtotal')) continue;
+
+        let cod = colMap.cod !== -1 ? String(row[colMap.cod] || '').trim().toUpperCase() : '';
+        let categorie = colMap.categorie !== -1 ? String(row[colMap.categorie] || '').trim() : '';
+
+        // Auto-detectare cod piesă dacă lipsește
+        if (!cod) {
+          const l = (eticheta + ' ' + categorie).toLowerCase();
+          if (l.includes('cot')) cod = 'CR';
+          else if (l.includes('reduc') || l.includes('red')) cod = 'RED';
+          else if (l.includes('teu')) cod = 'TEU';
+          else if (l.includes('capac')) cod = 'Capac';
+          else if (l.includes('spiro') || l.includes('circ')) cod = 'SPIRO';
+          else cod = 'CRD';
+        }
+
+        if (!categorie) {
+          if (cod === 'CR') categorie = 'Cot rectangular ( fara dirijori )';
+          else if (cod === 'RED') categorie = 'Reductie';
+          else if (cod === 'TEU') categorie = 'Teu';
+          else if (cod === 'Capac') categorie = 'Capac';
+          else if (cod === 'SPIRO') categorie = 'Tubulatura Circulara Spiro';
+          else categorie = 'Canal drept';
+        }
+
+        const flansa = colMap.flansa !== -1 ? String(row[colMap.flansa] || '').trim() : '';
+        const grosime = colMap.grosime !== -1 ? String(row[colMap.grosime] || '').trim().replace(' mm', '') : '';
+        let suprafata = colMap.suprafata !== -1 ? parseFloat(row[colMap.suprafata]) : undefined;
+        let sUnit = colMap.sUnit !== -1 ? parseFloat(row[colMap.sUnit]) : undefined;
+        let pretUnitar = colMap.pretUnitar !== -1 ? parseFloat(row[colMap.pretUnitar]) : undefined;
+        let valoareTotala = colMap.valoareTotala !== -1 ? parseFloat(row[colMap.valoareTotala]) : undefined;
+
+        // Calcul suprafață din dimensiuni dacă nu este furnizată
+        if ((!suprafata || isNaN(suprafata)) && dimensiuni) {
+          const nums = dimensiuni.match(/\d+/g);
+          if (nums && nums.length >= 2) {
+            const a = parseInt(nums[0], 10) || 500;
+            const b = parseInt(nums[1], 10) || 500;
+            const l = nums.length >= 3 ? (parseInt(nums[2], 10) || 1250) : 1250;
+            sUnit = ((2 * (a / 1000) + 2 * (b / 1000)) * (l / 1000));
+            suprafata = sUnit * cant;
+          }
+        }
+
+        const rawItem = {
+          nr: state.items.length + importedItems.length + 1,
+          eticheta: eticheta || `Piesa ${state.items.length + importedItems.length + 1}`,
+          categorie,
+          cod,
+          dimensiuni: dimensiuni || 'A=500;B=500;L=1250',
+          cantitate: cant,
+          um: 'buc',
+          sUnit: sUnit || (suprafata && cant > 0 ? suprafata / cant : undefined),
+          suprafata: suprafata,
+          pretUnitar: pretUnitar,
+          valoareTotala: valoareTotala,
+          flansa,
+          grosime
+        };
+
+        importedItems.push(enrichItemData(rawItem, rawItem.nr));
+      }
+
+      if (importedItems.length > 0) {
+        state.items = [...state.items, ...importedItems];
+        saveCartToStorage();
+        applyFiltersAndRender();
+        updateKPICards();
+        updateAtelierTab();
+        showToast(`Fișierul Excel "${file.name}" a fost importat cu succes! S-au adăugat ${importedItems.length} poziții în coș.`, 'success');
+      } else {
+        showToast('Nu s-au putut extrage piese valide din fișierul Excel.', 'warning');
+      }
+    } catch (err) {
+      console.error('Eroare import Excel:', err);
+      showToast('Eroare la procesarea fișierului Excel: ' + err.message, 'error');
+    }
+  };
+  reader.readAsArrayBuffer(file);
+}
+
 
 async function resetProjectData() {
   showAppConfirm(

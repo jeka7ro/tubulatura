@@ -73,7 +73,26 @@ document.addEventListener('DOMContentLoaded', async () => {
   try { await loadAdminData(); } catch (e) { console.error('loadAdminData err:', e); }
   try { await loadYearsAndParameters(); } catch (e) { console.error('loadYearsAndParameters err:', e); }
   try { await fetchBnrForAdmin(); } catch (e) { console.error('fetchBnrForAdmin err:', e); }
+  try { setupRealtimeOrderListener(); } catch (e) { console.error('setupRealtimeOrderListener err:', e); }
 });
+
+function setupRealtimeOrderListener() {
+  if (typeof BroadcastChannel !== 'undefined') {
+    try {
+      const syncChannel = new BroadcastChannel('kronvent_sync');
+      syncChannel.onmessage = async (e) => {
+        if (e.data && e.data.type === 'NEW_ORDER') {
+          console.log('[ADMIN SYNC] Comandă nouă primită de la client!');
+          await loadYearsAndParameters();
+          const ord = e.data.order;
+          showToast(`Comandă nouă înregistrată: ${ord?.id || ''} de la ${ord?.client || 'Client'}!`, 'success');
+        }
+      };
+    } catch (e) {
+      console.warn('Eroare BroadcastChannel în admin:', e);
+    }
+  }
+}
 
 // Setup Light/Dark Theme Toggle (Default is macOS Light, Icon-Only)
 function setupThemeToggle() {
@@ -1730,16 +1749,33 @@ function renderAdminDashboard() {
 
   const rankingContainer = document.getElementById('dash-sales-clients-ranking');
   if (rankingContainer) {
-    const sortedOrders = [...orders].sort((a, b) => (b.totalEur || 0) - (a.totalEur || 0));
-    rankingContainer.innerHTML = sortedOrders.map((o, idx) => {
+    const clientMap = {};
+    orders.forEach(o => {
+      const cName = (o.client || 'Client B2B').trim();
+      if (!clientMap[cName]) {
+        clientMap[cName] = {
+          name: cName,
+          totalEur: 0,
+          totalRon: 0,
+          ordersCount: 0,
+          latestProject: o.project || 'Proiect'
+        };
+      }
       const valEur = o.totalEur || 0;
       const valRon = o.totalRon || (valEur * cursEur);
-      const pct = totEur > 0 ? ((valEur / totEur) * 100).toFixed(1) : '0.0';
+      clientMap[cName].totalEur += valEur;
+      clientMap[cName].totalRon += valRon;
+      clientMap[cName].ordersCount++;
+    });
+
+    const sortedClients = Object.values(clientMap).sort((a, b) => b.totalEur - a.totalEur);
+    rankingContainer.innerHTML = sortedClients.map((c, idx) => {
+      const pct = totEur > 0 ? ((c.totalEur / totEur) * 100).toFixed(1) : '0.0';
       return `
         <div class="sales-ranking-item">
           <div class="ranking-client-info">
-            <div class="ranking-client-name">${idx + 1}. ${o.client || 'Client B2B'}</div>
-            <div class="ranking-client-proj">${o.project || 'Proiect'} • #${o.orderNumber || o.id}</div>
+            <div class="ranking-client-name">${idx + 1}. ${c.name}</div>
+            <div class="ranking-client-proj">${c.latestProject} • ${c.ordersCount} ${c.ordersCount === 1 ? 'comandă' : 'comenzi'}</div>
           </div>
           <div class="ranking-bar-wrap">
             <div class="ranking-bar-bg">
@@ -1748,8 +1784,8 @@ function renderAdminDashboard() {
             <div class="ranking-bar-pct">${pct}%</div>
           </div>
           <div class="ranking-val-box">
-            <div class="ranking-val-eur">${valEur.toLocaleString('ro-RO', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €</div>
-            <div class="ranking-val-ron">${valRon.toLocaleString('ro-RO', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} RON</div>
+            <div class="ranking-val-eur">${c.totalEur.toLocaleString('ro-RO', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €</div>
+            <div class="ranking-val-ron">${c.totalRon.toLocaleString('ro-RO', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} RON</div>
           </div>
         </div>
       `;

@@ -170,10 +170,96 @@
           "clapeta": 101.5
         }
       },
-      "ordersCount": 43
+      "ordersCount": 45
     }
   },
   "orders": [
+    {
+      "id": "CMD-2026-00045",
+      "orderNumber": "2026-00045",
+      "year": 2026,
+      "client": "RADOIA ISOLIRUNG",
+      "project": "Oferta HVAC HOTEL VALIUG",
+      "date": "21.03.2023",
+      "status": "CONFIRMED",
+      "totalEur": 12.71,
+      "totalRon": 66.78,
+      "totalMp": 0.85,
+      "totalPiese": 1,
+      "calculation_snapshot": {
+        "timestamp": "2026-09-10T08:30:10.591Z",
+        "settings": {
+          "pretMpRectangular": 15,
+          "cursEur": 5.2542,
+          "cursBnrDate": "09.09.2026",
+          "tva": 21,
+          "flansaPerimeterThreshold": 3500,
+          "dimGrosimePrag1": 500,
+          "dimGrosimePrag2": 1000,
+          "density06": 4.71,
+          "density08": 6.28,
+          "density10": 7.85,
+          "clipsStep": 350,
+          "siliconStep": 18
+        },
+        "cursEur": 5.2542,
+        "pretMpRectangular": 15,
+        "tva": 21,
+        "itemsCount": 1
+      },
+      "items": [
+        {
+          "nr": 1,
+          "eticheta": "Tubulatura Ventilatie-SSE-1",
+          "categorie": "Schimbare sec.excentrica",
+          "cod": "SSE",
+          "dimensiuni": "Ød=250; A=400; B=300; L=600",
+          "cantitate": 1,
+          "sUnit": 0.8475,
+          "suprafata": 0.8475,
+          "pretUnitar": 12.71,
+          "valoareTotala": 12.71,
+          "flansa": "FLANSA20",
+          "grosime": "0.6",
+          "greutate": 3.99
+        }
+      ]
+    },
+    {
+      "id": "CMD-2026-00044",
+      "orderNumber": "2026-00044",
+      "year": 2026,
+      "client": "RADOIA ISOLIRUNG",
+      "project": "Oferta HVAC HOTEL VALIUG",
+      "date": "21.03.2023",
+      "status": "CONFIRMED",
+      "totalEur": 0,
+      "totalRon": 0,
+      "totalMp": 0,
+      "totalPiese": 0,
+      "calculation_snapshot": {
+        "timestamp": "2026-09-10T08:28:28.536Z",
+        "settings": {
+          "pretMpRectangular": 15,
+          "cursEur": 5.2542,
+          "cursBnrDate": "09.09.2026",
+          "tva": 21,
+          "flansaPerimeterThreshold": 3500,
+          "dimGrosimePrag1": 500,
+          "dimGrosimePrag2": 1000,
+          "density06": 4.71,
+          "density08": 6.28,
+          "density10": 7.85,
+          "clipsStep": 350,
+          "siliconStep": 18
+        },
+        "cursEur": 5.2542,
+        "pretMpRectangular": 15,
+        "tva": 21,
+        "itemsCount": 0
+      },
+      "items": []
+    },
     {
       "id": "CMD-2026-00043",
       "orderNumber": "2026-00043",
