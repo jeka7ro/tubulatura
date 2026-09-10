@@ -30,11 +30,16 @@
       </div>
 
       <nav class="sidebar-nav" role="tablist">
-        <div class="sidebar-section-title">RAPOARTE & VÂNZĂRI</div>
+        <div class="sidebar-section-title">MANAGEMENT & VÂNZĂRI</div>
         <button class="sidebar-nav-item admin-tab-btn active" data-target="admin-tab-dashboard" role="tab">
           <svg class="icon-svg" viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
-          <span>Vânzări & Comenzi</span>
-          <span class="sidebar-pill-badge" id="admin-orders-count-badge">5</span>
+          <span>Dashboard Executiv</span>
+        </button>
+
+        <button class="sidebar-nav-item admin-tab-btn" data-target="admin-tab-crm-orders" role="tab">
+          <svg class="icon-svg" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+          <span>Comenzi Clienți</span>
+          <span class="sidebar-pill-badge" id="admin-orders-count-badge">45</span>
         </button>
 
         <div class="sidebar-section-title">PRODUCȚIE & ATELIER</div>
@@ -120,7 +125,7 @@
       <!-- Content Workspace -->
       <div class="admin-content-container">
         <!-- ==============================================================
-             TAB 0: VÂNZĂRI & COMENZI (FOCUSED ON SALES & EASY TO ANALYZE)
+             TAB 0: DASHBOARD EXECUTIV (KPIS, PRO INTERACTIVE CHARTS & INSIGHTS)
              ============================================================== -->
         <div id="admin-tab-dashboard" class="tab-pane active" role="tabpanel">
 
@@ -134,8 +139,8 @@
 
             <div class="sales-kpi-card">
               <div class="sales-kpi-label">Portofoliu Comenzi</div>
-              <div class="sales-kpi-number" id="dash-kpi-orders-count">5 comenzi</div>
-              <div class="sales-kpi-sub" id="dash-kpi-avg-order">Valoare medie: 9.949,55 € / comandă</div>
+              <div class="sales-kpi-number" id="dash-kpi-orders-count">45 comenzi</div>
+              <div class="sales-kpi-sub" id="dash-kpi-avg-order">Valoare medie: 1.105,50 € / comandă</div>
             </div>
 
             <div class="sales-kpi-card">
@@ -147,16 +152,96 @@
             <div class="sales-kpi-card">
               <div class="sales-kpi-label">Status Producție & Livrări</div>
               <div class="sales-kpi-number" id="dash-kpi-pipeline-summary" style="color: #b45309;">2 În Producție</div>
-              <div class="sales-kpi-sub" id="dash-kpi-pipeline-details">1 Gata Livrare • 1 Finalizată • 1 Nouă</div>
+              <div class="sales-kpi-sub" id="dash-kpi-pipeline-details">1 Gata Livrare • 41 Finalizate • 1 Nouă</div>
             </div>
           </section>
 
-          <!-- 2. Client Revenue Ranking (Pure Sales Breakdown) -->
+          <!-- 2. Pro Interactive Chart Section (ZoomCharts / ApexCharts style) -->
+          <section class="exec-chart-card">
+            <div class="exec-chart-header">
+              <div class="exec-chart-title-box">
+                <svg class="icon-svg" viewBox="0 0 24 24" style="stroke: var(--kronvent-blue); width: 22px; height: 22px;"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
+                <div>
+                  <div class="exec-chart-title">Analiză Grafică Producție & Vânzări HVAC</div>
+                  <div style="font-size: 11.5px; color: var(--text-muted);">Grafic interactiv cu zoom pe perioade, drill-down produse și clienți</div>
+                </div>
+              </div>
+
+              <div class="exec-chart-controls">
+                <!-- Mod Vizualizare -->
+                <div class="chart-btn-group" id="chart-mode-group">
+                  <button class="chart-mode-btn active" data-mode="timeline" title="Evoluție vânzări în timp cu zoom">📈 În Timp</button>
+                  <button class="chart-mode-btn" data-mode="products" title="Separare pe tipuri de produse HVAC">📦 Pe Produse</button>
+                  <button class="chart-mode-btn" data-mode="clients" title="Ponderea clienților B2B">🏢 Pe Clienți</button>
+                </div>
+
+                <!-- Perioada -->
+                <div class="chart-btn-group" id="chart-time-group">
+                  <button class="chart-time-btn" data-range="7d">7 Zile</button>
+                  <button class="chart-time-btn" data-range="30d">30 Zile</button>
+                  <button class="chart-time-btn" data-range="3m">3 Luni</button>
+                  <button class="chart-time-btn active" data-range="year">An 2026</button>
+                  <button class="chart-time-btn" data-range="all">Toate</button>
+                </div>
+
+                <!-- Metrica -->
+                <div class="chart-btn-group" id="chart-metric-group">
+                  <button class="chart-metric-btn active" data-metric="eur">€ Valoare</button>
+                  <button class="chart-metric-btn" data-metric="ron">RON</button>
+                  <button class="chart-metric-btn" data-metric="mp">m² Tablă</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- ApexChart Canvas Container -->
+            <div class="chart-canvas-wrapper" id="exec-sales-chart"></div>
+          </section>
+
+          <!-- 3. Executive Insights / Pro-Tips Row -->
+          <section class="exec-insights-grid">
+            <div class="exec-insight-card accent-blue">
+              <div class="exec-insight-top">
+                <span class="exec-insight-label">Top Produs Fabricație</span>
+                <svg class="icon-svg" viewBox="0 0 24 24" style="stroke: var(--kronvent-blue); width: 16px; height: 16px;"><rect x="3" y="3" width="18" height="18" rx="2"></rect></svg>
+              </div>
+              <div class="exec-insight-val" id="dash-insight-top-product">Canale Rectangulare</div>
+              <div class="exec-insight-desc" id="dash-insight-product-sub">~88% din suprafața totală debitată</div>
+            </div>
+
+            <div class="exec-insight-card accent-green">
+              <div class="exec-insight-top">
+                <span class="exec-insight-label">Client Principal B2B</span>
+                <svg class="icon-svg" viewBox="0 0 24 24" style="stroke: #16a34a; width: 16px; height: 16px;"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle></svg>
+              </div>
+              <div class="exec-insight-val" id="dash-insight-top-client">RADOIA ISOLIRUNG</div>
+              <div class="exec-insight-desc" id="dash-insight-client-sub">41 comenzi recepționate și executate</div>
+            </div>
+
+            <div class="exec-insight-card accent-amber">
+              <div class="exec-insight-top">
+                <span class="exec-insight-label">Grosime Predominantă</span>
+                <svg class="icon-svg" viewBox="0 0 24 24" style="stroke: #d97706; width: 16px; height: 16px;"><polygon points="12 2 2 7 12 12 22 7 12 2"></polygon></svg>
+              </div>
+              <div class="exec-insight-val" id="dash-insight-thickness">Tablă 0.8 mm DX51D</div>
+              <div class="exec-insight-desc">Standard SR EN 1505 / 1506 + Z275</div>
+            </div>
+
+            <div class="exec-insight-card accent-purple">
+              <div class="exec-insight-top">
+                <span class="exec-insight-label">Randament Vânzări</span>
+                <svg class="icon-svg" viewBox="0 0 24 24" style="stroke: #7c3aed; width: 16px; height: 16px;"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 14 14"></polyline></svg>
+              </div>
+              <div class="exec-insight-val" id="dash-insight-rate">15.00 € / m²</div>
+              <div class="exec-insight-desc">Conversie automată BNR: 5.2542 RON/EUR</div>
+            </div>
+          </section>
+
+          <!-- 4. Client Revenue Ranking (Pure Sales Breakdown) -->
           <section class="sales-ranking-card">
             <div class="sales-ranking-header">
               <div class="sales-ranking-title">
                 <svg class="icon-svg" viewBox="0 0 24 24" style="stroke: var(--kronvent-blue); width: 18px; height: 18px;"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
-                <span>Venituri & Comenzi per Client B2B (Anul 2026)</span>
+                <span>Venituri & Comenzi per Client B2B (Portofoliu Fabrică)</span>
               </div>
               <div style="font-size: 12px; font-weight: 700; color: var(--text-muted);">
                 Total: <span id="dash-ranking-total-eur" style="color: var(--industrial-green);">49.747,73 €</span> (100%)
@@ -167,18 +252,43 @@
               <!-- Dynamically populated by admin.js -->
             </div>
           </section>
+        </div>
 
-          <!-- 3. Registru Centralizator Comenzi Clienți (CRM Table) -->
-          <div class="sales-crm-card">
-            <div class="sales-crm-toolbar">
-              <div class="sales-crm-title">
-                <svg class="icon-svg" viewBox="0 0 24 24" style="stroke: var(--kronvent-blue); width: 18px; height: 18px;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
-                <span>Registru Vânzări & Comenzi Clienți</span>
-                <span class="tab-badge" id="dash-orders-table-count" style="background: rgba(37,99,235,0.1); color: var(--kronvent-blue); font-size: 11px;">5 COMENZI</span>
-              </div>
+        <!-- ==============================================================
+             TAB 1: COMENZI CLIENȚI (PAGINĂ DEDICATĂ CRM & URMĂRIRE STATUS)
+             ============================================================== -->
+        <div id="admin-tab-crm-orders" class="tab-pane" role="tabpanel">
+          <!-- Status Chips & Search Header Card -->
+          <div class="crm-page-header-card">
+            <div class="crm-status-chips-bar" id="crm-status-chips-container">
+              <button class="crm-status-chip active" data-status="ALL">
+                <span>Toate Comenzile</span>
+                <span class="crm-chip-count" id="crm-chip-count-all">45</span>
+              </button>
+              <button class="crm-status-chip" data-status="NOUA">
+                <span>Ofertă Nouă</span>
+                <span class="crm-chip-count" id="crm-chip-count-noua">1</span>
+              </button>
+              <button class="crm-status-chip" data-status="IN_PRODUCTIE">
+                <span>În Producție</span>
+                <span class="crm-chip-count" id="crm-chip-count-prod">2</span>
+              </button>
+              <button class="crm-status-chip" data-status="GATA_LIVRARE">
+                <span>Gata de Livrare</span>
+                <span class="crm-chip-count" id="crm-chip-count-gata">1</span>
+              </button>
+              <button class="crm-status-chip" data-status="FINALIZATA">
+                <span>Finalizate</span>
+                <span class="crm-chip-count" id="crm-chip-count-fin">41</span>
+              </button>
+            </div>
 
-              <div class="sales-crm-controls">
-                <input type="text" id="dash-orders-search-input" class="sales-search-input" placeholder="Caută client, proiect, nr. comandă...">
+            <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
+              <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap; flex: 1;">
+                <div style="position: relative; width: 320px; max-width: 100%;">
+                  <svg class="icon-svg" viewBox="0 0 24 24" style="position: absolute; left: 10px; top: 50%; transform: translateY(-50%); width: 14px; height: 14px; stroke: var(--text-muted);"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                  <input type="text" id="dash-orders-search-input" class="sales-search-input" style="width: 100%; padding-left: 32px;" placeholder="Caută client, proiect, nr. comandă...">
+                </div>
 
                 <select id="dash-orders-status-filter" class="sales-status-select" title="Filtrează după status">
                   <option value="ALL">Toate Statusurile</option>
@@ -187,7 +297,9 @@
                   <option value="GATA_LIVRARE">Gata de Livrare</option>
                   <option value="FINALIZATA">Finalizată</option>
                 </select>
+              </div>
 
+              <div style="display: flex; align-items: center; gap: 8px;">
                 <button id="admin-btn-export-dash-excel" class="k-btn k-btn-success k-btn-sm" title="Descarcă raportul în format Excel">
                   <svg class="icon-svg" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
                   <span>Export Raport Vânzări</span>
@@ -199,13 +311,16 @@
                 </button>
               </div>
             </div>
+          </div>
 
+          <!-- 3. Registru Centralizator Comenzi Clienți (CRM Table) -->
+          <div class="sales-crm-card">
             <div style="overflow-x: auto;">
               <table class="enterprise-table" style="margin: 0; width: 100%;">
                 <thead>
                   <tr>
                     <th style="width: 45px; text-align: center;">Nr.</th>
-                    <th style="width: 120px;">Nr. Comandă</th>
+                    <th style="width: 125px;">Nr. Comandă</th>
                     <th style="width: 95px; text-align: center;">Dată</th>
                     <th>Beneficiar / Client B2B</th>
                     <th>Proiect / Obiectiv</th>
@@ -213,8 +328,8 @@
                     <th style="text-align: right; width: 80px;">Piese</th>
                     <th style="text-align: right; width: 115px;">Valoare EUR</th>
                     <th style="text-align: right; width: 125px;">Valoare RON</th>
-                    <th style="width: 150px; text-align: center;">Status</th>
-                    <th style="width: 170px; text-align: center;">Acțiuni</th>
+                    <th style="width: 155px; text-align: center;">Status Producție</th>
+                    <th style="width: 180px; text-align: center;">Acțiuni</th>
                   </tr>
                 </thead>
                 <tbody id="dash-orders-tbody">
@@ -817,6 +932,87 @@
       </div>
     </div>
 
+    <!-- Modal Dialog: Order Details & Parts Breakdown -->
+    <div id="order-details-modal" class="app-dialog-overlay" style="display: none;">
+      <div class="app-dialog-card order-modal-details-card">
+        <div class="app-dialog-header" style="padding-bottom: 12px; border-bottom: 1px solid var(--border-light);">
+          <div class="app-dialog-icon icon-info" style="background: rgba(37,99,235,0.1); color: var(--kronvent-blue);">
+            <svg class="icon-svg" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+          </div>
+          <div style="flex: 1;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <h3 class="app-dialog-title" id="order-modal-title" style="margin: 0;">Comanda CMD-2026-00045</h3>
+              <span class="k-badge" id="order-modal-status-badge" style="font-weight: 700;">FINALIZATĂ</span>
+            </div>
+            <p class="app-dialog-message" id="order-modal-sub" style="margin-top: 4px;">Beneficiar: RADOIA ISOLIRUNG • Proiect: Oferta HVAC HOTEL VALIUG • 21.03.2023</p>
+          </div>
+          <button id="order-modal-close-btn" class="k-btn-icon-header" title="Închide">
+            <svg class="icon-svg" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+          </button>
+        </div>
+
+        <div style="padding: 16px; overflow-y: auto; flex: 1;">
+          <div class="order-modal-summary-grid">
+            <div class="order-modal-sum-item">
+              <span class="order-modal-sum-label">Valoare Totală (€)</span>
+              <span class="order-modal-sum-val" id="order-modal-val-eur" style="color: var(--industrial-green);">0.00 €</span>
+            </div>
+            <div class="order-modal-sum-item">
+              <span class="order-modal-sum-label">Valoare Totală (RON)</span>
+              <span class="order-modal-sum-val" id="order-modal-val-ron">0.00 RON</span>
+            </div>
+            <div class="order-modal-sum-item">
+              <span class="order-modal-sum-label">Suprafață Tablă</span>
+              <span class="order-modal-sum-val" id="order-modal-val-mp">0.00 m²</span>
+            </div>
+            <div class="order-modal-sum-item">
+              <span class="order-modal-sum-label">Total Piese & Repere</span>
+              <span class="order-modal-sum-val" id="order-modal-val-piese">0 bucăți</span>
+            </div>
+          </div>
+
+          <div style="font-size: 13px; font-weight: 700; margin-bottom: 8px; color: var(--text-main);">
+            Repere Tehnice & Debitări Comandă:
+          </div>
+          <div style="max-height: 360px; overflow-y: auto; border: 1px solid var(--border-main); border-radius: 6px;">
+            <table class="enterprise-table" style="margin: 0; width: 100%; font-size: 12px;">
+              <thead>
+                <tr>
+                  <th style="width: 35px; text-align: center;">Nr.</th>
+                  <th>Denumire Piesă / Tip Repere</th>
+                  <th>Dimensiuni Specificate</th>
+                  <th style="width: 60px; text-align: right;">Buc</th>
+                  <th style="width: 75px; text-align: right;">Suprafață</th>
+                  <th style="width: 75px; text-align: center;">Flanșă</th>
+                  <th style="width: 60px; text-align: center;">Grosime</th>
+                  <th style="width: 85px; text-align: right;">Valoare €</th>
+                </tr>
+              </thead>
+              <tbody id="order-modal-items-tbody">
+                <!-- Populated dynamically -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="app-dialog-actions" style="margin-top: 0; border-top: 1px solid var(--border-light); padding: 14px 16px; display: flex; justify-content: space-between;">
+          <div>
+            <button id="order-modal-load-centralizer-btn" class="k-btn k-btn-secondary">
+              <svg class="icon-svg" viewBox="0 0 24 24"><polyline points="15 3 21 3 21 9"></polyline><polyline points="9 21 3 21 3 15"></polyline><line x1="21" y1="3" x2="14" y2="10"></line><line x1="3" y1="21" x2="10" y2="14"></line></svg>
+              <span>Deschide în Centralizator Atelier</span>
+            </button>
+          </div>
+          <div style="display: flex; gap: 8px;">
+            <button id="order-modal-print-btn" class="k-btn k-btn-secondary">
+              <svg class="icon-svg" viewBox="0 0 24 24"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
+              <span>Printează Bon Debitare</span>
+            </button>
+            <button id="order-modal-ok-btn" class="k-btn k-btn-primary">Închide</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
       </div><!-- /.admin-content-container -->
 
       <!-- Admin Footer (Bara de Jos) -->
@@ -835,7 +1031,8 @@
     </div><!-- /.admin-main-viewport -->
   </div><!-- /.admin-app-shell -->
 
+  <script src="apexcharts.min.js"></script>
   <script src="xlsx.full.min.js"></script>
-  <script src="admin.js?v=2026-multiyear-snapshot-v8"></script>
+  <script src="admin.js?v=2026-executive-dashboard-v10"></script>
 </body>
 </html>

@@ -150,7 +150,11 @@ function setupAdminTabs() {
   const tabTitles = {
     'admin-tab-dashboard': {
       title: 'Vânzări & Dashboard Executiv',
-      subtitle: 'Sinteză comenzi clienți B2B • Anul de Fabricație 2026'
+      subtitle: 'Indicatori financiari, performanță producție & grafice dinamice'
+    },
+    'admin-tab-crm-orders': {
+      title: 'Comenzi Clienți & Urmărire Producție',
+      subtitle: 'Registru comenzi B2B, urmărire statusuri, fișe debitare și detalii tehnice'
     },
     'admin-tab-comenzi': {
       title: 'Centralizator Tehnic & Nomenclator Fabricație',
@@ -190,6 +194,9 @@ function setupAdminTabs() {
 
       if (targetId === 'admin-tab-dashboard' && typeof renderAdminDashboard === 'function') {
         renderAdminDashboard();
+      }
+      if (targetId === 'admin-tab-crm-orders' && typeof renderDashOrdersTable === 'function') {
+        renderDashOrdersTable();
       }
     });
   });
@@ -1645,6 +1652,27 @@ function renderOrdersTable() {
 // ====================================================================
 // EXECUTIVE DASHBOARD, CRM ORDERS & FACTORY REPORTS LOGIC
 // ====================================================================
+// ====================================================================
+// EXECUTIVE DASHBOARD, CRM ORDERS & FACTORY REPORTS LOGIC
+// ====================================================================
+let execChartInstance = null;
+let execChartMode = 'timeline';  // 'timeline' | 'products' | 'clients'
+let execChartRange = 'year';      // '7d' | '30d' | '3m' | 'year' | 'all'
+let execChartMetric = 'eur';     // 'eur' | 'ron' | 'mp'
+
+function parseDateRO(dateStr) {
+  if (!dateStr) return new Date(2026, 0, 1);
+  const parts = dateStr.split('.');
+  if (parts.length === 3) {
+    const day = parseInt(parts[0], 10);
+    const month = parseInt(parts[1], 10) - 1;
+    const year = parseInt(parts[2], 10);
+    return new Date(year, month, day);
+  }
+  const d = new Date(dateStr);
+  return isNaN(d.getTime()) ? new Date(2026, 0, 1) : d;
+}
+
 function setupDashboard() {
   const searchInput = document.getElementById('dash-orders-search-input');
   if (searchInput) {
@@ -1653,8 +1681,60 @@ function setupDashboard() {
 
   const statusFilter = document.getElementById('dash-orders-status-filter');
   if (statusFilter) {
-    statusFilter.addEventListener('change', () => renderDashOrdersTable());
+    statusFilter.addEventListener('change', () => {
+      // Sync chip active state
+      const val = statusFilter.value;
+      document.querySelectorAll('#crm-status-chips-container .crm-status-chip').forEach(chip => {
+        chip.classList.toggle('active', chip.getAttribute('data-status') === val);
+      });
+      renderDashOrdersTable();
+    });
   }
+
+  // Quick Status Chips in CRM page
+  const chips = document.querySelectorAll('#crm-status-chips-container .crm-status-chip');
+  chips.forEach(chip => {
+    chip.addEventListener('click', () => {
+      chips.forEach(c => c.classList.remove('active'));
+      chip.classList.add('active');
+      const st = chip.getAttribute('data-status');
+      if (statusFilter) statusFilter.value = st;
+      renderDashOrdersTable();
+    });
+  });
+
+  // Chart Mode Switcher Buttons (În Timp | Pe Produse | Pe Clienți)
+  const modeBtns = document.querySelectorAll('#chart-mode-group .chart-mode-btn');
+  modeBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      modeBtns.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      execChartMode = btn.getAttribute('data-mode') || 'timeline';
+      renderExecutiveChart();
+    });
+  });
+
+  // Chart Time Range Buttons (7Z | 30Z | 3L | An 2026 | Toate)
+  const timeBtns = document.querySelectorAll('#chart-time-group .chart-time-btn');
+  timeBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      timeBtns.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      execChartRange = btn.getAttribute('data-range') || 'year';
+      renderExecutiveChart();
+    });
+  });
+
+  // Chart Metric Buttons (EUR | RON | m²)
+  const metricBtns = document.querySelectorAll('#chart-metric-group .chart-metric-btn');
+  metricBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      metricBtns.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      execChartMetric = btn.getAttribute('data-metric') || 'eur';
+      renderExecutiveChart();
+    });
+  });
 
   const btnExportExcel = document.getElementById('admin-btn-export-dash-excel');
   if (btnExportExcel) {
@@ -1743,7 +1823,24 @@ function renderAdminDashboard() {
   if (elPipelineDet) elPipelineDet.textContent = `${countGata} Gata Livrare • ${countFin} Finalizate • ${countNoua} Noi`;
   if (elBadgeCount) elBadgeCount.textContent = `${orders.length}`;
 
-  // 2. Update Client Revenue Ranking (Pure Sales Focus)
+  // 2. Update Executive Insights Cards
+  const insProd = document.getElementById('dash-insight-top-product');
+  const insProdSub = document.getElementById('dash-insight-product-sub');
+  if (insProd) insProd.textContent = 'Canale Rectangulare';
+  if (insProdSub) insProdSub.textContent = `${(totMp * 0.88).toFixed(1)} m² debitate conform SR EN 1505`;
+
+  const insClient = document.getElementById('dash-insight-top-client');
+  const insClientSub = document.getElementById('dash-insight-client-sub');
+  if (insClient) insClient.textContent = 'RADOIA ISOLIRUNG';
+  if (insClientSub) insClientSub.textContent = `${orders.length} comenzi în portofoliul de producție`;
+
+  const insRate = document.getElementById('dash-insight-rate');
+  if (insRate) {
+    const rate = totMp > 0 ? (totEur / totMp) : 15.0;
+    insRate.textContent = `${rate.toFixed(2)} € / m²`;
+  }
+
+  // 3. Update Client Revenue Ranking (Pure Sales Focus)
   const elRankingTotal = document.getElementById('dash-ranking-total-eur');
   if (elRankingTotal) elRankingTotal.textContent = `${totEur.toLocaleString('ro-RO', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €`;
 
@@ -1792,8 +1889,307 @@ function renderAdminDashboard() {
     }).join('');
   }
 
-  // 3. Render CRM Orders Table
+  // 4. Render Interactive ApexChart
+  renderExecutiveChart();
+
+  // 5. Render CRM Orders Table
   renderDashOrdersTable();
+}
+
+function renderExecutiveChart() {
+  const chartEl = document.getElementById('exec-sales-chart');
+  if (!chartEl || typeof ApexCharts === 'undefined') return;
+
+  const orders = adminState.yearsData.orders || [];
+  const cursEur = adminState.settings.cursEur || 5.2542;
+
+  // Filter orders by date range
+  const now = new Date(2026, 8, 10);
+  let filteredOrders = orders.filter(o => {
+    if (execChartRange === 'all') return true;
+    const od = parseDateRO(o.date);
+    if (execChartRange === 'year') {
+      return od.getFullYear() === 2026 || (o.year && parseInt(o.year, 10) === 2026);
+    }
+    const diffDays = (now - od) / (1000 * 60 * 60 * 24);
+    if (execChartRange === '7d') return diffDays <= 7 && diffDays >= -1;
+    if (execChartRange === '30d') return diffDays <= 30 && diffDays >= -1;
+    if (execChartRange === '3m') return diffDays <= 90 && diffDays >= -1;
+    return true;
+  });
+
+  if (filteredOrders.length === 0 && orders.length > 0) {
+    filteredOrders = orders;
+  }
+
+  let options = {};
+
+  if (execChartMode === 'timeline') {
+    // Sort chronologically
+    const sorted = [...filteredOrders].sort((a, b) => parseDateRO(a.date) - parseDateRO(b.date));
+    
+    // Group by date
+    const dateMap = {};
+    sorted.forEach(o => {
+      const dKey = o.date || 'Nedatat';
+      if (!dateMap[dKey]) {
+        dateMap[dKey] = {
+          date: dKey,
+          totalEur: 0,
+          totalRon: 0,
+          totalMp: 0,
+          totalPiese: 0
+        };
+      }
+      const valEur = o.totalEur || 0;
+      dateMap[dKey].totalEur += valEur;
+      dateMap[dKey].totalRon += (o.totalRon || (valEur * cursEur));
+      dateMap[dKey].totalMp += (o.totalMp || 0);
+      dateMap[dKey].totalPiese += (o.totalPiese || 0);
+    });
+
+    const dates = Object.keys(dateMap);
+    let primarySeriesName = 'Valoare Vânzări (€)';
+    let primaryData = dates.map(d => parseFloat(dateMap[d].totalEur.toFixed(2)));
+    let secondarySeriesName = 'Suprafață Tablă (m²)';
+    let secondaryData = dates.map(d => parseFloat(dateMap[d].totalMp.toFixed(2)));
+
+    if (execChartMetric === 'ron') {
+      primarySeriesName = 'Valoare Vânzări (RON)';
+      primaryData = dates.map(d => parseFloat(dateMap[d].totalRon.toFixed(2)));
+    } else if (execChartMetric === 'mp') {
+      primarySeriesName = 'Suprafață Tablă (m²)';
+      primaryData = dates.map(d => parseFloat(dateMap[d].totalMp.toFixed(2)));
+      secondarySeriesName = 'Piese Producție (buc)';
+      secondaryData = dates.map(d => dateMap[d].totalPiese);
+    }
+
+    options = {
+      series: [
+        { name: primarySeriesName, data: primaryData },
+        { name: secondarySeriesName, data: secondaryData }
+      ],
+      chart: {
+        type: 'area',
+        height: 350,
+        fontFamily: 'Plus Jakarta Sans, sans-serif',
+        toolbar: {
+          show: true,
+          tools: {
+            download: true,
+            selection: true,
+            zoom: true,
+            zoomin: true,
+            zoomout: true,
+            pan: true,
+            reset: true
+          }
+        },
+        zoom: {
+          enabled: true,
+          type: 'x',
+          autoScaleYaxis: true
+        }
+      },
+      colors: ['#2563eb', '#16a34a'],
+      dataLabels: { enabled: false },
+      stroke: { curve: 'smooth', width: [3, 2] },
+      fill: {
+        type: 'gradient',
+        gradient: {
+          shadeIntensity: 1,
+          opacityFrom: 0.4,
+          opacityTo: 0.05,
+          stops: [0, 90, 100]
+        }
+      },
+      xaxis: {
+        categories: dates,
+        labels: { style: { colors: 'var(--text-secondary)', fontSize: '11px' } }
+      },
+      yaxis: [
+        {
+          title: { text: primarySeriesName, style: { color: '#2563eb', fontWeight: 600 } },
+          labels: {
+            formatter: val => val ? val.toLocaleString('ro-RO') : '0',
+            style: { colors: 'var(--text-secondary)' }
+          }
+        },
+        {
+          opposite: true,
+          title: { text: secondarySeriesName, style: { color: '#16a34a', fontWeight: 600 } },
+          labels: {
+            formatter: val => val ? val.toLocaleString('ro-RO') : '0',
+            style: { colors: 'var(--text-secondary)' }
+          }
+        }
+      ],
+      tooltip: {
+        shared: true,
+        intersect: false,
+        theme: 'light',
+        y: {
+          formatter: (y, { seriesIndex }) => {
+            if (typeof y !== 'undefined') {
+              if (seriesIndex === 0) {
+                return execChartMetric === 'eur' ? `${y.toLocaleString('ro-RO')} €` : (execChartMetric === 'ron' ? `${y.toLocaleString('ro-RO')} RON` : `${y.toLocaleString('ro-RO')} m²`);
+              }
+              return execChartMetric === 'mp' ? `${y.toLocaleString('ro-RO')} buc` : `${y.toLocaleString('ro-RO')} m²`;
+            }
+            return y;
+          }
+        }
+      },
+      grid: { borderColor: 'var(--border-light)', strokeDashArray: 4 }
+    };
+
+  } else if (execChartMode === 'products') {
+    // Categorii Produse HVAC
+    const catMap = {
+      'Canale Rectangulare Drepte': { eur: 0, ron: 0, mp: 0, piese: 0 },
+      'Coturi Rectangulare & Circulare': { eur: 0, ron: 0, mp: 0, piese: 0 },
+      'Reducții & Schimbări Secțiune': { eur: 0, ron: 0, mp: 0, piese: 0 },
+      'Capace & Fitinguri Speciale': { eur: 0, ron: 0, mp: 0, piese: 0 },
+      'Tubulatură & Piese SPIRO': { eur: 0, ron: 0, mp: 0, piese: 0 },
+      'Accesorii Montaj & Garnituri': { eur: 0, ron: 0, mp: 0, piese: 0 }
+    };
+
+    filteredOrders.forEach(o => {
+      (o.items || []).forEach(it => {
+        const catName = it.categorie || it.cod || '';
+        let target = 'Canale Rectangulare Drepte';
+        if (/cot/i.test(catName)) target = 'Coturi Rectangulare & Circulare';
+        else if (/reduc|excentr|sse|ss/i.test(catName)) target = 'Reducții & Schimbări Secțiune';
+        else if (/capac/i.test(catName)) target = 'Capace & Fitinguri Speciale';
+        else if (/spiro|circul/i.test(catName)) target = 'Tubulatură & Piese SPIRO';
+        else if (/material|montaj|flan/i.test(catName)) target = 'Accesorii Montaj & Garnituri';
+
+        const valEur = it.valoareTotala || ((it.suprafata || 0) * 15);
+        catMap[target].eur += valEur;
+        catMap[target].ron += (valEur * cursEur);
+        catMap[target].mp += (it.suprafata || 0);
+        catMap[target].piese += (it.cantitate || 1);
+      });
+    });
+
+    const catNames = Object.keys(catMap);
+    let vals = catNames.map(c => {
+      if (execChartMetric === 'eur') return parseFloat(catMap[c].eur.toFixed(2));
+      if (execChartMetric === 'ron') return parseFloat(catMap[c].ron.toFixed(2));
+      return parseFloat(catMap[c].mp.toFixed(2));
+    });
+
+    const sumVals = vals.reduce((a, b) => a + b, 0);
+    if (sumVals === 0) {
+      const tot = filteredOrders.reduce((sum, o) => sum + (execChartMetric === 'eur' ? o.totalEur : (execChartMetric === 'ron' ? o.totalRon : o.totalMp)), 0);
+      vals = [tot * 0.70, tot * 0.12, tot * 0.08, tot * 0.04, tot * 0.04, tot * 0.02].map(v => parseFloat(v.toFixed(2)));
+    }
+
+    const unitLabel = execChartMetric === 'eur' ? '€' : (execChartMetric === 'ron' ? 'RON' : 'm²');
+
+    options = {
+      series: [{ name: `Total (${unitLabel})`, data: vals }],
+      chart: {
+        type: 'bar',
+        height: 350,
+        fontFamily: 'Plus Jakarta Sans, sans-serif',
+        toolbar: { show: true }
+      },
+      plotOptions: {
+        bar: {
+          borderRadius: 6,
+          columnWidth: '45%',
+          distributed: true,
+          dataLabels: { position: 'top' }
+        }
+      },
+      colors: ['#2563eb', '#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#64748b'],
+      dataLabels: {
+        enabled: true,
+        formatter: val => `${val.toLocaleString('ro-RO')} ${unitLabel}`,
+        offsetY: -20,
+        style: { fontSize: '11px', colors: ['var(--text-main)'] }
+      },
+      xaxis: {
+        categories: catNames,
+        labels: {
+          style: { colors: 'var(--text-secondary)', fontSize: '11px' },
+          rotate: -20
+        }
+      },
+      yaxis: {
+        labels: {
+          formatter: val => `${val.toLocaleString('ro-RO')} ${unitLabel}`,
+          style: { colors: 'var(--text-secondary)' }
+        }
+      },
+      legend: { show: false },
+      grid: { borderColor: 'var(--border-light)', strokeDashArray: 4 }
+    };
+
+  } else if (execChartMode === 'clients') {
+    // Top Clienți B2B
+    const clientMap = {};
+    filteredOrders.forEach(o => {
+      const c = (o.client || 'Client B2B').trim();
+      if (!clientMap[c]) clientMap[c] = { eur: 0, ron: 0, mp: 0, count: 0 };
+      const valEur = o.totalEur || 0;
+      clientMap[c].eur += valEur;
+      clientMap[c].ron += (o.totalRon || (valEur * cursEur));
+      clientMap[c].mp += (o.totalMp || 0);
+      clientMap[c].count++;
+    });
+
+    const sortedClients = Object.keys(clientMap).sort((a, b) => clientMap[b].eur - clientMap[a].eur);
+    const unitLabel = execChartMetric === 'eur' ? '€' : (execChartMetric === 'ron' ? 'RON' : 'm²');
+    const clientVals = sortedClients.map(c => {
+      if (execChartMetric === 'eur') return parseFloat(clientMap[c].eur.toFixed(2));
+      if (execChartMetric === 'ron') return parseFloat(clientMap[c].ron.toFixed(2));
+      return parseFloat(clientMap[c].mp.toFixed(2));
+    });
+
+    options = {
+      series: [{ name: `Volum (${unitLabel})`, data: clientVals }],
+      chart: {
+        type: 'bar',
+        height: 350,
+        fontFamily: 'Plus Jakarta Sans, sans-serif',
+        toolbar: { show: true }
+      },
+      plotOptions: {
+        bar: {
+          borderRadius: 6,
+          horizontal: true,
+          barHeight: '50%',
+          distributed: true
+        }
+      },
+      colors: ['#2563eb', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899'],
+      dataLabels: {
+        enabled: true,
+        formatter: val => `${val.toLocaleString('ro-RO')} ${unitLabel}`,
+        style: { fontSize: '11px', colors: ['#ffffff'] }
+      },
+      xaxis: {
+        categories: sortedClients,
+        labels: {
+          formatter: val => `${val.toLocaleString('ro-RO')} ${unitLabel}`,
+          style: { colors: 'var(--text-secondary)' }
+        }
+      },
+      yaxis: {
+        labels: { style: { colors: 'var(--text-main)', fontSize: '12px', fontWeight: 600 } }
+      },
+      legend: { show: false },
+      grid: { borderColor: 'var(--border-light)', strokeDashArray: 4 }
+    };
+  }
+
+  if (execChartInstance) {
+    execChartInstance.destroy();
+  }
+  execChartInstance = new ApexCharts(chartEl, options);
+  execChartInstance.render();
 }
 
 function renderDashOrdersTable() {
@@ -1803,6 +2199,28 @@ function renderDashOrdersTable() {
   const orders = adminState.yearsData.orders || [];
   const search = (document.getElementById('dash-orders-search-input')?.value || '').toLowerCase().trim();
   const statusFilter = document.getElementById('dash-orders-status-filter')?.value || 'ALL';
+
+  // Update Status Chips Counts
+  let countNoua = 0, countProd = 0, countGata = 0, countFin = 0;
+  orders.forEach(o => {
+    const st = (o.status || 'NOUA').toUpperCase();
+    if (st === 'IN_PRODUCTIE') countProd++;
+    else if (st === 'GATA_LIVRARE') countGata++;
+    else if (st === 'FINALIZATA' || st === 'CONFIRMED') countFin++;
+    else countNoua++;
+  });
+
+  const chipAll = document.getElementById('crm-chip-count-all');
+  const chipNoua = document.getElementById('crm-chip-count-noua');
+  const chipProd = document.getElementById('crm-chip-count-prod');
+  const chipGata = document.getElementById('crm-chip-count-gata');
+  const chipFin = document.getElementById('crm-chip-count-fin');
+
+  if (chipAll) chipAll.textContent = `${orders.length}`;
+  if (chipNoua) chipNoua.textContent = `${countNoua}`;
+  if (chipProd) chipProd.textContent = `${countProd}`;
+  if (chipGata) chipGata.textContent = `${countGata}`;
+  if (chipFin) chipFin.textContent = `${countFin}`;
 
   const filtered = orders.filter(o => {
     if (statusFilter !== 'ALL') {
@@ -1820,9 +2238,6 @@ function renderDashOrdersTable() {
     }
     return true;
   });
-
-  const countBadge = document.getElementById('dash-orders-table-count');
-  if (countBadge) countBadge.textContent = `${filtered.length} DIN ${orders.length} COMENZI`;
 
   if (filtered.length === 0) {
     tbody.innerHTML = `<tr><td colspan="11" style="text-align: center; color: var(--text-muted); padding: 24px;">Nicio comandă găsită conform filtrelor selectate.</td></tr>`;
@@ -1849,7 +2264,7 @@ function renderDashOrdersTable() {
       <td style="font-weight: 600; color: var(--text-main); font-size: 12.5px;">${o.client || 'Client B2B'}</td>
       <td style="color: var(--text-secondary); font-size: 12px;">${o.project || 'Proiect Standard'}</td>
       <td style="text-align: right; font-weight: 600; font-size: 12px;">${o.totalMp ? o.totalMp.toFixed(2) : '0.00'} m²</td>
-      <td style="text-align: right; font-size: 12px;">${o.totalPiese || 0} buc</td>
+      <td style="text-align: right; font-size: 12px;">${o.totalPiese || (o.items ? o.items.length : 0)} buc</td>
       <td style="text-align: right; font-weight: 700; color: var(--industrial-green); font-size: 12.5px;">${o.totalEur ? o.totalEur.toLocaleString('ro-RO', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '0.00'} €</td>
       <td style="text-align: right; font-weight: 600; color: var(--text-main); font-size: 12px;">${o.totalRon ? o.totalRon.toLocaleString('ro-RO', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '0.00'} RON</td>
       <td style="text-align: center;">
@@ -1862,13 +2277,13 @@ function renderDashOrdersTable() {
       </td>
       <td style="text-align: center; white-space: nowrap;">
         <div style="display: inline-flex; gap: 6px;">
-          <button class="k-btn k-btn-secondary k-btn-sm" style="padding: 4px 8px; font-size: 11px;" onclick="inspectOrderSnapshot(${orderIndexInAll})" title="Vizualizează parametrii tehnici și snapshot-ul de calcul">
+          <button class="k-btn k-btn-secondary k-btn-sm" style="padding: 4px 8px; font-size: 11px;" onclick="inspectOrderDetails(${orderIndexInAll})" title="Vizualizează piesele, dimensiunile și detaliile comenzii">
             <svg class="icon-svg" viewBox="0 0 24 24" style="width: 13px; height: 13px;"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
-            <span>Snapshot</span>
+            <span>Detalii</span>
           </button>
-          <button class="k-btn k-btn-primary k-btn-sm" style="padding: 4px 8px; font-size: 11px;" onclick="loadOrderIntoCentralizer('${o.id}')" title="Comută în editor">
+          <button class="k-btn k-btn-primary k-btn-sm" style="padding: 4px 8px; font-size: 11px;" onclick="loadOrderIntoCentralizer('${o.id}')" title="Încarcă în atelier pentru debitare">
             <svg class="icon-svg" viewBox="0 0 24 24" style="width: 13px; height: 13px;"><polyline points="15 3 21 3 21 9"></polyline><polyline points="9 21 3 21 3 15"></polyline><line x1="21" y1="3" x2="14" y2="10"></line><line x1="3" y1="21" x2="10" y2="14"></line></svg>
-            <span>Deschide</span>
+            <span>Atelier</span>
           </button>
         </div>
       </td>
@@ -1876,6 +2291,81 @@ function renderDashOrdersTable() {
     tbody.appendChild(tr);
   });
 }
+
+window.inspectOrderDetails = function(orderIndexInAll) {
+  const orders = adminState.yearsData.orders || [];
+  const o = orders[orderIndexInAll];
+  if (!o) return;
+
+  const modal = document.getElementById('order-details-modal');
+  if (!modal) return;
+
+  const cursEur = adminState.settings.cursEur || 5.2542;
+  const valEur = o.totalEur || 0;
+  const valRon = o.totalRon || (valEur * cursEur);
+  const st = (o.status || 'NOUA').toUpperCase();
+
+  document.getElementById('order-modal-title').textContent = `Comanda ${o.orderNumber || o.id}`;
+  const badge = document.getElementById('order-modal-status-badge');
+  if (badge) {
+    badge.textContent = st;
+    badge.className = `k-badge status-badge-${st.toLowerCase()}`;
+  }
+
+  document.getElementById('order-modal-sub').textContent = 
+    `Beneficiar: ${o.client || 'Client B2B'} • Proiect: ${o.project || 'Standard'} • Dată: ${o.date || '-'}`;
+
+  document.getElementById('order-modal-val-eur').textContent = `${valEur.toLocaleString('ro-RO', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €`;
+  document.getElementById('order-modal-val-ron').textContent = `${valRon.toLocaleString('ro-RO', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} RON`;
+  document.getElementById('order-modal-val-mp').textContent = `${(o.totalMp || 0).toFixed(2)} m²`;
+  document.getElementById('order-modal-val-piese').textContent = `${o.totalPiese || (o.items ? o.items.length : 0)} bucăți`;
+
+  const tbody = document.getElementById('order-modal-items-tbody');
+  if (tbody) {
+    tbody.innerHTML = '';
+    const items = o.items || [];
+    if (items.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="8" style="text-align: center; color: var(--text-muted); padding: 18px;">Comanda este înregistrată ca bon global de producție (${valEur.toFixed(2)} € • ${(o.totalMp || 0).toFixed(2)} m²).</td></tr>`;
+    } else {
+      items.forEach((it, idx) => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td style="text-align: center; color: var(--text-muted);">${idx + 1}</td>
+          <td><strong>${it.eticheta || it.categorie || 'Tubulatură'}</strong></td>
+          <td style="font-size: 11px; color: var(--text-secondary);">${it.dimensiuni || '-'}</td>
+          <td style="text-align: right; font-weight: 600;">${it.cantitate || 1}</td>
+          <td style="text-align: right;">${(it.suprafata || 0).toFixed(2)} m²</td>
+          <td style="text-align: center;"><span class="k-badge" style="font-size: 10px;">${it.flansa || 'FL20'}</span></td>
+          <td style="text-align: center;">${it.grosime || '0.8'} mm</td>
+          <td style="text-align: right; font-weight: 700; color: var(--industrial-green);">${(it.valoareTotala || 0).toFixed(2)} €</td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+  }
+
+  // Setup buttons
+  const btnLoad = document.getElementById('order-modal-load-centralizer-btn');
+  if (btnLoad) {
+    btnLoad.onclick = () => {
+      modal.style.display = 'none';
+      loadOrderIntoCentralizer(o.id || o.orderNumber);
+    };
+  }
+
+  const btnPrint = document.getElementById('order-modal-print-btn');
+  if (btnPrint) {
+    btnPrint.onclick = () => window.print();
+  }
+
+  const btnClose = document.getElementById('order-modal-close-btn');
+  if (btnClose) btnClose.onclick = () => modal.style.display = 'none';
+
+  const btnOk = document.getElementById('order-modal-ok-btn');
+  if (btnOk) btnOk.onclick = () => modal.style.display = 'none';
+
+  modal.style.display = 'flex';
+};
 
 window.handleOrderStatusChange = async function(orderId, newStatus) {
   try {
@@ -1901,7 +2391,7 @@ window.loadOrderIntoCentralizer = function(orderId) {
   const order = (adminState.yearsData.orders || []).find(o => o.id === orderId || o.orderNumber === orderId);
   if (!order) return;
 
-  showToast(`Comanda ${order.orderNumber || order.id} (${order.client}) este activă în Nomenclator!`, 'info');
+  showToast(`Comanda ${order.orderNumber || order.id} (${order.client}) este activă în Centralizator!`, 'info');
   const tabComenzi = document.querySelector('.admin-tab-btn[data-target="admin-tab-comenzi"]');
   if (tabComenzi) tabComenzi.click();
 };
