@@ -1,0 +1,840 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+  <title>Urmărire Comandă HVAC - KronVent Brașov</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css?v=2026-v2">
+  <style>
+    /* Specific styling for Live Tracking Portal */
+    .tracking-page-container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 24px 16px 80px;
+    }
+
+    .tracking-top-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 16px;
+      margin-bottom: 24px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid var(--border-light);
+    }
+
+    .tracking-nav-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .back-btn-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 16px;
+      background: var(--bg-card);
+      border: 1px solid var(--border-main);
+      border-radius: var(--radius-full);
+      color: var(--text-main);
+      text-decoration: none;
+      font-size: 13px;
+      font-weight: 600;
+      transition: all 0.2s;
+    }
+    .back-btn-pill:hover {
+      background: var(--bg-card-hover);
+      border-color: var(--kronvent-blue);
+      color: var(--kronvent-blue);
+    }
+
+    .order-id-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 14px;
+      background: #eff6ff;
+      border: 1px solid #bfdbfe;
+      border-radius: var(--radius-full);
+      color: #1d4ed8;
+      font-size: 14px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+    }
+    [data-theme="dark"] .order-id-badge {
+      background: #1e293b;
+      border-color: #3b82f6;
+      color: #93c5fd;
+    }
+
+    .live-pulse-dot {
+      width: 8px;
+      height: 8px;
+      background: #22c55e;
+      border-radius: 50%;
+      box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7);
+      animation: pulseGreen 1.8s infinite;
+      display: inline-block;
+    }
+
+    @keyframes pulseGreen {
+      0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7); }
+      70% { transform: scale(1); box-shadow: 0 0 0 8px rgba(34, 197, 94, 0); }
+      100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); }
+    }
+
+    .tracking-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .btn-action-share {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 16px;
+      background: #25D366;
+      color: #ffffff;
+      border: none;
+      border-radius: var(--radius-full);
+      font-size: 13px;
+      font-weight: 700;
+      text-decoration: none;
+      cursor: pointer;
+      transition: background 0.2s, transform 0.1s;
+    }
+    .btn-action-share:hover {
+      background: #20ba59;
+      transform: translateY(-1px);
+    }
+
+    .btn-action-copy {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 16px;
+      background: var(--bg-card);
+      border: 1px solid var(--border-main);
+      border-radius: var(--radius-full);
+      color: var(--text-main);
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .btn-action-copy:hover {
+      background: var(--bg-card-hover);
+      border-color: var(--kronvent-blue);
+    }
+
+    /* Hero Card */
+    .tracking-hero-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-main);
+      border-radius: var(--radius-lg);
+      padding: 28px;
+      box-shadow: var(--shadow-md);
+      margin-bottom: 24px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .tracking-hero-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 5px;
+      background: linear-gradient(90deg, #2563eb, #38bdf8, #16a34a);
+    }
+
+    .hero-header-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      flex-wrap: wrap;
+      gap: 20px;
+      margin-bottom: 24px;
+    }
+
+    .hero-status-title {
+      font-size: 24px;
+      font-weight: 800;
+      color: var(--text-main);
+      margin-bottom: 6px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .hero-status-subtitle {
+      font-size: 14px;
+      color: var(--text-muted);
+    }
+
+    .estimated-delivery-box {
+      background: #f0fdf4;
+      border: 1px solid #bbf7d0;
+      border-radius: var(--radius-md);
+      padding: 12px 20px;
+      text-align: right;
+    }
+    [data-theme="dark"] .estimated-delivery-box {
+      background: #064e3b26;
+      border-color: #059669;
+    }
+
+    .est-label {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      color: #15803d;
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+    [data-theme="dark"] .est-label {
+      color: #34d399;
+    }
+
+    .est-val {
+      font-size: 18px;
+      font-weight: 800;
+      color: #166534;
+    }
+    [data-theme="dark"] .est-val {
+      color: #6ee7b7;
+    }
+
+    /* Production Stepper */
+    .stepper-container {
+      margin: 32px 0 16px;
+    }
+
+    .stepper-track {
+      display: flex;
+      justify-content: space-between;
+      position: relative;
+      margin-bottom: 12px;
+    }
+
+    .stepper-line-bg {
+      position: absolute;
+      top: 18px;
+      left: 30px;
+      right: 30px;
+      height: 4px;
+      background: var(--border-light);
+      z-index: 1;
+    }
+
+    .stepper-line-fill {
+      position: absolute;
+      top: 18px;
+      left: 30px;
+      height: 4px;
+      background: linear-gradient(90deg, #2563eb, #16a34a);
+      z-index: 2;
+      transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .step-node {
+      position: relative;
+      z-index: 3;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      flex: 1;
+      text-align: center;
+    }
+
+    .step-circle {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: var(--bg-card);
+      border: 3px solid var(--border-main);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--text-muted);
+      margin-bottom: 8px;
+      transition: all 0.3s;
+    }
+
+    .step-node.completed .step-circle {
+      background: #16a34a;
+      border-color: #16a34a;
+      color: #ffffff;
+    }
+
+    .step-node.current .step-circle {
+      background: #2563eb;
+      border-color: #93c5fd;
+      color: #ffffff;
+      box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.25);
+      transform: scale(1.1);
+    }
+
+    .step-label {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--text-muted);
+      max-width: 120px;
+      line-height: 1.3;
+    }
+
+    .step-node.completed .step-label {
+      color: #16a34a;
+    }
+
+    .step-node.current .step-label {
+      color: #2563eb;
+      font-weight: 800;
+    }
+
+    /* Grid Layout for details */
+    .tracking-grid {
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      gap: 24px;
+    }
+
+    @media (max-width: 900px) {
+      .tracking-grid {
+        grid-template-columns: 1fr;
+      }
+      .stepper-track {
+        overflow-x: auto;
+        padding-bottom: 12px;
+      }
+      .step-node {
+        min-width: 100px;
+      }
+    }
+
+    .tracking-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-main);
+      border-radius: var(--radius-lg);
+      padding: 24px;
+      box-shadow: var(--shadow-sm);
+      margin-bottom: 24px;
+    }
+
+    .card-heading {
+      font-size: 16px;
+      font-weight: 800;
+      color: var(--text-main);
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      border-bottom: 1px solid var(--border-light);
+      padding-bottom: 12px;
+    }
+
+    /* Timeline list */
+    .timeline-list {
+      position: relative;
+      padding-left: 24px;
+      margin: 0;
+      list-style: none;
+    }
+
+    .timeline-list::before {
+      content: '';
+      position: absolute;
+      top: 8px;
+      bottom: 8px;
+      left: 7px;
+      width: 2px;
+      background: var(--border-main);
+    }
+
+    .timeline-item {
+      position: relative;
+      margin-bottom: 20px;
+    }
+    .timeline-item:last-child {
+      margin-bottom: 0;
+    }
+
+    .timeline-bullet {
+      position: absolute;
+      left: -24px;
+      top: 2px;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: var(--bg-card);
+      border: 3px solid var(--kronvent-blue);
+    }
+
+    .timeline-item:first-child .timeline-bullet {
+      background: var(--kronvent-blue);
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.2);
+    }
+
+    .timeline-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--text-main);
+      margin-bottom: 2px;
+    }
+
+    .timeline-date {
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-bottom: 6px;
+    }
+
+    .timeline-note {
+      font-size: 13px;
+      color: var(--text-secondary);
+      background: var(--bg-card-hover);
+      padding: 8px 12px;
+      border-radius: var(--radius-xs);
+      border-left: 3px solid var(--kronvent-blue);
+    }
+
+    /* Items table */
+    .tracking-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+
+    .tracking-table th {
+      background: var(--th-bg);
+      border-bottom: 2px solid var(--border-main);
+      padding: 10px 12px;
+      text-align: left;
+      font-weight: 700;
+      color: var(--text-secondary);
+    }
+
+    .tracking-table td {
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--border-light);
+      color: var(--text-main);
+    }
+
+    .tracking-table tr:hover td {
+      background: var(--tr-hover);
+    }
+
+    /* Financial stats box */
+    .stats-summary-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .stat-pill-card {
+      background: var(--bg-card-hover);
+      border: 1px solid var(--border-light);
+      border-radius: var(--radius-md);
+      padding: 12px 14px;
+    }
+
+    .stat-pill-card .stat-k {
+      font-size: 11px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+
+    .stat-pill-card .stat-v {
+      font-size: 16px;
+      font-weight: 800;
+      color: var(--text-main);
+    }
+
+    .total-price-box {
+      background: linear-gradient(135deg, #1e3a8a, #2563eb);
+      color: #ffffff;
+      border-radius: var(--radius-md);
+      padding: 18px;
+      text-align: center;
+      margin-top: 16px;
+    }
+
+    .total-price-box .t-sub {
+      font-size: 12px;
+      opacity: 0.85;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+    }
+
+    .total-price-box .t-main {
+      font-size: 26px;
+      font-weight: 800;
+      margin: 4px 0;
+    }
+
+    .total-price-box .t-ron {
+      font-size: 14px;
+      opacity: 0.9;
+    }
+
+    @media print {
+      @page {
+        size: A4 portrait;
+        margin: 8mm;
+      }
+      body {
+        background: #ffffff !important;
+        color: #0f172a !important;
+      }
+      .kronvent-header,
+      .back-btn-pill,
+      .tracking-actions,
+      #btn-theme-toggle {
+        display: none !important;
+      }
+      .tracking-page-container {
+        padding: 0 !important;
+        max-width: 100% !important;
+      }
+      .tracking-hero-card,
+      .client-meta-card,
+      .timeline-card,
+      .order-items-card,
+      .totals-summary-card {
+        box-shadow: none !important;
+        border: 1px solid #cbd5e1 !important;
+        page-break-inside: avoid !important;
+        break-inside: avoid !important;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top Header with Brand & Logo -->
+  <header class="kronvent-header">
+    <div class="header-container">
+      <div class="header-left">
+        <a href="index.html" class="header-logo-link" title="KronVent Brașov - Calculator & Ofertare Tubulatură HVAC">
+          <img src="kronvent-logo.png" alt="KronVent Brașov" class="kronvent-logo-img">
+        </a>
+      </div>
+
+      <div class="header-right">
+        <a href="index.html" class="k-btn-header-cart" title="Crează o ofertă nouă">
+          <svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="12" y1="5" x2="12" y2="19"></line>
+            <line x1="5" y1="12" x2="19" y2="12"></line>
+          </svg>
+          <span>Calculator Nou</span>
+        </a>
+
+        <button id="btn-theme-toggle" class="k-btn-icon-header" title="Comută temă" aria-label="Comută temă">
+          <svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+          </svg>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Tracking Container -->
+  <main class="tracking-page-container">
+    
+    <!-- Top Bar Navigation & Actions -->
+    <div class="tracking-top-bar">
+      <div class="tracking-nav-left">
+        <a href="index.html" class="back-btn-pill">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="19" y1="12" x2="5" y2="12"></line>
+            <polyline points="12 19 5 12 12 5"></polyline>
+          </svg>
+          Înapoi la Catalog
+        </a>
+        <div class="order-id-badge">
+          <span class="live-pulse-dot" title="Sincronizare activă"></span>
+          <span id="label-order-id">CMD-ÎNCĂRCARE...</span>
+        </div>
+      </div>
+
+      <div class="tracking-actions">
+        <button id="btn-copy-tracking-link" class="btn-action-copy" type="button">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+          </svg>
+          Copiază Link
+        </button>
+
+        <a id="btn-share-whatsapp" href="#" target="_blank" class="btn-action-share">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path>
+          </svg>
+          Distribuie pe WhatsApp
+        </a>
+
+        <button id="btn-print-order" class="btn-action-copy" type="button" onclick="window.print()">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="6 9 6 2 18 2 18 9"></polyline>
+            <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path>
+            <rect x="6" y="14" width="12" height="8"></rect>
+          </svg>
+          Tipărește / Salvează PDF
+        </button>
+      </div>
+    </div>
+
+    <!-- Hero Card: Status & 6-Stage Stepper -->
+    <section class="tracking-hero-card">
+      <div class="hero-header-row">
+        <div>
+          <div class="hero-status-title">
+            <span id="badge-status-icon" style="display: none;"></span>
+            <span id="badge-status-text">Preluată în Producție</span>
+          </div>
+          <div class="hero-status-subtitle">
+            Comandă confecționare tubulatură HVAC la fabrica KronVent Brașov
+          </div>
+        </div>
+
+        <div class="estimated-delivery-box">
+          <div class="est-label">Termen Estimat Finalizare</div>
+          <div class="est-val" id="text-delivery-date">--.--.----</div>
+        </div>
+      </div>
+
+      <!-- Live Stepper -->
+      <div class="stepper-container">
+        <div class="stepper-track">
+          <div class="stepper-line-bg"></div>
+          <div class="stepper-line-fill" id="stepper-progress-line" style="width: 20%;"></div>
+
+          <div class="step-node" id="step-node-inregistrata">
+            <div class="step-circle">1</div>
+            <div class="step-label">Înregistrată</div>
+          </div>
+
+          <div class="step-node" id="step-node-preluata">
+            <div class="step-circle">2</div>
+            <div class="step-label">Preluată în Producție</div>
+          </div>
+
+          <div class="step-node" id="step-node-debitare">
+            <div class="step-circle">3</div>
+            <div class="step-label">Debitare CNC Tablă</div>
+          </div>
+
+          <div class="step-node" id="step-node-asamblare">
+            <div class="step-circle">4</div>
+            <div class="step-label">Asamblare & Etanșare</div>
+          </div>
+
+          <div class="step-node" id="step-node-calitate">
+            <div class="step-circle">5</div>
+            <div class="step-label">Control Calitate (QC)</div>
+          </div>
+
+          <div class="step-node" id="step-node-gata">
+            <div class="step-circle">6</div>
+            <div class="step-label">Gata de Livrare</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Two columns: Left = Timeline + Items, Right = Beneficiary + Financials -->
+    <div class="tracking-grid">
+      
+      <!-- Left Column -->
+      <div class="tracking-col-left">
+
+        <!-- Workshop Production Log / Timeline -->
+        <section class="tracking-card">
+          <h2 class="card-heading">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"></circle>
+              <polyline points="12 6 12 12 16 14"></polyline>
+            </svg>
+            Jurnal Stadiu Fabricație & Atelier
+          </h2>
+          <ul class="timeline-list" id="tracking-timeline-container">
+            <!-- Rendered by comanda.js -->
+            <li class="timeline-item">
+              <div class="timeline-bullet"></div>
+              <div class="timeline-title">Preluată în Producție</div>
+              <div class="timeline-date">Se încarcă jurnalul...</div>
+              <div class="timeline-note">Comanda a fost recepționată în sistem.</div>
+            </li>
+          </ul>
+        </section>
+
+        <!-- Order Items Specification -->
+        <section class="tracking-card">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+            <h2 class="card-heading" style="margin-bottom: 0; border: none; padding: 0;">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                <polyline points="14 2 14 8 20 8"></polyline>
+                <line x1="16" y1="13" x2="8" y2="13"></line>
+                <line x1="16" y1="17" x2="8" y2="17"></line>
+                <polyline points="10 9 9 9 8 9"></polyline>
+              </svg>
+              Specificație Piese & Repere (<span id="count-total-piese">0</span> buc)
+            </h2>
+          </div>
+
+          <div style="overflow-x: auto;">
+            <table class="tracking-table">
+              <thead>
+                <tr>
+                  <th style="width: 40px;">#</th>
+                  <th>Reper / Tip</th>
+                  <th>Dimensiuni (mm)</th>
+                  <th style="text-align: center;">Cant.</th>
+                  <th style="text-align: right;">Suprafață</th>
+                  <th style="text-align: right;">Masă</th>
+                  <th style="text-align: right;">Preț Total</th>
+                </tr>
+              </thead>
+              <tbody id="tracking-items-tbody">
+                <!-- Rendered dynamically -->
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+      </div>
+
+      <!-- Right Column -->
+      <div class="tracking-col-right">
+
+        <!-- Beneficiary & Project Details -->
+        <section class="tracking-card">
+          <h2 class="card-heading">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+              <circle cx="12" cy="7" r="4"></circle>
+            </svg>
+            Date Beneficiar & Livrare
+          </h2>
+
+          <div style="display: flex; flex-direction: column; gap: 12px; font-size: 13px;">
+            <div>
+              <span style="color: var(--text-muted); font-size: 11px; text-transform: uppercase; font-weight: 700; display: block;">Client / Companie</span>
+              <strong id="info-client" style="font-size: 15px; color: var(--text-main);">-</strong>
+            </div>
+
+            <div>
+              <span style="color: var(--text-muted); font-size: 11px; text-transform: uppercase; font-weight: 700; display: block;">Cod Fiscal / CUI</span>
+              <span id="info-cui" style="color: var(--text-main);">-</span>
+            </div>
+
+            <div>
+              <span style="color: var(--text-muted); font-size: 11px; text-transform: uppercase; font-weight: 700; display: block;">Proiect / Destinație Șantier</span>
+              <strong id="info-project" style="color: var(--text-main);">-</strong>
+            </div>
+
+            <div>
+              <span style="color: var(--text-muted); font-size: 11px; text-transform: uppercase; font-weight: 700; display: block;">Telefon Contact</span>
+              <span id="info-telefon" style="color: var(--text-main); font-weight: 600;">-</span>
+            </div>
+
+            <div>
+              <span style="color: var(--text-muted); font-size: 11px; text-transform: uppercase; font-weight: 700; display: block;">Data Înregistrării</span>
+              <span id="info-date" style="color: var(--text-main);">-</span>
+            </div>
+          </div>
+        </section>
+
+        <!-- Technical & Financial Summary -->
+        <section class="tracking-card">
+          <h2 class="card-heading">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="12" y1="1" x2="12" y2="23"></line>
+              <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+            </svg>
+            Centralizator Cantități & Cost
+          </h2>
+
+          <div class="stats-summary-grid">
+            <div class="stat-pill-card">
+              <div class="stat-k">Total Piese</div>
+              <div class="stat-v" id="sum-piese">0 buc</div>
+            </div>
+            <div class="stat-pill-card">
+              <div class="stat-k">Suprafață Tablă</div>
+              <div class="stat-v" id="sum-mp">0.00 m²</div>
+            </div>
+            <div class="stat-pill-card">
+              <div class="stat-k">Masă Tablă Est.</div>
+              <div class="stat-v" id="sum-kg">0.0 kg</div>
+            </div>
+            <div class="stat-pill-card">
+              <div class="stat-k">Curs Valutar BNR</div>
+              <div class="stat-v" id="sum-curs">- RON</div>
+            </div>
+          </div>
+
+          <div style="font-size: 13px; border-top: 1px solid var(--border-light); padding-top: 12px; display: flex; flex-direction: column; gap: 6px;">
+            <div style="display: flex; justify-content: space-between;">
+              <span style="color: var(--text-muted);">Valoare Bază (fără TVA):</span>
+              <strong id="sum-taxable-eur">0.00 €</strong>
+            </div>
+            <div style="display: flex; justify-content: space-between;">
+              <span style="color: var(--text-muted);">TVA:</span>
+              <span id="sum-tva-eur">0.00 €</span>
+            </div>
+          </div>
+
+          <div class="total-price-box">
+            <div class="t-sub">Total General Comandă</div>
+            <div class="t-main" id="sum-total-eur">0.00 €</div>
+            <div class="t-ron" id="sum-total-ron">echivalent 0.00 RON (cu TVA inclus)</div>
+          </div>
+        </section>
+
+        <!-- Factory Support Box -->
+        <section class="tracking-card" style="background: var(--bg-card-hover); border-style: dashed;">
+          <h2 class="card-heading" style="border: none; padding: 0; margin-bottom: 8px;">
+            Dispecerat Fabrică KronVent
+          </h2>
+          <p style="font-size: 13px; color: var(--text-muted); margin: 0 0 12px 0;">
+            Pentru modificări de cote sau detalii tehnice urgente privind această comandă:
+          </p>
+          <div style="display: flex; flex-direction: column; gap: 8px; font-size: 13px;">
+            <a href="tel:+40720000000" style="color: var(--kronvent-blue); font-weight: 700; text-decoration: none; display: flex; align-items: center; gap: 8px;">
+              <svg class="icon-svg" viewBox="0 0 24 24" style="width: 14px; height: 14px; stroke: currentColor;"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg> +40 (720) 000 000 (Șef Producție)
+            </a>
+            <a href="mailto:comenzi@kronvent.ro" style="color: var(--kronvent-blue); font-weight: 600; text-decoration: none; display: flex; align-items: center; gap: 8px;">
+              <svg class="icon-svg" viewBox="0 0 24 24" style="width: 14px; height: 14px; stroke: currentColor;"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg> comenzi@kronvent.ro
+            </a>
+            <span style="color: var(--text-muted); font-size: 12px; display: flex; align-items: center; gap: 8px;">
+              <svg class="icon-svg" viewBox="0 0 24 24" style="width: 14px; height: 14px; stroke: currentColor;"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg> Str. Fabricii nr. 12, Brașov, România
+            </span>
+          </div>
+        </section>
+
+      </div>
+
+    </div>
+
+  </main>
+
+  <script src="comanda.js?v=2026-v2"></script>
+</body>
+</html>

@@ -10,7 +10,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=2026-logofix-v17">
+  <link rel="stylesheet" href="style.css?v=2026-printmargins-v2">
 </head>
 <body>
 
@@ -33,7 +33,7 @@
             <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
           </svg>
           <span class="cart-btn-title">Coș Comandă</span>
-          <span class="cart-pill-count" id="cart-count-badge">51</span>
+          <span class="cart-pill-count" id="cart-count-badge">0</span>
         </button>
 
         <button id="btn-theme-toggle" class="k-btn-icon-header" title="Comută mod luminos / întunecat" aria-label="Comută temă">
@@ -48,19 +48,178 @@
        ==================================================================== -->
   <nav class="workspace-nav-bar">
     <div class="workspace-nav-container">
-      <div class="workspace-nav-status">
-        <div class="status-indicator-dot"></div>
-        <span id="page-view-indicator" class="workspace-status-label">Configurator Piese Tubulatură HVAC</span>
+      <div class="main-nav-tabs">
+        <button type="button" id="nav-btn-catalog" class="main-nav-tab active" onclick="goToStep(0)">
+          <svg class="icon-svg" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+          <span>Catalog Produse</span>
+        </button>
+        <button type="button" id="nav-btn-configurator" class="main-nav-tab" onclick="goToStep(1)">
+          <svg class="icon-svg" viewBox="0 0 24 24"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
+          <span>Configurator Tehnic</span>
+        </button>
+        <button type="button" id="nav-btn-cart" class="main-nav-tab" onclick="goToStep(2)">
+          <svg class="icon-svg" viewBox="0 0 24 24"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></svg>
+          <span>Coș Comandă</span>
+          <span class="nav-cart-badge" id="nav-cart-badge-count">0</span>
+        </button>
       </div>
 
-      <!-- Live BNR Exchange Rate Badge -->
-      <div class="bnr-live-card bnr-nav-pill" id="bnr-header-badge" title="Curs valutar oficial preluat automat de la Banca Națională a României (curs.bnr.ro)">
-        <div class="bnr-card-top">
-          <span class="bnr-badge-pill">CURS BNR</span>
-          <span class="bnr-date-text" id="header-bnr-date">09.09.2026</span>
+      <!-- Live BNR Exchange Rate Badge (Trigger Popover) -->
+      <div class="bnr-header-wrapper" id="bnr-header-wrapper">
+        <div class="bnr-nav-pill-modern" id="bnr-header-badge" role="button" tabindex="0" title="Click pentru detalii Curs Valutar BNR" aria-haspopup="true" aria-expanded="false">
+          <div class="bnr-pill-icon-wrap">
+            <svg class="bnr-pill-trend-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
+              <polyline points="17 6 23 6 23 12"></polyline>
+            </svg>
+          </div>
+          <span class="bnr-pill-item">
+            EUR <strong id="header-bnr-eur">5.2537</strong>
+          </span>
+          <span class="bnr-pill-sep">|</span>
+          <span class="bnr-pill-item">
+            USD <strong id="header-bnr-usd">4.5164</strong>
+          </span>
+          <span class="bnr-pill-sep">|</span>
+          <span class="bnr-pill-item bnr-pill-date-wrap">
+            <span class="bnr-pill-prefix">BNR</span> <span id="header-bnr-date">10.09.2026</span>
+          </span>
+          <span class="bnr-pill-badge-live">
+            <span class="bnr-live-dot"></span> LA ZI
+          </span>
         </div>
-        <div class="bnr-card-val" id="header-bnr-rate">
-          1 EUR = <strong id="header-bnr-num">5.2542 RON</strong>
+
+        <!-- Dropdown Popover BNR (Exact conform machetei cerute) -->
+        <div class="bnr-dropdown-popover" id="bnr-popover-dropdown" aria-hidden="true">
+          <!-- Popover Header -->
+          <div class="bnr-popover-header">
+            <div class="bnr-popover-header-left">
+              <div class="bnr-popover-bank-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M3 21h18M3 10h18M5 10v11M9 10v11M15 10v11M19 10v11M12 2L2 7h20L12 2z"></path>
+                </svg>
+              </div>
+              <div class="bnr-popover-header-text">
+                <div class="bnr-popover-title-row">
+                  <strong class="bnr-popover-title">Curs Valutar BNR</strong>
+                  <span class="bnr-popover-badge-oficial">OFICIAL</span>
+                </div>
+                <div class="bnr-popover-sub">Banca Națională a României</div>
+              </div>
+            </div>
+            <button type="button" class="bnr-popover-refresh-btn" id="btn-refresh-bnr-popover" title="Actualizează curs BNR manual" aria-label="Actualizează curs BNR">
+              <svg class="bnr-refresh-icon" viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="23 4 23 10 17 10"></polyline>
+                <polyline points="1 20 1 14 7 14"></polyline>
+                <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+              </svg>
+            </button>
+          </div>
+
+          <!-- Date / Status Pill -->
+          <div class="bnr-popover-date-pill">
+            <div class="bnr-popover-date-left">
+              <svg class="bnr-popover-cal-icon" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="#2563eb" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                <line x1="16" y1="2" x2="16" y2="6"></line>
+                <line x1="8" y1="2" x2="8" y2="6"></line>
+                <line x1="3" y1="10" x2="21" y2="10"></line>
+              </svg>
+              <span id="bnr-popover-date-long">10 Septembrie 2026</span>
+            </div>
+            <div class="bnr-popover-status-tag">
+              <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="9"></circle>
+                <polyline points="9 12 11 14 15 10"></polyline>
+              </svg>
+              <span>Actualizat</span>
+            </div>
+          </div>
+
+          <!-- Currencies List -->
+          <div class="bnr-popover-curr-list">
+            <!-- EUR / RON -->
+            <div class="bnr-popover-curr-row">
+              <div class="bnr-curr-left">
+                <span class="bnr-curr-code-pill">EUR</span>
+                <div class="bnr-curr-meta">
+                  <strong class="bnr-curr-pair">EUR / RON</strong>
+                  <span class="bnr-curr-name">Euro</span>
+                </div>
+              </div>
+              <div class="bnr-curr-right">
+                <div class="bnr-curr-price"><strong id="popover-rate-eur">5.2537</strong> <span class="bnr-curr-unit">RON</span></div>
+                <div class="bnr-curr-subcalc bnr-curr-subcalc-highlight" id="popover-subcalc-eur">1 EUR = 5.2537 lei</div>
+              </div>
+            </div>
+
+            <!-- USD / RON -->
+            <div class="bnr-popover-curr-row">
+              <div class="bnr-curr-left">
+                <span class="bnr-curr-code-pill">USD</span>
+                <div class="bnr-curr-meta">
+                  <strong class="bnr-curr-pair">USD / RON</strong>
+                  <span class="bnr-curr-name">Dolar American</span>
+                </div>
+              </div>
+              <div class="bnr-curr-right">
+                <div class="bnr-curr-price"><strong id="popover-rate-usd">4.5164</strong> <span class="bnr-curr-unit">RON</span></div>
+                <div class="bnr-curr-subcalc" id="popover-subcalc-usd">1 USD = 4.5164 lei</div>
+              </div>
+            </div>
+
+            <!-- GBP / RON -->
+            <div class="bnr-popover-curr-row">
+              <div class="bnr-curr-left">
+                <span class="bnr-curr-code-pill">GBP</span>
+                <div class="bnr-curr-meta">
+                  <strong class="bnr-curr-pair">GBP / RON</strong>
+                  <span class="bnr-curr-name">Liră Sterlină</span>
+                </div>
+              </div>
+              <div class="bnr-curr-right">
+                <div class="bnr-curr-price"><strong id="popover-rate-gbp">6.1178</strong> <span class="bnr-curr-unit">RON</span></div>
+              </div>
+            </div>
+
+            <!-- CHF / RON -->
+            <div class="bnr-popover-curr-row">
+              <div class="bnr-curr-left">
+                <span class="bnr-curr-code-pill">CHF</span>
+                <div class="bnr-curr-meta">
+                  <strong class="bnr-curr-pair">CHF / RON</strong>
+                  <span class="bnr-curr-name">Franc Elvețian</span>
+                </div>
+              </div>
+              <div class="bnr-curr-right">
+                <div class="bnr-curr-price"><strong id="popover-rate-chf">5.5707</strong> <span class="bnr-curr-unit">RON</span></div>
+              </div>
+            </div>
+
+            <!-- MDL / RON -->
+            <div class="bnr-popover-curr-row">
+              <div class="bnr-curr-left">
+                <span class="bnr-curr-code-pill">MDL</span>
+                <div class="bnr-curr-meta">
+                  <strong class="bnr-curr-pair">MDL / RON</strong>
+                  <span class="bnr-curr-name">Leu Moldovenesc</span>
+                </div>
+              </div>
+              <div class="bnr-curr-right">
+                <div class="bnr-curr-price"><strong id="popover-rate-mdl">0.2620</strong> <span class="bnr-curr-unit">RON</span></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Popover Footer -->
+          <div class="bnr-popover-footer">
+            <div class="bnr-popover-footer-src">
+              Sursa: curs.bnr.ro
+            </div>
+            <a href="https://www.bnr.ro/Cursul-de-schimb--524.aspx" target="_blank" rel="noopener noreferrer" class="bnr-popover-footer-link">
+              Site oficial BNR <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
+            </a>
+          </div>
         </div>
       </div>
     </div>
@@ -71,37 +230,90 @@
        ==================================================================== -->
   <main class="main-workspace">
 
-    <!-- METRICS RIBBON (CLIENT SUMMARY BAR) -->
-    <section class="metrics-ribbon">
-      <div class="metric-panel">
-        <div class="metric-label">Valoare Comandă Curentă (Fără TVA)</div>
-        <div class="metric-value" id="kpi-valoare-totala">0.00 €</div>
-        <div class="metric-sub" id="kpi-valoare-ron">0.00 RON</div>
+    <!-- ==================================================================
+         TAB 0: CATALOG PRODUSE & PREZENTARE GAMĂ HVAC (PAGINA DE START)
+         ================================================================== -->
+    <div id="tab-catalog" class="tab-pane active" role="tabpanel">
+
+      <!-- Catalog Hero Banner -->
+      <div class="catalog-hero-card">
+        <div class="catalog-hero-content">
+          <div class="catalog-hero-badge">
+            <span class="catalog-hero-dot"></span>
+            Producție Industrială Ventilație & Climatizare
+          </div>
+          <h1 class="catalog-hero-title">Gamă de Fabricație Tubulatură HVAC</h1>
+          <p class="catalog-hero-subtitle">
+            Canale rectangulare și tubulatură circulară SPIRO® confecționate pe linie automată CNC din tablă zincată DX51D + Z275 (grosimi 0.5 – 1.2 mm). Sisteme certificate SR EN 1505 și SR EN 1506, clase de etanșeitate A, B, C.
+          </p>
+          <div class="catalog-hero-actions">
+            <button type="button" class="k-btn k-btn-primary" onclick="goToStep(1)" style="padding: 12px 22px; font-size: 13.5px; font-weight: 700;">
+              <svg class="icon-svg" viewBox="0 0 24 24"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
+              <span>Deschide Configuratorul / Comandă Acum</span>
+            </button>
+            <button type="button" class="k-btn k-btn-secondary" onclick="goToStep(2)" style="padding: 12px 20px; font-size: 13.5px; font-weight: 600;">
+              <svg class="icon-svg" viewBox="0 0 24 24"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></svg>
+              <span>Vezi Coșul de Comandă</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="catalog-hero-metrics">
+          <div class="catalog-metric-pill">
+            <span class="metric-val">SR EN 1505 / 1506</span>
+            <span class="metric-label">Standard European de Calitate</span>
+          </div>
+          <div class="catalog-metric-pill">
+            <span class="metric-val">DX51D + Z275</span>
+            <span class="metric-label">Tablă Zincată 0.5 - 1.2 mm</span>
+          </div>
+          <div class="catalog-metric-pill">
+            <span class="metric-val">Flanșe MEZ 20 / 30</span>
+            <span class="metric-label">Etanșare Mastic & Garnitură EPDM</span>
+          </div>
+        </div>
       </div>
 
-      <div class="metric-panel">
-        <div class="metric-label">TVA (21%) & Total General</div>
-        <div class="metric-value" id="kpi-total-cu-tva">0.00 €</div>
-        <div class="metric-sub" id="kpi-total-cu-tva-ron">TVA calculat automat</div>
+      <!-- Filter Controls for Catalog -->
+      <div class="catalog-filter-bar">
+        <div class="catalog-filter-tabs">
+          <button type="button" class="cat-filter-btn active" data-cat="all" onclick="filterCatalogCards('all')">
+            Toate Produsele (23)
+          </button>
+          <button type="button" class="cat-filter-btn" data-cat="rectangular" onclick="filterCatalogCards('rectangular')">
+            Tubulatură Rectangulară & Fitinguri (15)
+          </button>
+          <button type="button" class="cat-filter-btn" data-cat="circular" onclick="filterCatalogCards('circular')">
+            Tubulatură Circulară SPIRO® (8)
+          </button>
+        </div>
+        <div class="catalog-search-wrap">
+          <svg class="icon-svg catalog-search-icon" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+          <input type="text" id="catalog-search-input" class="form-input catalog-search-field" placeholder="Caută piesă după nume sau cod (ex: CRD, Cot, Spiro)..." oninput="searchCatalogCards(this.value)">
+        </div>
       </div>
 
-      <div class="metric-panel">
-        <div class="metric-label">Suprafață Desfășurată Totală</div>
-        <div class="metric-value" id="kpi-suprafata">0.00 m²</div>
-        <div class="metric-sub">Tablă zincată DX51D + Z275</div>
+      <!-- Products Grid -->
+      <div id="catalog-products-grid" class="catalog-products-grid">
+        <!-- Rendered via renderProductCatalog() -->
       </div>
-
-      <div class="metric-panel">
-        <div class="metric-label">Număr Piese în Comandă</div>
-        <div class="metric-value" id="kpi-piese">0 bucăți</div>
-        <div class="metric-sub" id="kpi-categorii-count">0 poziții distincte</div>
-      </div>
-    </section>
+    </div>
 
     <!-- ==================================================================
-         TAB 1: CONFIGURATOR TEHNIC PIESE (CLIENT FLOW PASUL 1)
+         TAB 1: CONFIGURATOR TEHNIC PIESE (CLIENT FLOW PASUL 2)
          ================================================================== -->
-    <div id="tab-configurator" class="tab-pane active" role="tabpanel">
+    <div id="tab-configurator" class="tab-pane" role="tabpanel">
+
+      <!-- Bară Întoarcere la Catalog Produse -->
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; flex-wrap: wrap; gap: 10px;">
+        <button type="button" class="k-btn k-btn-secondary" onclick="goToStep(0)" style="font-size: 13px; font-weight: 600; padding: 8px 16px;">
+          <svg class="icon-svg" viewBox="0 0 24 24"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+          <span>Înapoi la Catalog Produse</span>
+        </button>
+        <div style="font-size: 12.5px; color: var(--text-muted);">
+          Selectează tehnologia, alege piesa și introdu dimensiunile pentru calcul instant
+        </div>
+      </div>
 
       <!-- SELECTOR TEHNOLOGIE FABRICAȚIE (RECTANGULAR VS CIRCULAR SPIRO) -->
       <div class="tech-category-panel">
@@ -190,7 +402,7 @@
               </h2>
               <button type="button" id="btn-zoom-blueprint" class="view-switch-btn" title="Fă clic pentru mărire schiță tehnică">
                 <svg class="icon-svg" viewBox="0 0 24 24" style="width: 14px; height: 14px; stroke: currentColor;"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line><line x1="11" y1="8" x2="11" y2="14"></line><line x1="8" y1="11" x2="14" y2="11"></line></svg>
-                <span>Mărește Schița 🔍</span>
+                <span>Mărește Schița</span>
               </button>
             </div>
 
@@ -244,8 +456,8 @@
         </div>
       </div>
 
-      <!-- CONTAINER 3: PASUL URMĂTOR - REZUMAT COȘ & BUTON NEXT -->
-      <div class="stepper-next-container" id="step1-next-container">
+      <!-- CONTAINER 3: PASUL URMĂTOR - REZUMAT COȘ & BUTON NEXT (Apare doar când există piese în coș) -->
+      <div class="stepper-next-container" id="step1-next-container" style="display: none;">
         <div class="stepper-next-left">
           <div class="stepper-next-icon">
             <svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -256,12 +468,12 @@
           </div>
           <div class="stepper-next-details">
             <div class="stepper-next-title">
-              Coș de Comandă: <strong id="step1-summary-count">51 bucăți</strong> (<span id="step1-summary-positions">51 poziții</span>)
+              Coș de Comandă: <strong id="step1-summary-count">0 bucăți</strong> (<span id="step1-summary-positions">0 poziții</span>)
             </div>
             <div class="stepper-next-metrics">
-              <span>Suprafață totală: <strong id="step1-summary-area">141.52 m²</strong></span>
+              <span>Suprafață totală: <strong id="step1-summary-area">0.00 m²</strong></span>
               <span class="sep">•</span>
-              <span>Valoare fără TVA: <strong id="step1-summary-price">2,122.80 €</strong></span>
+              <span>Valoare fără TVA: <strong id="step1-summary-price">0.00 €</strong></span>
               <span class="sep">•</span>
               <span class="stepper-hint">Poți adăuga piese suplimentare sau poți trece la pasul următor</span>
             </div>
@@ -270,7 +482,7 @@
 
         <div class="stepper-next-right">
           <button id="btn-goto-step-2" class="k-btn-next-step" type="button" title="Mergi la Coșul de Comandă pentru a vizualiza lista completă și a finaliza comanda">
-            <span id="step1-next-btn-text">Vezi Coșul de Comandă & Finalizează →</span>
+            <span id="step1-next-btn-text">Vezi Coșul de Comandă & Finalizează</span>
             <svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
           </button>
         </div>
@@ -286,7 +498,7 @@
       <div class="cart-header-action-bar">
         <button id="btn-back-to-step1" class="k-btn k-btn-secondary" type="button" title="Revino la Configurator pentru a adăuga mai multe piese">
           <svg class="icon-svg" viewBox="0 0 24 24"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
-          <span>← Înapoi la Configurator Piese</span>
+          <span>Înapoi la Configurator Piese</span>
         </button>
 
         <div class="cart-title-indicator">
@@ -297,6 +509,33 @@
           <span>Coș de Cumpărături & Centralizator Comandă HVAC</span>
         </div>
       </div>
+
+      <!-- REZUMAT VALORIC & METRICI COMANDĂ (PASUL 2: COȘ) -->
+      <section class="metrics-ribbon" style="margin-top: 14px; margin-bottom: 16px;">
+        <div class="metric-panel">
+          <div class="metric-label">Valoare Comandă Curentă (Fără TVA)</div>
+          <div class="metric-value" id="kpi-valoare-totala">0.00 €</div>
+          <div class="metric-sub" id="kpi-valoare-ron">0.00 RON (fără TVA)</div>
+        </div>
+
+        <div class="metric-panel">
+          <div class="metric-label">TVA (21%) & Total General</div>
+          <div class="metric-value" id="kpi-total-cu-tva">0.00 €</div>
+          <div class="metric-sub" id="kpi-total-cu-tva-ron">TVA calculat automat</div>
+        </div>
+
+        <div class="metric-panel">
+          <div class="metric-label">Suprafață Desfășurată Totală</div>
+          <div class="metric-value" id="kpi-suprafata">0.00 m²</div>
+          <div class="metric-sub">Tablă zincată DX51D + Z275</div>
+        </div>
+
+        <div class="metric-panel">
+          <div class="metric-label">Număr Piese în Comandă</div>
+          <div class="metric-value" id="kpi-piese">0 bucăți</div>
+          <div class="metric-sub" id="kpi-categorii-count">0 poziții distincte</div>
+        </div>
+      </section>
       
       <!-- Date Beneficiar & Livrare Comandă (Panou Profesional Structurat - PLASAT SUS) -->
       <div class="enterprise-card order-details-panel" style="margin-top: 14px; margin-bottom: 20px;">
@@ -454,7 +693,7 @@
             <thead>
               <tr>
                 <th style="width: 42px; text-align: center;">Nr.</th>
-                <th style="width: 86px; text-align: center;">Acțiuni</th>
+                <th style="width: 110px; text-align: center;">Acțiuni</th>
                 <th>Denumire / Etichetă</th>
                 <th>Tip Piesă</th>
                 <th>Cod</th>
@@ -512,16 +751,30 @@
       <!-- Checkout Action Bar (La finalizarea comenzii din Coș - JOS) -->
       <div class="enterprise-card cart-checkout-panel" style="margin-top: 20px; padding: 20px;">
         <div class="cart-checkout-bar" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px;">
-          <div>
-            <div style="font-size: 11px; color: var(--text-muted); font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em;">Total General Ofertă (Fără TVA)</div>
-            <div style="font-size: 24px; font-weight: 700; color: var(--text-main);" id="summary-total-eur">0.00 € / 0.00 RON</div>
-            <div style="font-size: 12px; color: var(--text-secondary); margin-top: 2px;" id="summary-total-tva">TVA (21%): 0.00 € | Total cu TVA: 0.00 €</div>
+          <div style="display: flex; flex-direction: column; gap: 6px;">
+            <div style="display: flex; align-items: center; gap: 20px; flex-wrap: wrap;">
+              <div>
+                <div style="font-size: 11px; color: var(--text-muted); font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em;">Subtotal Comandă (fără TVA)</div>
+                <div style="font-size: 18px; font-weight: 700; color: var(--text-main);" id="summary-subtotal-eur">0.00 €</div>
+              </div>
+
+              <div>
+                <div style="font-size: 11px; color: var(--text-muted); font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em;">TVA (21%)</div>
+                <div style="font-size: 18px; font-weight: 700; color: var(--text-secondary);" id="summary-tva-eur">0.00 €</div>
+              </div>
+
+              <div>
+                <div style="font-size: 11px; color: var(--text-muted); font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em;">Total General de Plată (TVA Inclus)</div>
+                <div style="font-size: 22px; font-weight: 800; color: var(--industrial-green);" id="summary-total-eur">0.00 € / 0.00 RON</div>
+              </div>
+            </div>
+            <div style="font-size: 12px; color: var(--text-secondary);" id="summary-total-tva">TVA calculat automat conform cotei legale • Curs oficial BNR aplicat</div>
           </div>
 
           <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
             <button id="btn-back-to-step1-bottom" class="k-btn k-btn-secondary" style="font-size: 13px; font-weight: 600; padding: 10px 18px;" type="button" title="Revino la Configurator pentru a adăuga mai multe piese în comandă">
               <svg class="icon-svg" viewBox="0 0 24 24"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
-              <span>← Înapoi la Configurator (Adaugă piese)</span>
+              <span>Înapoi la Configurator (Adaugă piese)</span>
             </button>
 
             <button id="btn-cart-export-excel" class="k-btn k-btn-success" style="font-size: 13px; font-weight: 600; padding: 10px 18px;" title="Descarcă specificația tehnică a comenzii în format Excel (.xlsx)">
@@ -589,23 +842,52 @@
   </div>
 
   <!-- ====================================================================
+       BOM BREAKDOWN MODAL (DETALII COMPLETE CONSUMURI & SUSPENSIE)
+       ==================================================================== -->
+  <div id="bom-modal" class="mac-modal-overlay">
+    <div class="mac-modal-window" style="max-width: 680px; width: 95%;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; border-bottom: 1px solid var(--border-main); padding-bottom: 10px;">
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <div style="background: rgba(14, 165, 233, 0.12); color: #0284c7; border-radius: 8px; width: 34px; height: 34px; display: flex; align-items: center; justify-content: center;">
+            <svg class="icon-svg" viewBox="0 0 24 24" style="width: 18px; height: 18px;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+          </div>
+          <div>
+            <h3 id="bom-modal-title" style="font-size: 15px; font-weight: 700; color: var(--text-main); margin: 0;">Breakdown Consumuri Materiale</h3>
+            <span id="bom-modal-subtitle" style="font-size: 11.5px; color: var(--text-muted);">Specificație detaliată reper HVAC</span>
+          </div>
+        </div>
+        <button id="bom-modal-close" type="button" style="background: none; border: none; font-size: 22px; cursor: pointer; color: var(--text-muted); line-height: 1;">&times;</button>
+      </div>
+
+      <div id="bom-modal-body" style="display: flex; flex-direction: column; gap: 14px; max-height: 65vh; overflow-y: auto; padding-right: 4px;">
+        <!-- Dynamically populated by app.js -->
+      </div>
+
+      <div style="display: flex; justify-content: flex-end; margin-top: 14px; border-top: 1px solid var(--border-main); padding-top: 10px;">
+        <button id="bom-modal-btn-close" type="button" class="k-btn k-btn-secondary" style="font-size: 12.5px; padding: 7px 18px;">Închide</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ====================================================================
        ORDER SUBMITTED SUCCESS MODAL
        ==================================================================== -->
   <div id="order-success-modal" class="mac-modal-overlay">
-    <div class="mac-modal-window" style="max-width: 500px; text-align: center; padding: 28px 24px;">
+    <div class="mac-modal-window" style="max-width: 540px; text-align: center; padding: 28px 24px;">
       <div style="width: 56px; height: 56px; border-radius: 50%; background: #dcfce7; color: #15803d; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px;">
         <svg class="icon-svg" style="width: 32px; height: 32px;" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg>
       </div>
-      <h2 style="font-size: 18px; font-weight: 700; color: var(--text-main); margin-bottom: 6px;">
-        Comanda a fost transmisă către producători!
+      <h2 style="font-size: 19px; font-weight: 800; color: var(--text-main); margin-bottom: 6px;">
+        Comandă Transmisă cu Succes în Producție!
       </h2>
-      <p style="font-size: 13.5px; color: var(--text-secondary); margin-bottom: 16px; line-height: 1.5;" id="order-success-msg">
-        Comanda a fost transmisă cu succes către producători și veți fi contactat de echipă în cel mai scurt timp.
+      <p style="font-size: 13px; color: var(--text-secondary); margin-bottom: 16px; line-height: 1.5;" id="order-success-msg">
+        Comanda a fost recepționată de fabrica KronVent. A fost expediată și o notificare automată pe grupul WhatsApp de producție.
       </p>
-      <div style="background: #f8fafc; border: 1px solid var(--border-light); border-radius: var(--radius-xs); padding: 12px; margin-bottom: 18px; text-align: left; font-size: 12px;">
+
+      <div style="background: var(--bg-card-hover); border: 1px solid var(--border-light); border-radius: var(--radius-xs); padding: 12px; margin-bottom: 16px; text-align: left; font-size: 12px;">
         <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
           <span style="color: var(--text-muted);">Număr Înregistrare Comandă:</span>
-          <strong id="success-cmd-num" style="color: var(--kronvent-blue);">CMD-2026/01</strong>
+          <strong id="success-cmd-num" style="color: var(--kronvent-blue); font-size: 13px;">CMD-2026/01</strong>
         </div>
         <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
           <span style="color: var(--text-muted);">Total Articole:</span>
@@ -615,22 +897,59 @@
           <span style="color: var(--text-muted);">Suprafață Desfășurată:</span>
           <strong id="success-cmd-surface">0.00 m²</strong>
         </div>
-        <div style="display: flex; justify-content: space-between;">
+        <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
           <span style="color: var(--text-muted);">Valoare Totală Ofertată:</span>
-          <strong id="success-cmd-val" style="color: var(--industrial-green);">0.00 €</strong>
+          <strong id="success-cmd-val" style="color: var(--industrial-green); font-size: 13px;">0.00 €</strong>
+        </div>
+        <!-- Repere & Articole Comandate Preview -->
+        <div style="border-top: 1px dashed var(--border-light); padding-top: 8px; margin-top: 6px;">
+          <div style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-bottom: 6px; display: flex; justify-content: space-between;">
+            <span>Repere & Piese Comandate:</span>
+            <span id="success-cmd-items-count" style="color: var(--kronvent-blue);">0 poziții</span>
+          </div>
+          <div id="success-cmd-items-list" style="max-height: 130px; overflow-y: auto; display: flex; flex-direction: column; gap: 5px; text-align: left;"></div>
         </div>
       </div>
+
+      <!-- Live Tracking Link Card -->
+      <div style="background: #eff6ff; border: 1px solid #bfdbfe; border-radius: var(--radius-sm); padding: 14px; margin-bottom: 18px; text-align: left;">
+        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
+          <svg class="icon-svg" style="width: 16px; height: 16px; stroke: #1d4ed8;" viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>
+          <strong style="color: #1d4ed8; font-size: 13px;">Link Urmărire Live Comandă & Stadiu Producție</strong>
+        </div>
+        <p style="font-size: 11.5px; color: #3b82f6; margin-bottom: 8px; line-height: 1.4;">
+          Urmăriți în timp real debitarea, asamblarea, controlul calității și data estimată de finalizare a comenzii.
+        </p>
+        <div style="display: flex; gap: 6px;">
+          <input type="text" id="success-tracking-link-input" readonly style="flex: 1; padding: 6px 10px; font-size: 12px; border: 1px solid #93c5fd; border-radius: 4px; background: #ffffff; color: #1e3a8a; font-family: monospace;" value="">
+          <button id="btn-success-copy-link" type="button" class="k-btn k-btn-secondary" style="padding: 6px 12px; font-size: 12px; white-space: nowrap;">
+            Copiază Link
+          </button>
+        </div>
+        <div style="display: flex; gap: 8px; margin-top: 10px;">
+          <a id="success-tracking-open-btn" href="#" target="_blank" class="k-btn k-btn-primary" style="flex: 1; font-size: 12px; text-decoration: none; justify-content: center; padding: 8px;">
+            <svg class="icon-svg" viewBox="0 0 24 24"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
+            <span>Deschide Urmărire Live</span>
+          </a>
+          <a id="success-tracking-share-btn" href="#" target="_blank" class="k-btn" style="background: #25D366; color: #ffffff; font-size: 12px; text-decoration: none; justify-content: center; padding: 8px 12px; font-weight: 700;">
+            <svg class="icon-svg" viewBox="0 0 24 24"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg>
+            <span>WhatsApp</span>
+          </a>
+        </div>
+      </div>
+
       <div style="display: flex; gap: 8px; justify-content: center;">
-        <button id="btn-success-print" class="k-btn k-btn-secondary" onclick="window.print()">
+        <button id="btn-success-print" class="k-btn k-btn-secondary">
           <svg class="icon-svg" viewBox="0 0 24 24"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
           <span>Tipărește Confirmarea</span>
         </button>
-        <button id="btn-success-close" class="k-btn k-btn-primary">
+        <button id="btn-success-close" class="k-btn k-btn-secondary">
           <span>Continuă Navigarea</span>
         </button>
       </div>
     </div>
   </div>
+
 
   <!-- Modal Zoom Schiță Tehnică & Randare 3D -->
   <div id="blueprint-zoom-modal" class="mac-modal-overlay">
@@ -640,7 +959,7 @@
           <svg class="icon-svg" viewBox="0 0 24 24" style="width: 18px; height: 18px; stroke: var(--kronvent-blue);"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
           <span id="zoom-modal-piece-title">Schiță Tehnică Detaliată</span>
         </div>
-        <button type="button" id="zoom-modal-close-btn" class="modal-close-btn" title="Închide">✕</button>
+        <button type="button" id="zoom-modal-close-btn" class="modal-close-btn" title="Închide">&times;</button>
       </div>
 
       <div class="zoom-modal-body">
@@ -650,6 +969,22 @@
             <svg id="zoom-cad-overlay" class="blueprint-cad-overlay" viewBox="0 0 1000 1000" preserveAspectRatio="xMidYMid meet"></svg>
           </div>
         </div>
+
+        <!-- Descriere Tehnică Piesă (Vizibilă exclusiv în Zoom Modal) -->
+        <div class="zoom-modal-desc-box" id="zoom-modal-desc-box">
+          <div class="zoom-desc-header">
+            <div class="zoom-desc-title-wrap">
+              <svg class="zoom-desc-icon icon-svg" viewBox="0 0 24 24" style="width: 16px; height: 16px; stroke: var(--kronvent-blue);"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+              <strong class="zoom-desc-title" id="zoom-desc-name">Canal Rectangular Drept</strong>
+            </div>
+            <span class="zoom-desc-standard" id="zoom-desc-standard">SR EN 1505 • Clasa B / C</span>
+          </div>
+          <p class="zoom-desc-text" id="zoom-desc-text">Tronson liniar de tubulatură din tablă zincată DX51D+Z275.</p>
+          <div class="zoom-desc-use" id="zoom-desc-use">
+            <strong>Destinație / Utilizare:</strong> <span id="zoom-desc-use-text">Magistrale de distribuție aer...</span>
+          </div>
+        </div>
+
         <div class="zoom-modal-specs">
           <div class="zoom-specs-heading">DIMENSIUNI & COTE DINAMICE SELECTATE</div>
           <div id="zoom-modal-dim-badges" class="zoom-dim-badges-grid">
@@ -682,6 +1017,6 @@
   <!-- SheetJS Library -->
   <script src="xlsx.full.min.js"></script>
   <!-- Application Logic -->
-  <script src="app.js?v=2026-logofix-v17"></script>
+  <script src="app.js?v=2026-noadaos-v1"></script>
 </body>
 </html>

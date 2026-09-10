@@ -45,34 +45,188 @@ const adminState = {
   }
 };
 
-// Preluare Curs Oficial BNR pentru Backoffice
-async function fetchBnrForAdmin() {
+// Preluare Curs Oficial BNR pentru Backoffice (suportă force și refresh manual)
+async function fetchBnrForAdmin(force = false) {
+  const btnRefresh = document.getElementById('btn-refresh-bnr-admin');
+  const btnRefreshPop = document.getElementById('btn-refresh-bnr-admin-popover');
+  [btnRefresh, btnRefreshPop].forEach(btn => {
+    if (btn) {
+      btn.classList.add('spinning');
+      btn.disabled = true;
+    }
+  });
+
   try {
-    const res = await fetch('/api/bnr');
+    const url = force ? `/api/bnr?force=true&t=${Date.now()}` : '/api/bnr';
+    const res = await fetch(url);
     if (res.ok) {
       const data = await res.json();
-      if (data && data.rate) {
-        adminState.settings.cursEur = data.rate;
-        adminState.settings.cursBnrDate = data.date || '09.09.2026';
+      if (data && (data.rates || data.rate)) {
+        const eurRate = data.rates?.EUR || data.rate || 5.2537;
+        const usdRate = data.rates?.USD || 4.5164;
+        const gbpRate = data.rates?.GBP || 6.1178;
+        const chfRate = data.rates?.CHF || 5.5707;
+        const mdlRate = data.rates?.MDL || 0.2620;
 
-        const dateEl = document.getElementById('admin-bnr-date');
-        const numEl = document.getElementById('admin-bnr-num');
+        adminState.settings.cursEur = eurRate;
+        adminState.settings.cursBnrDate = data.date || '10.09.2026';
+        adminState.settings.cursBnrDateFormatted = data.dateFormatted || '10 Septembrie 2026';
+
+        // Update Topbar Nav Pill elements
+        const dateEl = document.getElementById('admin-header-bnr-date') || document.getElementById('admin-bnr-date');
         if (dateEl) dateEl.textContent = adminState.settings.cursBnrDate;
-        if (numEl) numEl.textContent = `${data.rate.toFixed(4)} RON`;
 
+        const eurEl = document.getElementById('admin-header-bnr-eur') || document.getElementById('admin-bnr-num');
+        if (eurEl) eurEl.textContent = eurRate.toFixed(4);
+
+        const usdEl = document.getElementById('admin-header-bnr-usd');
+        if (usdEl) usdEl.textContent = usdRate.toFixed(4);
+
+        // Update Settings Tab inputs
         const inputCurs = document.getElementById('admin-setting-curs-eur');
-        if (inputCurs) inputCurs.value = data.rate.toFixed(4);
+        if (inputCurs) inputCurs.value = eurRate.toFixed(4);
 
         const statusEl = document.getElementById('admin-bnr-sync-status');
-        if (statusEl) statusEl.textContent = `Sincronizat cu BNR: 1 EUR = ${data.rate.toFixed(4)} RON la data ${adminState.settings.cursBnrDate}`;
-        console.log(`[BNR ADMIN] Curs actualizat: 1 EUR = ${data.rate} RON (${adminState.settings.cursBnrDate})`);
+        if (statusEl) statusEl.textContent = `Sincronizat cu BNR: 1 EUR = ${eurRate.toFixed(4)} RON la data ${adminState.settings.cursBnrDate}`;
+
+        // Update Popover elements
+        const popDate = document.getElementById('admin-bnr-popover-date-long');
+        if (popDate) popDate.textContent = adminState.settings.cursBnrDateFormatted;
+
+        const popEur = document.getElementById('admin-popover-rate-eur');
+        if (popEur) popEur.textContent = eurRate.toFixed(4);
+
+        const popSubEur = document.getElementById('admin-popover-subcalc-eur');
+        if (popSubEur) popSubEur.textContent = `1 EUR = ${eurRate.toFixed(4)} lei`;
+
+        const popUsd = document.getElementById('admin-popover-rate-usd');
+        if (popUsd) popUsd.textContent = usdRate.toFixed(4);
+
+        const popSubUsd = document.getElementById('admin-popover-subcalc-usd');
+        if (popSubUsd) popSubUsd.textContent = `1 USD = ${usdRate.toFixed(4)} lei`;
+
+        const popGbp = document.getElementById('admin-popover-rate-gbp');
+        if (popGbp) popGbp.textContent = gbpRate.toFixed(4);
+
+        const popChf = document.getElementById('admin-popover-rate-chf');
+        if (popChf) popChf.textContent = chfRate.toFixed(4);
+
+        const popMdl = document.getElementById('admin-popover-rate-mdl');
+        if (popMdl) popMdl.textContent = mdlRate.toFixed(4);
+
+        console.log(`[BNR ADMIN] Curs actualizat: 1 EUR = ${eurRate} RON | 1 USD = ${usdRate} RON (${adminState.settings.cursBnrDate})`);
         if (typeof updateAdminMetrics === 'function') updateAdminMetrics();
         if (typeof renderAdminTable === 'function') renderAdminTable();
+
+        if (force && typeof showToast === 'function') {
+          showToast(`Curs BNR actualizat: 1 EUR = ${eurRate.toFixed(4)} RON (${adminState.settings.cursBnrDate})`, 'success');
+        }
       }
     }
   } catch (err) {
     console.warn('Nu s-a putut prelua cursul BNR în admin:', err);
+    if (force && typeof showToast === 'function') {
+      showToast('Eroare la actualizarea cursului BNR: ' + err.message, 'error');
+    }
+  } finally {
+    setTimeout(() => {
+      [btnRefresh, btnRefreshPop].forEach(btn => {
+        if (btn) {
+          btn.classList.remove('spinning');
+          btn.disabled = false;
+        }
+      });
+    }, 350);
   }
+}
+
+// Configurare buton refresh manual BNR, popover dropdown și planificare actualizare zilnică la ora 13:00
+function setupBnrAdminScheduler() {
+  const bnrBadge = document.getElementById('bnr-admin-header-badge');
+  const popover = document.getElementById('bnr-admin-popover-dropdown');
+  const btnRefresh = document.getElementById('btn-refresh-bnr-admin');
+  const btnRefreshPop = document.getElementById('btn-refresh-bnr-admin-popover');
+
+  if (bnrBadge && popover) {
+    bnrBadge.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const isOpen = popover.classList.toggle('open');
+      bnrBadge.classList.toggle('active', isOpen);
+      bnrBadge.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+      popover.setAttribute('aria-hidden', isOpen ? 'false' : 'true');
+    });
+
+    document.addEventListener('click', (e) => {
+      if (!popover.contains(e.target) && !bnrBadge.contains(e.target)) {
+        popover.classList.remove('open');
+        bnrBadge.classList.remove('active');
+        bnrBadge.setAttribute('aria-expanded', 'false');
+        popover.setAttribute('aria-hidden', 'true');
+      }
+    });
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && popover.classList.contains('open')) {
+        popover.classList.remove('open');
+        bnrBadge.classList.remove('active');
+        bnrBadge.setAttribute('aria-expanded', 'false');
+        popover.setAttribute('aria-hidden', 'true');
+      }
+    });
+  }
+
+  [btnRefresh, btnRefreshPop].forEach(btn => {
+    if (btn) {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        fetchBnrForAdmin(true);
+      });
+    }
+  });
+
+  // Planificare actualizare la ora 13:00 (ora României când BNR publică cursul de referință)
+  function scheduleNext13() {
+    const now = new Date();
+    const roHour = parseInt(now.toLocaleTimeString('ro-RO', { timeZone: 'Europe/Bucharest', hour: '2-digit', hour12: false }), 10);
+    const roMin = parseInt(now.toLocaleTimeString('ro-RO', { timeZone: 'Europe/Bucharest', minute: '2-digit', hour12: false }), 10);
+    const roSec = parseInt(now.toLocaleTimeString('ro-RO', { timeZone: 'Europe/Bucharest', second: '2-digit', hour12: false }), 10);
+
+    let msUntil13 = 0;
+    if (roHour < 13) {
+      const targetSec = 13 * 3600 + 5; // 13:00:05
+      const currentSec = roHour * 3600 + roMin * 60 + roSec;
+      msUntil13 = (targetSec - currentSec) * 1000;
+    } else {
+      const remainingTodaySec = 86400 - (roHour * 3600 + roMin * 60 + roSec);
+      const tomorrowSec = 13 * 3600 + 5;
+      msUntil13 = (remainingTodaySec + tomorrowSec) * 1000;
+    }
+
+    console.log(`[BNR ADMIN CRON] Următoarea actualizare BNR programată la ora 13:00 (peste ${Math.round(msUntil13 / 60000)} minute).`);
+
+    setTimeout(async () => {
+      console.log('[BNR ADMIN CRON] Ora 13:00 atinsă! Se actualizează automat cursul BNR...');
+      await fetchBnrForAdmin(true);
+      // Reîncercare la 13:02 și 13:05 în caz că BNR are decalaj de publicare
+      setTimeout(() => fetchBnrForAdmin(false), 2 * 60 * 1000);
+      setTimeout(() => fetchBnrForAdmin(false), 5 * 60 * 1000);
+      scheduleNext13();
+    }, msUntil13);
+  }
+
+  scheduleNext13();
+
+  // Verificare la fiecare 5 minute dacă a trecut de ora 13:00 și data este mai veche decât azi
+  setInterval(() => {
+    const now = new Date();
+    const roHour = parseInt(now.toLocaleTimeString('ro-RO', { timeZone: 'Europe/Bucharest', hour: '2-digit', hour12: false }), 10);
+    const roDate = now.toLocaleDateString('ro-RO', { timeZone: 'Europe/Bucharest' });
+    const currentShownDate = document.getElementById('admin-bnr-date')?.textContent?.trim();
+    if (roHour >= 13 && currentShownDate && currentShownDate !== roDate) {
+      console.log(`[BNR ADMIN CRON] Data curentă (${roDate}) diferă de data afișată (${currentShownDate}) după ora 13:00. Se actualizează cursul.`);
+      fetchBnrForAdmin(false);
+    }
+  }, 5 * 60 * 1000);
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
@@ -85,7 +239,11 @@ document.addEventListener('DOMContentLoaded', async () => {
   try { await loadAdminData(); } catch (e) { console.error('loadAdminData err:', e); }
   try { await loadYearsAndParameters(); } catch (e) { console.error('loadYearsAndParameters err:', e); }
   try { await fetchBnrForAdmin(); } catch (e) { console.error('fetchBnrForAdmin err:', e); }
+  try { setupBnrAdminScheduler(); } catch (e) { console.error('setupBnrAdminScheduler err:', e); }
   try { setupRealtimeOrderListener(); } catch (e) { console.error('setupRealtimeOrderListener err:', e); }
+  try { setupStatusModalListeners(); } catch (e) { console.error('setupStatusModalListeners err:', e); }
+  try { setupWhatsAppListeners(); } catch (e) { console.error('setupWhatsAppListeners err:', e); }
+  try { await loadWhatsAppSettings(); } catch (e) { console.error('loadWhatsAppSettings err:', e); }
 });
 
 function setupRealtimeOrderListener() {
@@ -326,6 +484,221 @@ function updateAdminMetrics() {
   document.getElementById('admin-items-count-badge').textContent = adminState.items.length;
 }
 
+// ====================================================================
+// PARSARE DIMENSIUNI & CALCUL DETALIAT BOM / CONSUMURI ATELIER
+// ====================================================================
+function parseItemDimensions(it) {
+  let A = 500, B = 500, L = 1250, H = 350, D = 200;
+  const text = (it.dimensiuni || '') + ' ' + (it.dimText || '');
+  if (text) {
+    const matchA = text.match(/A(?:1)?\s*=\s*(\d+)/i);
+    const matchB = text.match(/B\s*=\s*(\d+)/i);
+    const matchL = text.match(/L\s*=\s*(\d+)/i);
+    const matchH = text.match(/H\s*=\s*(\d+)/i);
+    const matchD = text.match(/(?:Ø|[Dd]im_D|[Dd])\s*=?\s*(\d+)/i);
+
+    if (matchA) A = parseInt(matchA[1], 10);
+    if (matchB) B = parseInt(matchB[1], 10);
+    if (matchL) L = parseInt(matchL[1], 10);
+    if (matchH) H = parseInt(matchH[1], 10);
+    if (matchD) D = parseInt(matchD[1], 10);
+
+    if (!matchA && !matchB && !matchD) {
+      const nums = text.match(/\d+/g);
+      if (nums && nums.length >= 2) {
+        A = parseInt(nums[0], 10) || 500;
+        B = parseInt(nums[1], 10) || 500;
+        if (nums.length >= 3) L = parseInt(nums[2], 10) || 1250;
+      } else if (nums && nums.length === 1) {
+        D = parseInt(nums[0], 10) || 200;
+      }
+    }
+  }
+  return { A, B, L, H, D };
+}
+
+function computeDetailedBOM(it) {
+  const { A, B, L, H, D } = parseItemDimensions(it);
+  const cant = parseFloat(it.cantitate) || 1;
+  const sTot = parseFloat(it.suprafata) || 0;
+  const code = (it.cod || '').toUpperCase();
+  const cat = (it.categorie || '').toLowerCase();
+  const isCircular = cat.includes('spiro') || cat.includes('circular') || code.includes('SPIRO');
+
+  if (isCircular) {
+    const grosime = it.grosime || (D <= 315 ? '0.5' : (D <= 800 ? '0.6' : '0.8'));
+    const density = grosime === '0.5' ? 3.93 : (grosime === '0.6' ? 4.71 : 6.28);
+    const greutateKg = parseFloat((sTot * density).toFixed(2));
+    const nrTronsoane = Math.max(cant, Math.ceil((cant * (L || 3000)) / 3000));
+    return {
+      isCircular: true,
+      A: D, B: D, L, H, D,
+      cant,
+      tabla: {
+        tip: `Tablă zincată DX51D roluită elicoidal (Ø${D} mm)`,
+        grosime,
+        densitate: density,
+        suprafataTot: sTot,
+        greutateKg,
+        foi1x2m: Math.ceil(sTot / 2)
+      },
+      flansa: {
+        tip: 'Mufă / Niplu îmbinare Spiro cu garnitură EPDM',
+        mlTot: 0,
+        bare5m: 0
+      },
+      coltari: { tip: 'Fără colțari (secțiune circulară)', cantitate: 0 },
+      gasket: { mlTot: parseFloat(((Math.PI * D / 1000) * cant).toFixed(2)), role10m: Math.ceil(((Math.PI * D / 1000) * cant) / 10) },
+      feronerie: {
+        surubTip: 'Șuruburi autoforante HVAC 4.2x13 (sau pop-nituri)',
+        surubCant: Math.round(cant * 6),
+        clipsuriCant: 0,
+        siliconTuburi: Math.max(1, Math.ceil(cant / 20))
+      },
+      sustinere: {
+        areSustinere: true,
+        tijeTip: D >= 630 ? 'M10' : 'M8',
+        tijeMl: parseFloat((nrTronsoane * 1.0).toFixed(2)),
+        tijeBare2m: Math.ceil(nrTronsoane / 2),
+        conexpandTip: D >= 630 ? 'M10' : 'M8',
+        conexpandCant: nrTronsoane,
+        profilTip: `Colier circular Ø${D} mm cu garnitură antivibrație`,
+        profilMl: 0,
+        profilBare3m: 0,
+        garnituraMl: 0,
+        capaceCant: 0
+      },
+      plasaPlenum: 0
+    };
+  }
+
+  // Rectangular calculation
+  const maxDim = Math.max(A, B);
+  const grosime = it.grosime || (maxDim <= 500 ? '0.6' : (maxDim <= 1000 ? '0.8' : '1.0'));
+  const density = grosime === '0.6' ? 4.71 : (grosime === '0.8' ? 6.28 : 7.85);
+  const greutateKg = parseFloat((sTot * density).toFixed(2));
+  const foi1x2m = Math.ceil(sTot / 2);
+
+  const isFlansa30 = it.flansa === 'FLANSA30' || ((A + B) * 2 > 3500);
+  const flansaTip = isFlansa30 ? 'FLANSA 30 (profil zincat 30mm)' : 'FLANSA 20 (profil zincat 20mm)';
+  const coltariTip = isFlansa30 ? 'Colțari 30 (3.0 mm rigidizare)' : 'Colțari 20 (2.5 mm rigidizare)';
+
+  let nrCapete = 2;
+  if (code.includes('TEU') || cat.includes('teu') || code.includes('RAMIF') || cat.includes('ramif') || code.includes('PANTALON')) {
+    nrCapete = 3;
+  } else if (code.includes('CAPAC') || cat.includes('capac') || code.includes('YAKA') || cat.includes('yaka')) {
+    nrCapete = 1;
+  }
+
+  let mlFlansa = it.mlFlansa;
+  if (!mlFlansa || isNaN(mlFlansa)) {
+    mlFlansa = parseFloat((((A + B) * 2 * nrCapete / 1000) * cant).toFixed(2));
+  }
+  const coltariCant = it.coltari || (cant * nrCapete * 4);
+  const gasketMl = parseFloat(((mlFlansa) / 2).toFixed(2));
+
+  const surubTip = isFlansa30 ? 'M10x30 + Piulițe M10 (oțel 8.8)' : 'M8x25 + Piulițe M8 (oțel 4.8/8.8)';
+  const surubCant = cant * nrCapete * 4;
+
+  const perimFlansaM = ((A + B) * 2 / 1000);
+  const clipsuriCant = Math.ceil((perimFlansaM * nrCapete / 0.35) * cant);
+
+  const isYaka = code.includes('YAKA') || cat.includes('yaka');
+  const siliconStep = isYaka ? 8 : 18;
+  const siliconTuburi = Math.max(1, Math.ceil(cant / siliconStep));
+
+  const hasSustinere = code.includes('CRD') || code.includes('PDE') || code.includes('RED') || cat.includes('canal drept') || cat.includes('deviatie') || cat.includes('reductie');
+
+  let sustinere = {
+    areSustinere: hasSustinere,
+    tijeTip: 'M8',
+    tijeMl: 0,
+    tijeBare2m: 0,
+    conexpandTip: 'M8',
+    conexpandCant: 0,
+    profilTip: '30x20',
+    profilMl: 0,
+    profilBare3m: 0,
+    garnituraMl: 0,
+    capaceCant: 0
+  };
+
+  if (hasSustinere) {
+    const isHeavy = maxDim >= 800;
+    const tijeTip = isHeavy ? 'M10' : 'M8';
+    const conexpandTip = isHeavy ? 'M10' : 'M8';
+    const profilTip = isHeavy ? 'Profil 41x41' : 'Profil 30x20';
+
+    const lungimeTotalaM = ((L || 1250) / 1000) * cant;
+    const nrTraverse = Math.max(cant, Math.ceil(lungimeTotalaM / 2.0));
+    const nrPuncteTavan = nrTraverse * 2;
+
+    const tijeMl = parseFloat((nrPuncteTavan * 1.0).toFixed(2));
+    const tijeBare2m = Math.ceil(tijeMl / 2);
+
+    const lungimeTraversaM = (A + 100) / 1000;
+    const profilMl = parseFloat((nrTraverse * lungimeTraversaM).toFixed(2));
+    const profilBare3m = Math.ceil(profilMl / 3);
+
+    const garnituraMl = parseFloat((nrTraverse * (A / 1000)).toFixed(2));
+    const capaceCant = nrTraverse * 2;
+
+    sustinere = {
+      areSustinere: true,
+      tijeTip,
+      tijeMl,
+      tijeBare2m,
+      conexpandTip,
+      conexpandCant: nrPuncteTavan,
+      profilTip,
+      profilMl,
+      profilBare3m,
+      garnituraMl,
+      capaceCant
+    };
+  }
+
+  let plasaPlenum = 0;
+  if (code.includes('PLENUM') || cat.includes('plenum')) {
+    plasaPlenum = parseFloat((Math.sqrt(Math.pow(A / 1000, 2) + Math.pow(H / 1000, 2)) * (B / 1000) * cant).toFixed(4));
+  }
+
+  return {
+    isCircular: false,
+    A, B, L, H, D,
+    cant,
+    tabla: {
+      tip: `Tablă zincată DX51D + Z275 (grosime ${grosime} mm)`,
+      grosime,
+      densitate: density,
+      suprafataTot: sTot,
+      greutateKg,
+      foi1x2m
+    },
+    flansa: {
+      tip: flansaTip,
+      mlTot: mlFlansa,
+      bare5m: Math.ceil(mlFlansa / 5)
+    },
+    coltari: {
+      tip: coltariTip,
+      cantitate: coltariCant
+    },
+    gasket: {
+      mlTot: gasketMl,
+      role10m: Math.ceil(gasketMl / 10)
+    },
+    feronerie: {
+      surubTip,
+      surubCant,
+      clipsuriCant,
+      siliconTuburi
+    },
+    sustinere,
+    plasaPlenum
+  };
+}
+
 function updateAdminAtelierBreakdown() {
   let t06 = { s: 0, w: 0 };
   let t08 = { s: 0, w: 0 };
@@ -334,42 +707,63 @@ function updateAdminAtelierBreakdown() {
   let flansa30 = 0;
   let coltari20 = 0;
   let coltari30 = 0;
+  let garnitura = 0;
+
+  let tijeM8_ml = 0;
+  let tijeM10_ml = 0;
+  let conexpandM8 = 0;
+  let conexpandM10 = 0;
+  let profil30x20_ml = 0;
+  let profil41x41_ml = 0;
+  let profilGarnitura_ml = 0;
+  let profilCapace = 0;
+  let clipsuri = 0;
+  let silicon = 0;
+  let plasaPlenum = 0;
 
   adminState.items.forEach(it => {
-    const s = parseFloat(it.suprafata) || 0;
-    const g = it.grosime ? it.grosime.toString().trim() : '0.8';
-    const c = it.coltari || 0;
+    const bom = computeDetailedBOM(it);
 
-    if (g === '0.6') {
-      t06.s += s;
-      t06.w += s * 4.71;
-    } else if (g === '1.0' || g === '1') {
-      t10.s += s;
-      t10.w += s * 7.85;
+    if (bom.tabla.grosime === '0.6') {
+      t06.s += bom.tabla.suprafataTot;
+      t06.w += bom.tabla.greutateKg;
+    } else if (bom.tabla.grosime === '1.0' || bom.tabla.grosime === '1') {
+      t10.s += bom.tabla.suprafataTot;
+      t10.w += bom.tabla.greutateKg;
     } else {
-      t08.s += s;
-      t08.w += s * 6.28;
+      t08.s += bom.tabla.suprafataTot;
+      t08.w += bom.tabla.greutateKg;
     }
 
-    if (it.dimensiuni && it.categorie !== 'Tubulatura Circulara Spiro' && it.categorie !== 'Materiale montaj') {
-      const nums = it.dimensiuni.match(/\d+/g);
-      if (nums && nums.length >= 2) {
-        const a = parseInt(nums[0], 10) || 0;
-        const b = parseInt(nums[1], 10) || 0;
-        const cant = it.cantitate || 1;
-        const ml = ((a + b) * 4 / 1000) * cant;
-        if (it.flansa === 'FLANSA30') {
-          flansa30 += ml;
-          coltari30 += c;
-        } else {
-          flansa20 += ml;
-          coltari20 += c;
-        }
+    if (!bom.isCircular) {
+      if (it.flansa === 'FLANSA30' || bom.flansa.tip.includes('30')) {
+        flansa30 += bom.flansa.mlTot;
+        coltari30 += bom.coltari.cantitate;
+      } else {
+        flansa20 += bom.flansa.mlTot;
+        coltari20 += bom.coltari.cantitate;
       }
     }
-  });
+    garnitura += bom.gasket.mlTot;
 
-  const garnitura = (flansa20 + flansa30) / 2;
+    if (bom.sustinere && bom.sustinere.areSustinere) {
+      if (bom.sustinere.tijeTip === 'M10') {
+        tijeM10_ml += bom.sustinere.tijeMl;
+        conexpandM10 += bom.sustinere.conexpandCant;
+        profil41x41_ml += bom.sustinere.profilMl;
+      } else {
+        tijeM8_ml += bom.sustinere.tijeMl;
+        conexpandM8 += bom.sustinere.conexpandCant;
+        profil30x20_ml += bom.sustinere.profilMl;
+      }
+      profilGarnitura_ml += bom.sustinere.garnituraMl;
+      profilCapace += bom.sustinere.capaceCant;
+    }
+
+    clipsuri += (bom.feronerie.clipsuriCant || 0);
+    silicon += (bom.feronerie.siliconTuburi || 0);
+    plasaPlenum += (bom.plasaPlenum || 0);
+  });
 
   const setT = (id, txt) => {
     const el = document.getElementById(id);
@@ -384,6 +778,15 @@ function updateAdminAtelierBreakdown() {
   setT('mat-coltari-20', `${coltari20} buc`);
   setT('mat-coltari-30', `${coltari30} buc`);
   setT('mat-gasket', `${garnitura.toFixed(1)} ml (~${Math.ceil(garnitura / 10)} role x 10m)`);
+
+  setT('mat-tije-m8', `${tijeM8_ml.toFixed(1)} ml (~${Math.ceil(tijeM8_ml / 2)} bare x 2m)`);
+  setT('mat-tije-m10', `${tijeM10_ml.toFixed(1)} ml (~${Math.ceil(tijeM10_ml / 2)} bare x 2m)`);
+  setT('mat-conexpand', `${conexpandM8 + conexpandM10} buc (M8: ${conexpandM8} | M10: ${conexpandM10})`);
+  setT('mat-profile-sustinere', `${(profil30x20_ml + profil41x41_ml).toFixed(1)} ml (30x20: ${profil30x20_ml.toFixed(1)} ml | 41x41: ${profil41x41_ml.toFixed(1)} ml)`);
+  setT('mat-accesorii-profil', `${profilGarnitura_ml.toFixed(1)} ml EPDM / ${profilCapace} capace PVC`);
+  setT('mat-clipsuri', `${clipsuri} buc`);
+  setT('mat-silicon', `${silicon} tuburi`);
+  setT('mat-plasa-plenum', `${plasaPlenum.toFixed(2)} m²`);
 }
 
 const CATEGORIES_OPTIONS = [
@@ -421,7 +824,7 @@ function renderExcelSheetTabs() {
   comandaTab.id = 'sheet-tab-comanda';
   comandaTab.className = `excel-sheet-tab ${adminState.currentSheet === 'Comanda' ? 'active' : ''}`;
   comandaTab.innerHTML = `
-    <span>📋 Comanda (Centralizator)</span>
+    <span>Comanda (Centralizator)</span>
     <span class="sheet-badge">${adminState.items.length}</span>
   `;
   comandaTab.addEventListener('click', (e) => {
@@ -1272,7 +1675,15 @@ function downloadExcel() {
     ['Profil Flansa 30', document.getElementById('mat-flansa-30') ? document.getElementById('mat-flansa-30').textContent : '', 'ml'],
     ['Coltari 20', document.getElementById('mat-coltari-20') ? document.getElementById('mat-coltari-20').textContent : '', 'buc'],
     ['Coltari 30', document.getElementById('mat-coltari-30') ? document.getElementById('mat-coltari-30').textContent : '', 'buc'],
-    ['Garnitura Etansare', document.getElementById('mat-gasket') ? document.getElementById('mat-gasket').textContent : '', 'ml']
+    ['Garnitura Etansare Flansa', document.getElementById('mat-gasket') ? document.getElementById('mat-gasket').textContent : '', 'ml'],
+    ['Tije Filetate M8', document.getElementById('mat-tije-m8') ? document.getElementById('mat-tije-m8').textContent : '', 'ml'],
+    ['Tije Filetate M10', document.getElementById('mat-tije-m10') ? document.getElementById('mat-tije-m10').textContent : '', 'ml'],
+    ['Conexpanduri / Piulite Ancorare', document.getElementById('mat-conexpand') ? document.getElementById('mat-conexpand').textContent : '', 'buc'],
+    ['Profile Susținere 30x20 & 41x41', document.getElementById('mat-profile-sustinere') ? document.getElementById('mat-profile-sustinere').textContent : '', 'ml'],
+    ['Garnituri & Capace Profil', document.getElementById('mat-accesorii-profil') ? document.getElementById('mat-accesorii-profil').textContent : '', 'set'],
+    ['Clipsuri / Cleme Imbinare Flansa', document.getElementById('mat-clipsuri') ? document.getElementById('mat-clipsuri').textContent : '', 'buc'],
+    ['Mastic Siliconic Acrilic HVAC', document.getElementById('mat-silicon') ? document.getElementById('mat-silicon').textContent : '', 'tuburi'],
+    ['Plasa Uniformizare Difuzoare', document.getElementById('mat-plasa-plenum') ? document.getElementById('mat-plasa-plenum').textContent : '', 'm²']
   ];
   const wsAtelier = XLSX.utils.aoa_to_sheet(atelierRows);
   XLSX.utils.book_append_sheet(wb, wsAtelier, 'Consumuri Materiale');
@@ -1281,6 +1692,7 @@ function downloadExcel() {
   const setariRows = [
     ['Parametru', 'Valoare'],
     ['Pret Baza Rectangular (€/m²)', adminState.settings.pretMpRectangular],
+    ['Adaos Comercial Standard (%)', adminState.settings.adaosComercial || 0],
     ['Curs BNR (RON/EUR)', adminState.settings.cursEur],
     ['Data Curs BNR', adminState.settings.cursBnrDate],
     ['Cota TVA (%)', adminState.settings.tva]
@@ -1390,7 +1802,7 @@ function setupAdminListeners() {
     btnSyncBnr.addEventListener('click', async () => {
       btnSyncBnr.disabled = true;
       btnSyncBnr.innerHTML = `<span>Sincronizare...</span>`;
-      await fetchBnrForAdmin();
+      await fetchBnrForAdmin(true);
       updateAdminMetrics();
       renderAdminTable();
       btnSyncBnr.disabled = false;
@@ -1613,6 +2025,7 @@ function populateTechnicalSettingsInputs(s) {
     if (el && val !== undefined) el.value = val;
   };
   setVal('admin-setting-pret-mp', s.pretMpRectangular || 15.0);
+  setVal('admin-setting-adaos', s.adaosComercial !== undefined ? s.adaosComercial : 0);
   setVal('admin-setting-curs-eur', s.cursEur || 5.2542);
   setVal('admin-setting-tva', s.tva !== undefined ? s.tva : 21);
   setVal('admin-setting-flansa-prag', s.flansaPerimeterThreshold || 3500);
@@ -1736,7 +2149,7 @@ function renderOrdersTable() {
 
   tbody.innerHTML = '';
   if (orders.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="10" style="text-align: center; color: var(--text-muted); padding: 24px;">Nicio comandă salvată încă în registrul pe ani.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="9" style="text-align: center; color: var(--text-muted); padding: 24px;">Nicio comandă salvată încă în registrul pe ani.</td></tr>`;
     renderAniTfoot(0, 0, 0, 0, 0, 0, 0, 0, 0, false);
     renderAniPaginationBar(0, 0, 0, 1, 1);
     return;
@@ -1746,11 +2159,15 @@ function renderOrdersTable() {
     const globalIdx = startIdx + pageIdx;
     const tr = document.createElement('tr');
     tr.innerHTML = `
-      <td><strong>${o.orderNumber || o.id}</strong></td>
+      <td>
+        <div class="order-id-date-cell">
+          <strong class="order-cell-number">${o.orderNumber || o.id}</strong>
+          <span class="order-cell-date">${o.date || '-'}</span>
+        </div>
+      </td>
       <td style="text-align: center;"><span class="k-badge" style="font-size: 11px;">${o.year || 2026}</span></td>
       <td>${o.client || 'Client B2B'}</td>
       <td>${o.project || 'Proiect HVAC'}</td>
-      <td>${o.date || '-'}</td>
       <td style="text-align: right; font-weight: 600;">${o.totalMp ? o.totalMp.toFixed(2) : '-'} m²</td>
       <td style="text-align: right;">${o.totalPiese || '-'} buc</td>
       <td style="text-align: right; font-weight: 700; color: #15803d;">${o.totalEur ? o.totalEur.toFixed(2) : '-'} €</td>
@@ -1780,7 +2197,7 @@ function renderAniTfoot(pMp, pPiese, pEur, pRon, tMp, tPiese, tEur, tRon, count,
   if (showSubtotal) {
     html += `
       <tr style="background: #f8fafc; border-top: 1px solid var(--border-main); font-size: 11.5px;">
-        <td colspan="5" style="text-align: right; font-weight: 700; color: var(--text-secondary); padding: 8px 12px;">SUBTOTAL PAGINĂ:</td>
+        <td colspan="4" style="text-align: right; font-weight: 700; color: var(--text-secondary); padding: 8px 12px;">SUBTOTAL PAGINĂ:</td>
         <td style="text-align: right; font-weight: 700; color: var(--kronvent-blue); padding: 8px 10px;">${pMp.toFixed(2)} m²</td>
         <td style="text-align: right; font-weight: 700; color: var(--text-main); padding: 8px 10px;">${pPiese} buc</td>
         <td style="text-align: right; font-weight: 800; color: var(--industrial-green); padding: 8px 10px;">${pEur.toFixed(2)} €</td>
@@ -1791,7 +2208,7 @@ function renderAniTfoot(pMp, pPiese, pEur, pRon, tMp, tPiese, tEur, tRon, count,
   }
   html += `
     <tr style="background: #f1f5f9; border-top: 2px solid var(--border-main); font-size: 12.5px;">
-      <td colspan="5" style="text-align: right; font-weight: 800; color: var(--text-main); padding: 10px 12px; text-transform: uppercase;">
+      <td colspan="4" style="text-align: right; font-weight: 800; color: var(--text-main); padding: 10px 12px; text-transform: uppercase;">
         TOTAL GENERAL REGISTRU (${count} COMENZI):
       </td>
       <td style="text-align: right; font-weight: 800; color: var(--kronvent-blue); font-size: 13px; padding: 10px 10px;">${tMp.toFixed(2)} m²</td>
@@ -2485,7 +2902,7 @@ function renderDashOrdersTable() {
   });
 
   if (filtered.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="11" style="text-align: center; color: var(--text-muted); padding: 28px;">Nicio comandă găsită conform filtrelor selectate.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="10" style="text-align: center; color: var(--text-muted); padding: 28px;">Nicio comandă găsită conform filtrelor selectate.</td></tr>`;
     renderDashTfoot(0, 0, 0, 0, 0, 0, 0, 0, 0, false);
     renderDashPaginationBar(0, 0, 0, orders.length, 1, 1);
     return;
@@ -2497,42 +2914,43 @@ function renderDashOrdersTable() {
     const orderIndexInAll = orders.indexOf(o);
     const rowNum = startIdx + pageIdx + 1;
 
-    const st = (o.status || 'NOUA').toUpperCase();
-    let badgeClass = 'status-badge-noua';
-    if (st === 'IN_PRODUCTIE') badgeClass = 'status-badge-in_productie';
-    else if (st === 'GATA_LIVRARE') badgeClass = 'status-badge-gata_livrare';
-    else if (st === 'FINALIZATA' || st === 'CONFIRMED') badgeClass = 'status-badge-finalizata';
+    const stMeta = getStatusMeta(o.status);
 
     tr.innerHTML = `
       <td style="text-align: center; color: var(--text-muted); font-size: 11px; font-weight: 600;">${rowNum}</td>
       <td>
-        <strong style="color: var(--kronvent-blue); font-weight: 700; font-size: 12.5px; letter-spacing: -0.01em;">${o.orderNumber || o.id}</strong>
+        <div class="order-id-date-cell">
+          <strong class="order-cell-number">${o.orderNumber || o.id}</strong>
+          <span class="order-cell-date">${o.date || '-'}</span>
+        </div>
       </td>
-      <td style="text-align: center; font-size: 11.5px; color: var(--text-secondary);">${o.date || '-'}</td>
-      <td style="font-weight: 600; color: var(--text-main); font-size: 12.5px;">${o.client || 'Client B2B'}</td>
-      <td style="color: var(--text-secondary); font-size: 12px;">${o.project || 'Proiect Standard'}</td>
+      <td style="font-weight: 600; color: var(--text-main); font-size: 12.5px;">${escapeHtml(o.client || 'Client B2B')}</td>
+      <td style="color: var(--text-secondary); font-size: 12px;">${escapeHtml(o.project || 'Proiect Standard')}</td>
       <td style="text-align: right; font-weight: 600; font-size: 12px;">${o.totalMp ? o.totalMp.toFixed(2) : '0.00'} m²</td>
       <td style="text-align: right; font-size: 12px;">${o.totalPiese || (o.items ? o.items.length : 0)} buc</td>
       <td style="text-align: right; font-weight: 700; color: var(--industrial-green); font-size: 12.5px;">${o.totalEur ? o.totalEur.toLocaleString('ro-RO', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '0.00'} €</td>
       <td style="text-align: right; font-weight: 600; color: var(--text-main); font-size: 12px;">${o.totalRon ? o.totalRon.toLocaleString('ro-RO', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '0.00'} RON</td>
       <td style="text-align: center;">
-        <select class="dash-order-status-dropdown ${badgeClass}" onchange="handleOrderStatusChange('${o.id}', this.value)">
-          <option value="NOUA" ${st === 'NOUA' ? 'selected' : ''}>Ofertă Nouă</option>
-          <option value="IN_PRODUCTIE" ${st === 'IN_PRODUCTIE' ? 'selected' : ''}>În Producție</option>
-          <option value="GATA_LIVRARE" ${st === 'GATA_LIVRARE' ? 'selected' : ''}>Gata de Livrare</option>
-          <option value="FINALIZATA" ${(st === 'FINALIZATA' || st === 'CONFIRMED') ? 'selected' : ''}>Finalizată</option>
-        </select>
+        <button class="k-btn k-btn-secondary k-btn-sm" onclick="openProductionStatusModal('${o.id}')" title="Modifică stadiu atelier, termen livrare și notă tehnică" style="display: inline-flex; align-items: center; gap: 5px; font-weight: 700; width: 100%; justify-content: center; padding: 4px 6px; font-size: 11.5px;">
+          <span>${stMeta.label}</span>
+        </button>
       </td>
       <td style="text-align: center; white-space: nowrap;">
-        <div style="display: inline-flex; gap: 6px; justify-content: center;">
-          <button class="k-btn k-btn-secondary k-btn-icon-only" onclick="inspectOrderDetails(${orderIndexInAll})" title="Vezi repere tehnice & piese comandă" aria-label="Detalii Comandă">
-            <svg class="icon-svg" viewBox="0 0 24 24" style="width: 15px; height: 15px; stroke: currentColor;"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+        <div style="display: inline-flex; gap: 4px; justify-content: center;">
+          <button class="k-btn k-btn-primary k-btn-icon-only" onclick="openProductionStatusModal('${o.id}')" title="Modifică Stadiu Producție & Jurnal Atelier" aria-label="Stadiu Producție">
+            <svg class="icon-svg" viewBox="0 0 24 24" style="width: 14px; height: 14px; stroke: currentColor;"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
           </button>
-          <button class="k-btn k-btn-primary k-btn-icon-only" onclick="loadOrderIntoCentralizer('${o.id}')" title="Încarcă în atelier pentru debitare" aria-label="Trimite în Atelier">
-            <svg class="icon-svg" viewBox="0 0 24 24" style="width: 15px; height: 15px; stroke: currentColor;"><polyline points="15 3 21 3 21 9"></polyline><polyline points="9 21 3 21 3 15"></polyline><line x1="21" y1="3" x2="14" y2="10"></line><line x1="3" y1="21" x2="10" y2="14"></line></svg>
+          <button class="k-btn k-btn-secondary k-btn-icon-only" onclick="copyOrderTrackingLink('${o.id}')" title="Copiază & Deschide Link Urmărire Live Client" aria-label="Link Urmărire">
+            <svg class="icon-svg" viewBox="0 0 24 24" style="width: 14px; height: 14px; stroke: currentColor;"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>
+          </button>
+          <button class="k-btn k-btn-secondary k-btn-icon-only" onclick="inspectOrderDetails(${orderIndexInAll})" title="Vezi repere tehnice & piese comandă" aria-label="Detalii Comandă">
+            <svg class="icon-svg" viewBox="0 0 24 24" style="width: 14px; height: 14px; stroke: currentColor;"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+          </button>
+          <button class="k-btn k-btn-secondary k-btn-icon-only" onclick="loadOrderIntoCentralizer('${o.id}')" title="Încarcă în atelier pentru debitare" aria-label="Trimite în Atelier">
+            <svg class="icon-svg" viewBox="0 0 24 24" style="width: 14px; height: 14px; stroke: currentColor;"><polyline points="15 3 21 3 21 9"></polyline><polyline points="9 21 3 21 3 15"></polyline><line x1="21" y1="3" x2="14" y2="10"></line><line x1="3" y1="21" x2="10" y2="14"></line></svg>
           </button>
           <button class="k-btn k-btn-secondary k-btn-icon-only" onclick="quickPrintOrder('${o.id}')" title="Printează bon debitare atelier" aria-label="Printează">
-            <svg class="icon-svg" viewBox="0 0 24 24" style="width: 15px; height: 15px; stroke: currentColor;"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
+            <svg class="icon-svg" viewBox="0 0 24 24" style="width: 14px; height: 14px; stroke: currentColor;"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
           </button>
         </div>
       </td>
@@ -2552,7 +2970,7 @@ function renderDashTfoot(pMp, pPiese, pEur, pRon, tMp, tPiese, tEur, tRon, count
   if (showSubtotal) {
     html += `
       <tr style="background: #f8fafc; border-top: 1px solid var(--border-main); font-size: 11.5px;">
-        <td colspan="5" style="text-align: right; font-weight: 700; color: var(--text-secondary); padding: 8px 12px;">SUBTOTAL PAGINĂ CURENTĂ:</td>
+        <td colspan="4" style="text-align: right; font-weight: 700; color: var(--text-secondary); padding: 8px 12px;">SUBTOTAL PAGINĂ CURENTĂ:</td>
         <td style="text-align: right; font-weight: 700; color: var(--kronvent-blue); padding: 8px 10px;">${pMp.toFixed(2)} m²</td>
         <td style="text-align: right; font-weight: 700; color: var(--text-main); padding: 8px 10px;">${pPiese} buc</td>
         <td style="text-align: right; font-weight: 800; color: var(--industrial-green); padding: 8px 10px;">${pEur.toLocaleString('ro-RO', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €</td>
@@ -2563,7 +2981,7 @@ function renderDashTfoot(pMp, pPiese, pEur, pRon, tMp, tPiese, tEur, tRon, count
   }
   html += `
     <tr style="background: #f1f5f9; border-top: 2px solid var(--border-main); font-size: 12.5px;">
-      <td colspan="5" style="text-align: right; font-weight: 800; color: var(--text-main); padding: 10px 12px; text-transform: uppercase; letter-spacing: -0.01em;">
+      <td colspan="4" style="text-align: right; font-weight: 800; color: var(--text-main); padding: 10px 12px; text-transform: uppercase; letter-spacing: -0.01em;">
         TOTAL GENERAL (${count} COMENZI FILTRATE):
       </td>
       <td style="text-align: right; font-weight: 800; color: var(--kronvent-blue); font-size: 13px; padding: 10px 10px;">${tMp.toFixed(2)} m²</td>
@@ -2784,6 +3202,305 @@ window.handleOrderStatusChange = async function(orderId, newStatus) {
   }
 };
 
+function getStatusMeta(rawStatus) {
+  const s = (rawStatus || 'preluata').toLowerCase();
+  switch (s) {
+    case 'inregistrata':
+    case 'noua':
+      return { label: 'Înregistrată', icon: '', badgeClass: 'status-badge-noua' };
+    case 'preluata':
+    case 'confirmed':
+      return { label: 'Preluată Producție', icon: '', badgeClass: 'status-badge-in_productie' };
+    case 'debitare':
+      return { label: 'Debitare CNC', icon: '', badgeClass: 'status-badge-in_productie' };
+    case 'asamblare':
+    case 'in_productie':
+      return { label: 'Asamblare & Etanșare', icon: '', badgeClass: 'status-badge-in_productie' };
+    case 'calitate':
+      return { label: 'Control Calitate (QC)', icon: '', badgeClass: 'status-badge-gata_livrare' };
+    case 'gata':
+    case 'gata_livrare':
+      return { label: 'Gata de Livrare', icon: '', badgeClass: 'status-badge-gata_livrare' };
+    case 'livrata':
+    case 'finalizata':
+      return { label: 'Comandă Finalizată', icon: '', badgeClass: 'status-badge-finalizata' };
+    default:
+      return { label: rawStatus || 'Preluată', icon: '', badgeClass: 'status-badge-in_productie' };
+  }
+}
+
+// Deschidere Modal Actualizare Stadiu & Jurnal Producție
+window.openProductionStatusModal = function(orderId) {
+  const orders = adminState.yearsData.orders || [];
+  const order = orders.find(o => o.id === orderId || o.orderNumber === orderId);
+  if (!order) {
+    showToast(`Comanda ${orderId} nu a fost găsită.`, 'error');
+    return;
+  }
+
+  const modal = document.getElementById('admin-status-modal');
+  if (!modal) return;
+
+  const idInput = document.getElementById('status-modal-order-id');
+  const titleEl = document.getElementById('status-modal-order-title');
+  const subEl = document.getElementById('status-modal-order-sub');
+  const stageSelect = document.getElementById('status-modal-select-stage');
+  const deliveryDateInput = document.getElementById('status-modal-delivery-date');
+  const notesInput = document.getElementById('status-modal-notes');
+  const linkBtn = document.getElementById('status-modal-link-btn');
+
+  if (idInput) idInput.value = order.id;
+  if (titleEl) titleEl.textContent = `Comanda ${order.orderNumber || order.id} • ${order.client || 'Beneficiar'}`;
+  if (subEl) subEl.textContent = `Proiect: ${order.project || 'Standard'} | Suprafață: ${(order.totalMp || 0).toFixed(2)} m² | Total: ${(order.totalEur || 0).toFixed(2)} €`;
+  
+  if (stageSelect) {
+    const curSt = (order.status || 'preluata').toLowerCase();
+    // Mapăm cazuri vechi la noile chei dacă e nevoie
+    let mapped = curSt;
+    if (curSt === 'confirmed') mapped = 'preluata';
+    if (curSt === 'in_productie') mapped = 'asamblare';
+    if (curSt === 'gata_livrare') mapped = 'gata';
+    if (curSt === 'finalizata') mapped = 'livrata';
+    stageSelect.value = mapped;
+  }
+
+  if (deliveryDateInput) {
+    deliveryDateInput.value = order.dataEstimataLivrare || '';
+  }
+
+  if (notesInput) {
+    notesInput.value = '';
+  }
+
+  if (linkBtn) {
+    const origin = window.location.origin;
+    linkBtn.href = `${origin}/comanda.html?id=${encodeURIComponent(order.id)}`;
+  }
+
+  modal.style.display = 'flex';
+  requestAnimationFrame(() => modal.classList.add('open'));
+};
+
+window.copyOrderTrackingLink = function(orderId) {
+  const origin = window.location.origin;
+  const trackingUrl = `${origin}/comanda.html?id=${encodeURIComponent(orderId)}`;
+  
+  navigator.clipboard.writeText(trackingUrl).then(() => {
+    showToast(`Link-ul de urmărire a fost copiat în clipboard!\n${trackingUrl}`, 'success');
+  }).catch(() => {
+    prompt('Link de urmărire comandă client:', trackingUrl);
+  });
+};
+
+function setupStatusModalListeners() {
+  const modal = document.getElementById('admin-status-modal');
+  if (!modal) return;
+
+  const closeBtn = document.getElementById('status-modal-close-btn');
+  const cancelBtn = document.getElementById('status-modal-cancel-btn');
+  const saveBtn = document.getElementById('status-modal-save-btn');
+
+  const closeModal = () => {
+    modal.classList.remove('open');
+    setTimeout(() => { modal.style.display = 'none'; }, 200);
+  };
+
+  if (closeBtn) closeBtn.onclick = closeModal;
+  if (cancelBtn) cancelBtn.onclick = closeModal;
+
+  modal.onclick = (e) => {
+    if (e.target === modal) closeModal();
+  };
+
+  if (saveBtn) {
+    saveBtn.onclick = async () => {
+      const orderId = document.getElementById('status-modal-order-id')?.value;
+      const stageSelect = document.getElementById('status-modal-select-stage');
+      const deliveryInput = document.getElementById('status-modal-delivery-date');
+      const notesInput = document.getElementById('status-modal-notes');
+      const notifyCheck = document.getElementById('status-modal-notify-whatsapp');
+
+      if (!orderId) return;
+
+      const newStatus = stageSelect ? stageSelect.value : 'preluata';
+      const newDelivery = deliveryInput ? deliveryInput.value.trim() : '';
+      const note = notesInput ? notesInput.value.trim() : '';
+      const notifyWhatsApp = notifyCheck ? notifyCheck.checked : true;
+
+      try {
+        saveBtn.disabled = true;
+        saveBtn.innerHTML = 'Se salvează...';
+
+        const res = await fetch('/api/orders/update-status', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            orderId: orderId,
+            status: newStatus,
+            dataEstimataLivrare: newDelivery,
+            note: note,
+            notifyWhatsApp: notifyWhatsApp
+          })
+        });
+
+        const data = await res.json();
+        if (data.success) {
+          const orders = adminState.yearsData.orders || [];
+          const order = orders.find(o => o.id === orderId || o.orderNumber === orderId);
+          if (order) {
+            order.status = newStatus;
+            if (newDelivery) order.dataEstimataLivrare = newDelivery;
+            if (!Array.isArray(order.timeline)) order.timeline = [];
+            order.timeline.push({
+              status: newStatus,
+              title: getStatusMeta(newStatus).label,
+              date: new Date().toISOString(),
+              note: note
+            });
+          }
+
+          renderAdminDashboard();
+          renderDashOrdersTable();
+          closeModal();
+
+          const waSimMsg = data.waResult && data.waResult.simulated ? ' (Notificare WhatsApp simulată)' : '';
+          showToast(`Stadiul comenzii ${orderId} a fost actualizat la "${getStatusMeta(newStatus).label}"!${waSimMsg}`, 'success');
+        } else {
+          showToast('Eroare: ' + (data.error || 'Nu s-a putut actualiza comanda.'), 'error');
+        }
+      } catch (err) {
+        showToast('Eroare rețea: ' + err.message, 'error');
+      } finally {
+        saveBtn.disabled = false;
+        saveBtn.innerHTML = `<svg class="icon-svg" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg><span>Salvează & Actualizează</span>`;
+      }
+    };
+  }
+}
+
+// --------------------------------------------------------------------------
+// UltraGSM WhatsApp Settings Management
+// --------------------------------------------------------------------------
+async function loadWhatsAppSettings() {
+  try {
+    const res = await fetch('/api/whatsapp/config');
+    if (!res.ok) return;
+    const data = await res.json();
+    if (data.success && data.config) {
+      const cfg = data.config;
+      const chk = document.getElementById('admin-whatsapp-enabled');
+      const apiKey = document.getElementById('admin-whatsapp-api-key');
+      const grp = document.getElementById('admin-whatsapp-group-id');
+      const endpoint = document.getElementById('admin-whatsapp-endpoint');
+
+      if (chk) chk.checked = cfg.enabled !== false;
+      if (apiKey) apiKey.value = cfg.apiKey || '';
+      if (grp) grp.value = cfg.groupId || '';
+      if (endpoint) endpoint.value = cfg.endpointUrl || 'https://api.ultragsm.com/send';
+    }
+  } catch (err) {
+    console.warn('Nu s-au putut încărca setările WhatsApp:', err.message);
+  }
+}
+
+async function saveWhatsAppSettings() {
+  const chk = document.getElementById('admin-whatsapp-enabled');
+  const apiKey = document.getElementById('admin-whatsapp-api-key');
+  const grp = document.getElementById('admin-whatsapp-group-id');
+  const endpoint = document.getElementById('admin-whatsapp-endpoint');
+  const btn = document.getElementById('admin-btn-save-whatsapp');
+
+  const payload = {
+    enabled: chk ? chk.checked : true,
+    apiKey: apiKey ? apiKey.value.trim() : '',
+    groupId: grp ? grp.value.trim() : '',
+    endpointUrl: endpoint ? endpoint.value.trim() : 'https://api.ultragsm.com/send'
+  };
+
+  try {
+    if (btn) {
+      btn.disabled = true;
+      btn.innerHTML = 'Se salvează...';
+    }
+
+    const res = await fetch('/api/whatsapp/config', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+
+    const data = await res.json();
+    if (data.success) {
+      showToast('Configurația WhatsApp UltraGSM a fost salvată pe server!', 'success');
+    } else {
+      showToast('Eroare salvare WhatsApp: ' + (data.error || 'Necunoscută'), 'error');
+    }
+  } catch (err) {
+    showToast('Eroare rețea: ' + err.message, 'error');
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = `<svg class="icon-svg" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg><span>Salvează Setări WhatsApp</span>`;
+    }
+  }
+}
+
+async function testWhatsAppConnection() {
+  const chk = document.getElementById('admin-whatsapp-enabled');
+  const apiKey = document.getElementById('admin-whatsapp-api-key');
+  const grp = document.getElementById('admin-whatsapp-group-id');
+  const endpoint = document.getElementById('admin-whatsapp-endpoint');
+  const btn = document.getElementById('admin-btn-test-whatsapp');
+
+  const payload = {
+    enabled: chk ? chk.checked : true,
+    apiKey: apiKey ? apiKey.value.trim() : '',
+    groupId: grp ? grp.value.trim() : '',
+    endpointUrl: endpoint ? endpoint.value.trim() : 'https://api.ultragsm.com/send'
+  };
+
+  try {
+    if (btn) {
+      btn.disabled = true;
+      btn.innerHTML = 'Se testează...';
+    }
+
+    const res = await fetch('/api/whatsapp/test', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+
+    const data = await res.json();
+    if (data.success && data.result) {
+      if (data.result.simulated) {
+        showToast('Test simulat cu succes! Mesajul a fost generat corect conform modelului de producție KronVent.', 'info');
+      } else if (data.result.success) {
+        showToast('Conexiune confirmată cu UltraGSM! Mesajul de test a fost expediat pe grupul WhatsApp.', 'success');
+      } else {
+        showToast(`Răspuns UltraGSM: ${JSON.stringify(data.result.response || data.result.error)}`, 'warning');
+      }
+    } else {
+      showToast('Eroare testare WhatsApp: ' + (data.error || 'Necunoscută'), 'error');
+    }
+  } catch (err) {
+    showToast('Eroare rețea test WhatsApp: ' + err.message, 'error');
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = `<svg class="icon-svg" viewBox="0 0 24 24"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg><span>Trimite Mesaj Test</span>`;
+    }
+  }
+}
+
+function setupWhatsAppListeners() {
+  const saveBtn = document.getElementById('admin-btn-save-whatsapp');
+  if (saveBtn) saveBtn.addEventListener('click', saveWhatsAppSettings);
+
+  const testBtn = document.getElementById('admin-btn-test-whatsapp');
+  if (testBtn) testBtn.addEventListener('click', testWhatsAppConnection);
+}
+
 window.loadOrderIntoCentralizer = function(orderId) {
   const order = (adminState.yearsData.orders || []).find(o => o.id === orderId || o.orderNumber === orderId);
   if (!order) return;
@@ -2994,6 +3711,7 @@ window.quickPrintOrder = function(orderId) {
 
 async function saveAllSettings() {
   const pretMp = parseFloat(document.getElementById('admin-setting-pret-mp').value) || 15.0;
+  const adaos = parseFloat(document.getElementById('admin-setting-adaos')?.value) || 0;
   const curs = parseFloat(document.getElementById('admin-setting-curs-eur').value) || 5.2542;
   const tva = parseFloat(document.getElementById('admin-setting-tva').value) || 21;
   const flansaPrag = parseFloat(document.getElementById('admin-setting-flansa-prag').value) || 3500;
@@ -3018,6 +3736,7 @@ async function saveAllSettings() {
 
   const updatedSettings = {
     pretMpRectangular: pretMp,
+    adaosComercial: adaos,
     cursEur: curs,
     cursBnrDate: adminState.settings.cursBnrDate || '09.09.2026',
     tva: tva,

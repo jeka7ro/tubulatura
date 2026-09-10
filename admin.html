@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=2026-table-profi-v12">
+  <link rel="stylesheet" href="style.css?v=2026-bnrpill-v1">
 </head>
 <body>
 
@@ -69,17 +69,6 @@
 
       <!-- Sidebar Footer -->
       <div class="sidebar-footer">
-        <!-- Live BNR Badge in Sidebar -->
-        <div class="sidebar-bnr-pill" id="bnr-admin-badge" title="Curs valutar oficial preluat automat de la Banca Națională a României">
-          <div class="sidebar-bnr-top">
-            <span class="sidebar-bnr-tag">CURS OFICIAL BNR</span>
-            <span class="sidebar-bnr-date" id="admin-bnr-date">09.09.2026</span>
-          </div>
-          <div class="sidebar-bnr-val" id="admin-bnr-rate">
-            1 EUR = <strong id="admin-bnr-num">5.2542 RON</strong>
-          </div>
-        </div>
-
         <!-- Direct link to Client Portal -->
         <a href="index.html" class="sidebar-portal-btn" title="Deschide portalul de ofertare văzut de clienți">
           <svg class="icon-svg" viewBox="0 0 24 24"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
@@ -114,7 +103,166 @@
           <span id="admin-page-subtitle">Sinteză comenzi clienți B2B • Anul de Fabricație 2026</span>
         </div>
 
-        <div class="admin-topbar-right">
+        <div class="admin-topbar-right" style="display: flex; align-items: center; gap: 12px;">
+          <!-- Live BNR Exchange Rate Badge (Admin Topbar Trigger Popover) -->
+          <div class="bnr-header-wrapper" id="bnr-admin-header-wrapper">
+            <div class="bnr-nav-pill-modern" id="bnr-admin-header-badge" role="button" tabindex="0" title="Click pentru detalii Curs Valutar BNR" aria-haspopup="true" aria-expanded="false">
+              <div class="bnr-pill-icon-wrap">
+                <svg class="bnr-pill-trend-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                  <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
+                  <polyline points="17 6 23 6 23 12"></polyline>
+                </svg>
+              </div>
+              <span class="bnr-pill-item">
+                EUR <strong id="admin-header-bnr-eur">5.2537</strong>
+              </span>
+              <span class="bnr-pill-sep">|</span>
+              <span class="bnr-pill-item">
+                USD <strong id="admin-header-bnr-usd">4.5164</strong>
+              </span>
+              <span class="bnr-pill-sep">|</span>
+              <span class="bnr-pill-item bnr-pill-date-wrap">
+                <span class="bnr-pill-prefix">BNR</span> <span id="admin-header-bnr-date">10.09.2026</span>
+              </span>
+              <span class="bnr-pill-badge-live">
+                <span class="bnr-live-dot"></span> LA ZI
+              </span>
+            </div>
+
+            <!-- Dropdown Popover BNR Admin -->
+            <div class="bnr-dropdown-popover" id="bnr-admin-popover-dropdown" aria-hidden="true">
+              <!-- Popover Header -->
+              <div class="bnr-popover-header">
+                <div class="bnr-popover-header-left">
+                  <div class="bnr-popover-bank-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M3 21h18M3 10h18M5 10v11M9 10v11M15 10v11M19 10v11M12 2L2 7h20L12 2z"></path>
+                    </svg>
+                  </div>
+                  <div class="bnr-popover-header-text">
+                    <div class="bnr-popover-title-row">
+                      <strong class="bnr-popover-title">Curs Valutar BNR</strong>
+                      <span class="bnr-popover-badge-oficial">OFICIAL</span>
+                    </div>
+                    <div class="bnr-popover-sub">Banca Națională a României</div>
+                  </div>
+                </div>
+                <button type="button" class="bnr-popover-refresh-btn" id="btn-refresh-bnr-admin-popover" title="Actualizează curs BNR manual" aria-label="Actualizează curs BNR">
+                  <svg class="bnr-refresh-icon" viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="23 4 23 10 17 10"></polyline>
+                    <polyline points="1 20 1 14 7 14"></polyline>
+                    <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+                  </svg>
+                </button>
+              </div>
+
+              <!-- Date / Status Pill -->
+              <div class="bnr-popover-date-pill">
+                <div class="bnr-popover-date-left">
+                  <svg class="bnr-popover-cal-icon" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="#2563eb" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                    <line x1="16" y1="2" x2="16" y2="6"></line>
+                    <line x1="8" y1="2" x2="8" y2="6"></line>
+                    <line x1="3" y1="10" x2="21" y2="10"></line>
+                  </svg>
+                  <span id="admin-bnr-popover-date-long">10 Septembrie 2026</span>
+                </div>
+                <div class="bnr-popover-status-tag">
+                  <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="9"></circle>
+                    <polyline points="9 12 11 14 15 10"></polyline>
+                  </svg>
+                  <span>Actualizat</span>
+                </div>
+              </div>
+
+              <!-- Currencies List -->
+              <div class="bnr-popover-curr-list">
+                <!-- EUR / RON -->
+                <div class="bnr-popover-curr-row">
+                  <div class="bnr-curr-left">
+                    <span class="bnr-curr-code-pill">EUR</span>
+                    <div class="bnr-curr-meta">
+                      <strong class="bnr-curr-pair">EUR / RON</strong>
+                      <span class="bnr-curr-name">Euro</span>
+                    </div>
+                  </div>
+                  <div class="bnr-curr-right">
+                    <div class="bnr-curr-price"><strong id="admin-popover-rate-eur">5.2537</strong> <span class="bnr-curr-unit">RON</span></div>
+                    <div class="bnr-curr-subcalc bnr-curr-subcalc-highlight" id="admin-popover-subcalc-eur">1 EUR = 5.2537 lei</div>
+                  </div>
+                </div>
+
+                <!-- USD / RON -->
+                <div class="bnr-popover-curr-row">
+                  <div class="bnr-curr-left">
+                    <span class="bnr-curr-code-pill">USD</span>
+                    <div class="bnr-curr-meta">
+                      <strong class="bnr-curr-pair">USD / RON</strong>
+                      <span class="bnr-curr-name">Dolar American</span>
+                    </div>
+                  </div>
+                  <div class="bnr-curr-right">
+                    <div class="bnr-curr-price"><strong id="admin-popover-rate-usd">4.5164</strong> <span class="bnr-curr-unit">RON</span></div>
+                    <div class="bnr-curr-subcalc" id="admin-popover-subcalc-usd">1 USD = 4.5164 lei</div>
+                  </div>
+                </div>
+
+                <!-- GBP / RON -->
+                <div class="bnr-popover-curr-row">
+                  <div class="bnr-curr-left">
+                    <span class="bnr-curr-code-pill">GBP</span>
+                    <div class="bnr-curr-meta">
+                      <strong class="bnr-curr-pair">GBP / RON</strong>
+                      <span class="bnr-curr-name">Liră Sterlină</span>
+                    </div>
+                  </div>
+                  <div class="bnr-curr-right">
+                    <div class="bnr-curr-price"><strong id="admin-popover-rate-gbp">6.1178</strong> <span class="bnr-curr-unit">RON</span></div>
+                  </div>
+                </div>
+
+                <!-- CHF / RON -->
+                <div class="bnr-popover-curr-row">
+                  <div class="bnr-curr-left">
+                    <span class="bnr-curr-code-pill">CHF</span>
+                    <div class="bnr-curr-meta">
+                      <strong class="bnr-curr-pair">CHF / RON</strong>
+                      <span class="bnr-curr-name">Franc Elvețian</span>
+                    </div>
+                  </div>
+                  <div class="bnr-curr-right">
+                    <div class="bnr-curr-price"><strong id="admin-popover-rate-chf">5.5707</strong> <span class="bnr-curr-unit">RON</span></div>
+                  </div>
+                </div>
+
+                <!-- MDL / RON -->
+                <div class="bnr-popover-curr-row">
+                  <div class="bnr-curr-left">
+                    <span class="bnr-curr-code-pill">MDL</span>
+                    <div class="bnr-curr-meta">
+                      <strong class="bnr-curr-pair">MDL / RON</strong>
+                      <span class="bnr-curr-name">Leu Moldovenesc</span>
+                    </div>
+                  </div>
+                  <div class="bnr-curr-right">
+                    <div class="bnr-curr-price"><strong id="admin-popover-rate-mdl">0.2620</strong> <span class="bnr-curr-unit">RON</span></div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Popover Footer -->
+              <div class="bnr-popover-footer">
+                <div class="bnr-popover-footer-src">
+                  Sursa: curs.bnr.ro
+                </div>
+                <a href="https://www.bnr.ro/Cursul-de-schimb--524.aspx" target="_blank" rel="noopener noreferrer" class="bnr-popover-footer-link">
+                  Site oficial BNR <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
+                </a>
+              </div>
+            </div>
+          </div>
+
           <span class="topbar-status-badge">
             <span class="topbar-status-dot"></span>
             An de Fabricație 2026 • Activ
@@ -170,9 +318,9 @@
               <div class="exec-chart-controls">
                 <!-- Mod Vizualizare -->
                 <div class="chart-btn-group" id="chart-mode-group">
-                  <button class="chart-mode-btn active" data-mode="timeline" title="Evoluție vânzări în timp cu zoom">📈 În Timp</button>
-                  <button class="chart-mode-btn" data-mode="products" title="Separare pe tipuri de produse HVAC">📦 Pe Produse</button>
-                  <button class="chart-mode-btn" data-mode="clients" title="Ponderea clienților B2B">🏢 Pe Clienți</button>
+                  <button class="chart-mode-btn active" data-mode="timeline" title="Evoluție vânzări în timp cu zoom">În Timp</button>
+                  <button class="chart-mode-btn" data-mode="products" title="Separare pe tipuri de produse HVAC">Pe Produse</button>
+                  <button class="chart-mode-btn" data-mode="clients" title="Ponderea clienților B2B">Pe Clienți</button>
                 </div>
 
                 <!-- Perioada -->
@@ -320,8 +468,7 @@
                 <thead>
                   <tr>
                     <th style="width: 45px; text-align: center;">Nr.</th>
-                    <th style="width: 125px;">Nr. Comandă</th>
-                    <th style="width: 95px; text-align: center;">Dată</th>
+                    <th style="width: 140px;">Nr. Comandă & Dată</th>
                     <th>Beneficiar / Client B2B</th>
                     <th>Proiect / Obiectiv</th>
                     <th style="text-align: right; width: 95px;">Suprafață</th>
@@ -634,6 +781,62 @@
                 <td style="text-align: center;">ml</td>
                 <td>Etanșare între flanșe la montaj</td>
               </tr>
+              <tr>
+                <td><strong>Tije Filetate Zincate M8</strong></td>
+                <td>Clasa 4.8 / 8.8 (laturi max. &lt; 800 mm)</td>
+                <td style="text-align: right; font-weight: 700;" id="mat-tije-m8">0.0 ml (~0 bare x 2m)</td>
+                <td style="text-align: center;">ml</td>
+                <td>Suspendare tronsoane și etaje ușoare</td>
+              </tr>
+              <tr>
+                <td><strong>Tije Filetate Zincate M10</strong></td>
+                <td>Clasa 8.8 (laturi mari &ge; 800 mm)</td>
+                <td style="text-align: right; font-weight: 700;" id="mat-tije-m10">0.0 ml (~0 bare x 2m)</td>
+                <td style="text-align: center;">ml</td>
+                <td>Suspendare sarcini grele tavan</td>
+              </tr>
+              <tr>
+                <td><strong>Conexpanduri / Piulițe Expandabile</strong></td>
+                <td>Ancore expandabile oțel M8 și M10</td>
+                <td style="text-align: right; font-weight: 700;" id="mat-conexpand">0 buc (M8: 0 | M10: 0)</td>
+                <td style="text-align: center;">buc</td>
+                <td>Ancorare tije filetate în planșee beton</td>
+              </tr>
+              <tr>
+                <td><strong>Profil Susținere 30x20 &amp; 41x41</strong></td>
+                <td>Șină perforată zincată montaj</td>
+                <td style="text-align: right; font-weight: 700;" id="mat-profile-sustinere">0.0 ml (~0 bare x 3m)</td>
+                <td style="text-align: center;">ml</td>
+                <td>Traverse susținere orizontală canal</td>
+              </tr>
+              <tr>
+                <td><strong>Garnituri &amp; Capace Profil</strong></td>
+                <td>Amortizoare EPDM + capace PVC</td>
+                <td style="text-align: right; font-weight: 700;" id="mat-accesorii-profil">0 ml / 0 buc</td>
+                <td style="text-align: center;">set</td>
+                <td>Izolare fonică și protecție capete profil</td>
+              </tr>
+              <tr>
+                <td><strong>Clipsuri / Cleme Îmbinare Flanșă</strong></td>
+                <td>Cleme rapide din oțel arcuit (pas 350 mm)</td>
+                <td style="text-align: right; font-weight: 700;" id="mat-clipsuri">0 buc</td>
+                <td style="text-align: center;">buc</td>
+                <td>Strângere mecanică tronsoane tubulatură</td>
+              </tr>
+              <tr>
+                <td><strong>Mastic Siliconic Acrilic HVAC</strong></td>
+                <td>Cartușe etanșare canale (1 tub / 18 piese)</td>
+                <td style="text-align: right; font-weight: 700;" id="mat-silicon">0 tuburi</td>
+                <td style="text-align: center;">tuburi</td>
+                <td>Etanșare colțuri și îmbinări longitudinale</td>
+              </tr>
+              <tr>
+                <td><strong>Plasă Uniformizare Difuzoare</strong></td>
+                <td>Tablă perforată sită pentru casete plenum</td>
+                <td style="text-align: right; font-weight: 700;" id="mat-plasa-plenum">0.00 m²</td>
+                <td style="text-align: center;">m²</td>
+                <td>Distribuție uniformă debit aer difuzor</td>
+              </tr>
             </tbody>
           </table>
         </div>
@@ -688,6 +891,16 @@
             </select>
             <span style="font-size: 11px; color: var(--text-muted); display: block; margin-top: 4px;">
               Cota aplicată automat ofertelor și centralizatoarelor generate.
+            </span>
+          </div>
+
+          <div class="form-group">
+            <label for="admin-setting-adaos" style="font-weight: 700; display: block; margin-bottom: 6px;">
+              Adaos Comercial Implicit (%):
+            </label>
+            <input type="number" id="admin-setting-adaos" class="form-input" style="width: 100%;" min="0" max="100" step="1" value="0">
+            <span style="font-size: 11px; color: var(--text-muted); display: block; margin-top: 4px;">
+              Procentul de marjă comercială aplicat automat la subtotalul confecției.
             </span>
           </div>
         </div>
@@ -823,6 +1036,70 @@
           </table>
         </div>
       </div>
+
+      <!-- 4. Notificări Automate WhatsApp UltraGSM (Grup Producție) -->
+      <div class="enterprise-card" style="padding: 20px; margin-top: 20px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 10px;">
+          <div>
+            <h2 style="font-size: 15px; font-weight: 700; color: var(--text-main); margin-bottom: 4px; display: flex; align-items: center; gap: 8px;">
+              <svg style="color: #25D366; width: 18px; height: 18px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg>
+              Notificări Automate WhatsApp UltraGSM (Grup Producție)
+            </h2>
+            <p style="font-size: 12px; color: var(--text-muted); margin: 0;">
+              Transmite automat fișa comenzii și link-ul de urmărire live direct pe grupul de WhatsApp al atelierului prin gateway-ul UltraGSM.
+            </p>
+          </div>
+          <div style="display: flex; gap: 8px;">
+            <button id="admin-btn-test-whatsapp" type="button" class="k-btn k-btn-secondary">
+              <svg class="icon-svg" viewBox="0 0 24 24"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg>
+              <span>Trimite Mesaj Test</span>
+            </button>
+            <button id="admin-btn-save-whatsapp" type="button" class="k-btn k-btn-primary">
+              <svg class="icon-svg" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg>
+              <span>Salvează Setări WhatsApp</span>
+            </button>
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; margin-top: 16px;">
+          <div class="form-group" style="grid-column: 1 / -1; display: flex; align-items: center; gap: 10px; background: var(--bg-card-hover); padding: 12px 16px; border-radius: var(--radius-sm); border: 1px solid var(--border-light);">
+            <input type="checkbox" id="admin-whatsapp-enabled" checked style="width: 18px; height: 18px; cursor: pointer;">
+            <label for="admin-whatsapp-enabled" style="font-weight: 700; cursor: pointer; margin: 0;">
+              Activează transmiterea notificărilor automate la plasarea comenzii și la actualizarea stadiului
+            </label>
+          </div>
+
+          <div class="form-group">
+            <label for="admin-whatsapp-api-key" style="font-weight: 700; display: block; margin-bottom: 6px;">
+              API Key / Token UltraGSM:
+            </label>
+            <input type="password" id="admin-whatsapp-api-key" class="form-input" style="width: 100%; font-family: monospace;" placeholder="Introduceți cheia API furnizată de UltraGSM...">
+            <span style="font-size: 11px; color: var(--text-muted); display: block; margin-top: 4px;">
+              Dacă este gol, notificările rulează în mod simulator (testare sigură fără consum credite).
+            </span>
+          </div>
+
+          <div class="form-group">
+            <label for="admin-whatsapp-group-id" style="font-weight: 700; display: block; margin-bottom: 6px;">
+              ID Grup Producție sau Număr Destinatar:
+            </label>
+            <input type="text" id="admin-whatsapp-group-id" class="form-input" style="width: 100%; font-family: monospace;" placeholder="Ex: 120363028374829182@g.us sau +40720000000">
+            <span style="font-size: 11px; color: var(--text-muted); display: block; margin-top: 4px;">
+              ID-ul grupului WhatsApp (format @g.us) sau numărul de telefon al dispeceratului.
+            </span>
+          </div>
+
+          <div class="form-group">
+            <label for="admin-whatsapp-endpoint" style="font-weight: 700; display: block; margin-bottom: 6px;">
+              Endpoint Gateway UltraGSM:
+            </label>
+            <input type="text" id="admin-whatsapp-endpoint" class="form-input" style="width: 100%;" value="https://api.ultragsm.com/send">
+            <span style="font-size: 11px; color: var(--text-muted); display: block; margin-top: 4px;">
+              URL-ul serviciului UltraGSM API pentru expedierea mesajelor WhatsApp.
+            </span>
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- ==================================================================
@@ -922,11 +1199,10 @@
           <table class="enterprise-grid">
             <thead>
               <tr>
-                <th style="width: 120px;">Nr. Comandă</th>
+                <th style="width: 140px;">Nr. Comandă & Dată</th>
                 <th style="width: 70px; text-align: center;">An</th>
                 <th style="min-width: 160px;">Beneficiar / Client</th>
                 <th style="min-width: 160px;">Proiect HVAC</th>
-                <th style="width: 90px;">Data Emiterii</th>
                 <th style="width: 90px; text-align: right;">Suprafață [m²]</th>
                 <th style="width: 80px; text-align: right;">Piese [buc]</th>
                 <th style="width: 100px; text-align: right;">Total [€]</th>
@@ -1059,6 +1335,84 @@
       </div>
     </div>
 
+    <!-- Modal Dialog: Actualizare Stadiu Producție & Jurnal Atelier -->
+    <div id="admin-status-modal" class="app-dialog-overlay" style="display: none;">
+      <div class="app-dialog-card" style="max-width: 600px; width: 100%;">
+        <div class="app-dialog-header" style="padding-bottom: 12px; border-bottom: 1px solid var(--border-light); display: flex; align-items: center; justify-content: space-between;">
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <div class="app-dialog-icon icon-info" style="background: rgba(37,99,235,0.1); color: var(--kronvent-blue);">
+              <svg class="icon-svg" viewBox="0 0 24 24"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
+            </div>
+            <div>
+              <h3 class="app-dialog-title" id="status-modal-order-title" style="margin: 0; font-size: 17px; font-weight: 800;">Stadiu Producție Comandă</h3>
+              <p class="app-dialog-message" id="status-modal-order-sub" style="margin-top: 2px; font-size: 13px; color: var(--text-muted);">Actualizează fluxul de confecționare și notifică atelierul</p>
+            </div>
+          </div>
+          <button id="status-modal-close-btn" class="k-btn-icon-header" title="Închide" type="button">
+            <svg class="icon-svg" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+          </button>
+        </div>
+
+        <div style="padding: 20px; display: flex; flex-direction: column; gap: 16px;">
+          <input type="hidden" id="status-modal-order-id" value="">
+
+          <div class="form-group">
+            <label for="status-modal-select-stage" style="font-weight: 700; display: block; margin-bottom: 6px; font-size: 13px;">
+              Stadiu Curent de Fabricație:
+            </label>
+            <select id="status-modal-select-stage" class="form-select" style="width: 100%; font-weight: 600; padding: 10px 12px;">
+              <option value="inregistrata">1. Înregistrată în Sistem</option>
+              <option value="preluata">2. Preluată în Producție</option>
+              <option value="debitare">3. În Debitare CNC Tablă</option>
+              <option value="asamblare">4. Asamblare & Etanșare Mastic</option>
+              <option value="calitate">5. Control Calitate & Etichetare (QC)</option>
+              <option value="gata">6. Gata de Livrare / Ridicare</option>
+              <option value="livrata">7. Livrată / Comandă Finalizată</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="status-modal-delivery-date" style="font-weight: 700; display: block; margin-bottom: 6px; font-size: 13px;">
+              Dată Estimată de Finalizare / Livrare:
+            </label>
+            <input type="text" id="status-modal-delivery-date" class="form-input" style="width: 100%; padding: 8px 12px;" placeholder="Ex: 15.09.2026">
+            <span style="font-size: 11px; color: var(--text-muted); display: block; margin-top: 4px;">
+              Această dată este vizibilă clientului în timp real pe portalul live de urmărire.
+            </span>
+          </div>
+
+          <div class="form-group">
+            <label for="status-modal-notes" style="font-weight: 700; display: block; margin-bottom: 6px; font-size: 13px;">
+              Notă Tehnică Atelier / Observații:
+            </label>
+            <textarea id="status-modal-notes" class="form-input" style="width: 100%; min-height: 70px; resize: vertical; padding: 8px 12px;" placeholder="Ex: Table debitate pe CNC plasma, trecere la asamblare & siliconare..."></textarea>
+          </div>
+
+          <div style="display: flex; align-items: center; gap: 10px; background: var(--bg-card-hover); padding: 10px 14px; border-radius: var(--radius-sm); border: 1px solid var(--border-light);">
+            <input type="checkbox" id="status-modal-notify-whatsapp" checked style="width: 18px; height: 18px; cursor: pointer;">
+            <label for="status-modal-notify-whatsapp" style="font-size: 13px; font-weight: 600; margin: 0; cursor: pointer;">
+              Notifică automat pe grupul WhatsApp UltraGSM
+            </label>
+          </div>
+        </div>
+
+        <div class="app-dialog-actions" style="border-top: 1px solid var(--border-light); padding: 14px 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+          <a id="status-modal-link-btn" href="#" target="_blank" class="k-btn k-btn-secondary" title="Deschide în pagină nouă link-ul de client">
+            <svg class="icon-svg" viewBox="0 0 24 24"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
+            <span>Deschide Urmărire Live</span>
+          </a>
+
+          <div style="display: flex; gap: 8px;">
+            <button id="status-modal-cancel-btn" type="button" class="k-btn k-btn-secondary">Anulează</button>
+            <button id="status-modal-save-btn" type="button" class="k-btn k-btn-primary">
+              <svg class="icon-svg" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg>
+              <span>Salvează & Actualizează</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
       </div><!-- /.admin-content-container -->
 
       <!-- Admin Footer (Bara de Jos) -->
@@ -1079,6 +1433,6 @@
 
   <script src="apexcharts.min.js"></script>
   <script src="xlsx.full.min.js"></script>
-  <script src="admin.js?v=2026-table-profi-v12"></script>
+  <script src="admin.js?v=2026-bnrpill-v1"></script>
 </body>
 </html>

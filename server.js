@@ -3,6 +3,7 @@ const https = require('https');
 const fs = require('fs');
 const path = require('path');
 const url = require('url');
+const whatsappService = require('./whatsappService');
 
 const PORT = parseInt(process.env.PORT, 10) || 5181;
 const DATA_FILE = path.join(__dirname, 'tubulatura_saved_data.json');
@@ -47,14 +48,25 @@ if (process.env.DATABASE_URL) {
   }
 }
 
-// BNR Live Exchange Rate Cache (30 min TTL)
+// BNR Live Exchange Rate Cache (30 min TTL or 13:00 official fixing update)
 let bnrCache = null;
 let bnrLastFetch = 0;
 
-function fetchBnrRates() {
+function fetchBnrRates(force = false) {
   return new Promise((resolve) => {
     const now = Date.now();
-    if (bnrCache && (now - bnrLastFetch < 30 * 60 * 1000)) {
+    const roDateStr = new Date().toLocaleDateString('ro-RO', { timeZone: 'Europe/Bucharest' });
+    const roHour = parseInt(new Date().toLocaleTimeString('ro-RO', { timeZone: 'Europe/Bucharest', hour: '2-digit', hour12: false }), 10);
+
+    const isCacheYoung = bnrCache && (now - bnrLastFetch < 30 * 60 * 1000);
+    const isPast13 = roHour >= 13;
+    const cacheHasToday = bnrCache && bnrCache.date === roDateStr;
+    const fetchedAfter13Today = bnrCache &&
+      (new Date(bnrLastFetch).toLocaleDateString('ro-RO', { timeZone: 'Europe/Bucharest' }) === roDateStr) &&
+      (parseInt(new Date(bnrLastFetch).toLocaleTimeString('ro-RO', { timeZone: 'Europe/Bucharest', hour: '2-digit', hour12: false }), 10) >= 13);
+
+    // Daca nu este fortat si avem cache valid din ziua curenta dupa ora 13:00
+    if (!force && isCacheYoung && (!isPast13 || cacheHasToday || fetchedAfter13Today)) {
       return resolve(bnrCache);
     }
 
@@ -65,44 +77,99 @@ function fetchBnrRates() {
         try {
           const cubeMatch = data.match(/<Cube date="([^"]+)">/);
           const dateStr = cubeMatch ? cubeMatch[1] : new Date().toISOString().slice(0, 10);
+          
           const eurMatch = data.match(/<Rate currency="EUR">([0-9.]+)<\/Rate>/);
-          const eurRate = eurMatch ? parseFloat(eurMatch[1]) : 5.2542;
+          const usdMatch = data.match(/<Rate currency="USD">([0-9.]+)<\/Rate>/);
+          const gbpMatch = data.match(/<Rate currency="GBP">([0-9.]+)<\/Rate>/);
+          const chfMatch = data.match(/<Rate currency="CHF">([0-9.]+)<\/Rate>/);
+          const mdlMatch = data.match(/<Rate currency="MDL">([0-9.]+)<\/Rate>/);
+
+          const eurRate = eurMatch ? parseFloat(eurMatch[1]) : 5.2537;
+          const usdRate = usdMatch ? parseFloat(usdMatch[1]) : 4.5164;
+          const gbpRate = gbpMatch ? parseFloat(gbpMatch[1]) : 6.1178;
+          const chfRate = chfMatch ? parseFloat(chfMatch[1]) : 5.5707;
+          const mdlRate = mdlMatch ? parseFloat(mdlMatch[1]) : 0.2620;
+
           const parts = dateStr.split('-');
           const formattedDate = parts.length === 3 ? `${parts[2]}.${parts[1]}.${parts[0]}` : dateStr;
+          
+          const monthNamesRo = ['Ianuarie', 'Februarie', 'Martie', 'Aprilie', 'Mai', 'Iunie', 'Iulie', 'August', 'Septembrie', 'Octombrie', 'Noiembrie', 'Decembrie'];
+          const dayNum = parts.length === 3 ? parseInt(parts[2], 10) : 10;
+          const monthIdx = parts.length === 3 ? parseInt(parts[1], 10) - 1 : 8;
+          const yearNum = parts.length === 3 ? parts[0] : '2026';
+          const dateFormatted = `${dayNum} ${monthNamesRo[monthIdx] || ''} ${yearNum}`;
 
           bnrCache = {
             success: true,
             currency: 'EUR',
             rate: eurRate,
             date: formattedDate,
+            dateFormatted: dateFormatted,
             rawDate: dateStr,
+            rates: {
+              EUR: eurRate,
+              USD: usdRate,
+              GBP: gbpRate,
+              CHF: chfRate,
+              MDL: mdlRate
+            },
+            lastFetchIso: new Date().toISOString(),
+            lastFetchRo: new Date().toLocaleTimeString('ro-RO', { timeZone: 'Europe/Bucharest' }),
             source: 'Banca Națională a României (curs.bnr.ro)'
           };
           bnrLastFetch = now;
-          console.log(`[BNR SYNC] Curs EUR actualizat: 1 EUR = ${eurRate} RON la data ${formattedDate}`);
+          console.log(`[BNR SYNC] Cursuri actualizate: EUR=${eurRate}, USD=${usdRate}, GBP=${gbpRate}, CHF=${chfRate}, MDL=${mdlRate} la data ${formattedDate}`);
           resolve(bnrCache);
         } catch (e) {
           console.error('[BNR ERROR] Eroare parsare BNR XML:', e.message);
-          resolve(getFallbackBnr());
+          resolve(bnrCache || getFallbackBnr());
         }
       });
     }).on('error', (err) => {
       console.error('[BNR ERROR] Eroare conectare curs.bnr.ro:', err.message);
-      resolve(getFallbackBnr());
+      resolve(bnrCache || getFallbackBnr());
     });
   });
 }
 
 function getFallbackBnr() {
+  const d = new Date();
+  const todayRo = d.toLocaleDateString('ro-RO', { timeZone: 'Europe/Bucharest' });
   return {
     success: true,
     currency: 'EUR',
-    rate: 5.2542,
-    date: '09.09.2026',
-    rawDate: '2026-09-09',
+    rate: 5.2537,
+    date: todayRo || '10.09.2026',
+    dateFormatted: '10 Septembrie 2026',
+    rawDate: new Date().toISOString().slice(0, 10),
+    rates: {
+      EUR: 5.2537,
+      USD: 4.5164,
+      GBP: 6.1178,
+      CHF: 5.5707,
+      MDL: 0.2620
+    },
     source: 'Banca Națională a României'
   };
 }
+
+// Sincronizare automată zilnică la ora 13:00 (când BNR publică cursul oficial de referință)
+setInterval(() => {
+  try {
+    const d = new Date();
+    const roHour = parseInt(d.toLocaleTimeString('ro-RO', { timeZone: 'Europe/Bucharest', hour: '2-digit', hour12: false }), 10);
+    const roDate = d.toLocaleDateString('ro-RO', { timeZone: 'Europe/Bucharest' });
+    if (roHour >= 13) {
+      const needsTodayRate = !bnrCache || bnrCache.date !== roDate;
+      if (needsTodayRate) {
+        console.log(`[BNR 13:00 CRON] Declanșare automată sincronizare BNR la ora 13:00 (data ${roDate})...`);
+        fetchBnrRates(true);
+      }
+    }
+  } catch (err) {
+    console.error('[BNR CRON ERROR]:', err);
+  }
+}, 60000);
 
 const MIME_TYPES = {
   '.html': 'text/html; charset=utf-8',
@@ -195,12 +262,13 @@ const server = http.createServer((req, res) => {
   }
 
   if (pathname === '/api/bnr') {
-    fetchBnrRates().then(rates => {
+    const force = parsedUrl.query && (parsedUrl.query.force === 'true' || parsedUrl.query.force === '1');
+    fetchBnrRates(force).then(rates => {
       res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
       res.end(JSON.stringify(rates));
     }).catch(err => {
       res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
-      res.end(JSON.stringify(getFallbackBnr()));
+      res.end(JSON.stringify(bnrCache || getFallbackBnr()));
     });
     return;
   }
@@ -468,6 +536,9 @@ const server = http.createServer((req, res) => {
             pData.settings.pretMpRectangular = payload.settings.pretMpRectangular || pData.settings.pretMpRectangular;
             pData.settings.cursEur = payload.settings.cursEur || pData.settings.cursEur;
             pData.settings.tva = payload.settings.tva !== undefined ? payload.settings.tva : pData.settings.tva;
+            if (payload.settings.adaosComercial !== undefined) {
+              pData.settings.adaosComercial = payload.settings.adaosComercial;
+            }
             saveProjectData(pData);
           }
 
@@ -482,11 +553,20 @@ const server = http.createServer((req, res) => {
     }
   }
 
-  if (pathname === '/api/orders') {
+  // WhatsApp UltraGSM Settings API
+  if (pathname === '/api/whatsapp/config') {
     const yData = getYearsData();
     if (req.method === 'GET') {
       res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
-      res.end(JSON.stringify(yData.orders || []));
+      res.end(JSON.stringify({
+        success: true,
+        config: yData.whatsappConfig || {
+          enabled: true,
+          apiKey: '',
+          groupId: '',
+          endpointUrl: 'https://api.ultragsm.com/send'
+        }
+      }));
       return;
     }
 
@@ -496,26 +576,143 @@ const server = http.createServer((req, res) => {
       req.on('end', () => {
         try {
           const payload = JSON.parse(body);
+          yData.whatsappConfig = {
+            enabled: payload.enabled !== false,
+            apiKey: (payload.apiKey || '').trim(),
+            groupId: (payload.groupId || '').trim(),
+            endpointUrl: (payload.endpointUrl || 'https://api.ultragsm.com/send').trim()
+          };
+          saveYearsData(yData);
+
+          // Sincronizare și în tubulatura_saved_data.json
+          const pData = getProjectData();
+          pData.settings = pData.settings || {};
+          pData.settings.whatsappConfig = yData.whatsappConfig;
+          saveProjectData(pData);
+
+          res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+          res.end(JSON.stringify({ success: true, message: 'Configurația WhatsApp UltraGSM a fost salvată!', config: yData.whatsappConfig }));
+        } catch (err) {
+          res.writeHead(400, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ success: false, error: err.message }));
+        }
+      });
+      return;
+    }
+  }
+
+  if (pathname === '/api/whatsapp/test' && req.method === 'POST') {
+    let body = '';
+    req.on('data', chunk => { body += chunk; });
+    req.on('end', async () => {
+      try {
+        const payload = JSON.parse(body);
+        const yData = getYearsData();
+        const cfg = {
+          enabled: payload.enabled !== false,
+          apiKey: (payload.apiKey !== undefined ? payload.apiKey : yData.whatsappConfig?.apiKey || '').trim(),
+          groupId: (payload.groupId !== undefined ? payload.groupId : yData.whatsappConfig?.groupId || '').trim(),
+          endpointUrl: (payload.endpointUrl !== undefined ? payload.endpointUrl : yData.whatsappConfig?.endpointUrl || 'https://api.ultragsm.com/send').trim()
+        };
+
+        const result = await whatsappService.testWhatsAppConnection(cfg);
+        res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+        res.end(JSON.stringify({ success: true, result }));
+      } catch (err) {
+        res.writeHead(500, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: false, error: err.message }));
+      }
+    });
+    return;
+  }
+
+  // Orders Management & Live Tracking
+  if (pathname === '/api/orders' || pathname.startsWith('/api/orders/')) {
+    const yData = getYearsData();
+
+    // GET single order or all orders
+    if (req.method === 'GET') {
+      let targetId = parsedUrl.query.id;
+      if (!targetId && pathname.startsWith('/api/orders/') && pathname !== '/api/orders/update-status') {
+        targetId = pathname.replace('/api/orders/', '').trim();
+      }
+
+      if (targetId) {
+        const order = (yData.orders || []).find(o => o.id === targetId || o.orderNumber === targetId);
+        if (!order) {
+          res.writeHead(404, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ success: false, error: 'Comanda nu a fost găsită' }));
+          return;
+        }
+        res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+        res.end(JSON.stringify({ success: true, order }));
+        return;
+      }
+
+      res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+      res.end(JSON.stringify(yData.orders || []));
+      return;
+    }
+
+    if (req.method === 'POST' && pathname === '/api/orders') {
+      let body = '';
+      req.on('data', chunk => { body += chunk; });
+      req.on('end', async () => {
+        try {
+          const payload = JSON.parse(body);
           const currentYear = yData.activeYear || 2026;
           const yearKey = String(currentYear);
           const orderIdx = ((yData.years[yearKey] && yData.years[yearKey].ordersCount) || (yData.orders || []).length) + 1;
           const orderNumber = `${currentYear}-${String(orderIdx).padStart(5, '0')}`;
+          const orderId = `CMD-${orderNumber}`;
+
+          // Calcul data estimată de livrare implicită (+4 zile lucrătoare)
+          const now = new Date();
+          const defaultDelivery = new Date(now.getTime() + 4 * 24 * 60 * 60 * 1000);
+          const defaultDeliveryStr = `${String(defaultDelivery.getDate()).padStart(2, '0')}.${String(defaultDelivery.getMonth() + 1).padStart(2, '0')}.${defaultDelivery.getFullYear()}`;
+          const dataEstimata = payload.dataEstimataLivrare || defaultDeliveryStr;
+
+          const hostHeader = req.headers.host || `localhost:${PORT}`;
+          const protocol = req.headers['x-forwarded-proto'] || 'http';
+          const trackingUrl = `${protocol}://${hostHeader}/comanda.html?id=${encodeURIComponent(orderId)}`;
+
+          const nowIso = now.toISOString();
+          const initialTimeline = payload.timeline && Array.isArray(payload.timeline) && payload.timeline.length > 0
+            ? payload.timeline
+            : [
+                {
+                  status: 'preluata',
+                  title: 'Preluată în Producție',
+                  date: nowIso,
+                  note: 'Comanda a fost recepționată și confirmată în sistemul KronVent HVAC.'
+                }
+              ];
 
           const newOrder = {
-            id: `CMD-${orderNumber}`,
+            id: orderId,
             orderNumber: orderNumber,
             year: currentYear,
             client: payload.client || 'Beneficiar Nespecificat',
+            cui: payload.cui || '',
+            telefon: payload.telefon || payload.contactTel || '',
+            email: payload.email || '',
             project: payload.project || 'Proiect Standard HVAC',
-            date: payload.date || new Date().toISOString().slice(0, 10),
-            status: 'CONFIRMED',
+            date: payload.date || now.toLocaleDateString('ro-RO'),
+            status: payload.status || 'preluata', // 'preluata' | 'debitare' | 'asamblare' | 'calitate' | 'gata' | 'livrata'
+            dataEstimataLivrare: dataEstimata,
+            timeline: initialTimeline,
             totalEur: payload.totalEur || 0,
             totalRon: payload.totalRon || 0,
+            subtotalEur: payload.subtotalEur || payload.totalEur || 0,
+            adaosPercent: payload.adaosPercent || 0,
+            adaosValEur: payload.adaosValEur || 0,
+            taxableBaseEur: payload.taxableBaseEur || payload.totalEur || 0,
+            tvaValEur: payload.tvaValEur || 0,
             totalMp: payload.totalMp || 0,
             totalPiese: payload.totalPiese || 0,
             calculation_snapshot: payload.calculation_snapshot || {
               year: currentYear,
-              timestamp: new Date().toISOString(),
+              timestamp: nowIso,
               settings: yData.years[yearKey]?.settings || {},
               cursEur: yData.years[yearKey]?.settings?.cursEur || 5.2542
             },
@@ -527,8 +724,22 @@ const server = http.createServer((req, res) => {
           if (yData.years[yearKey]) yData.years[yearKey].ordersCount = orderIdx;
           saveYearsData(yData);
 
+          // Transmitere automată WhatsApp pe grupul de producție UltraGSM
+          const waConfig = yData.whatsappConfig || (getProjectData().settings?.whatsappConfig) || { enabled: true };
+          const waMsg = whatsappService.formatOrderWhatsAppMessage(newOrder, trackingUrl);
+          whatsappService.sendUltraGsmMessage(waConfig, waMsg).then(waRes => {
+            console.log(`[WHATSAPP DISPATCH] Comanda ${orderId} notificată:`, waRes.simulated ? 'Simulare reușită' : (waRes.success ? 'Succes UltraGSM' : 'Eroare'));
+          }).catch(err => {
+            console.error('[WHATSAPP DISPATCH ERROR]:', err.message);
+          });
+
           res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
-          res.end(JSON.stringify({ success: true, order: newOrder }));
+          res.end(JSON.stringify({
+            success: true,
+            order: newOrder,
+            trackingUrl: trackingUrl,
+            message: `Comanda ${orderId} a fost înregistrată cu succes!`
+          }));
         } catch (err) {
           res.writeHead(400, { 'Content-Type': 'application/json' });
           res.end(JSON.stringify({ success: false, error: err.message }));
@@ -541,10 +752,10 @@ const server = http.createServer((req, res) => {
   if (pathname === '/api/orders/update-status' && req.method === 'POST') {
     let body = '';
     req.on('data', chunk => { body += chunk; });
-    req.on('end', () => {
+    req.on('end', async () => {
       try {
         const payload = JSON.parse(body);
-        const { orderId, status } = payload;
+        const { orderId, status, dataEstimataLivrare, note, notifyWhatsApp } = payload;
         const yData = getYearsData();
         const order = (yData.orders || []).find(o => o.id === orderId || o.orderNumber === orderId);
         if (!order) {
@@ -552,10 +763,67 @@ const server = http.createServer((req, res) => {
           res.end(JSON.stringify({ success: false, error: 'Comanda nu a fost găsită' }));
           return;
         }
+
+        const statusLabels = {
+          'inregistrata': 'Înregistrată',
+          'preluata': 'Preluată în Producție',
+          'debitare': 'În Debitare CNC',
+          'asamblare': 'Asamblare & Etanșare',
+          'calitate': 'Control Calitate (QC)',
+          'gata': 'Gata de Livrare / Ridicare',
+          'livrata': 'Comandă Livrată / Finalizată'
+        };
+
+        const newStatusTitle = statusLabels[status] || status;
         order.status = status;
+        if (dataEstimataLivrare) {
+          order.dataEstimataLivrare = dataEstimataLivrare;
+        }
+
+        if (!Array.isArray(order.timeline)) {
+          order.timeline = [
+            {
+              status: 'preluata',
+              title: 'Preluată în Producție',
+              date: order.date || new Date().toISOString(),
+              note: 'Comandă înregistrată în atelier.'
+            }
+          ];
+        }
+
+        order.timeline.push({
+          status: status,
+          title: newStatusTitle,
+          date: new Date().toISOString(),
+          note: (note || '').trim()
+        });
+
         saveYearsData(yData);
+
+        // Notificare WhatsApp automată la schimbarea statusului (dacă nu e dezactivată explicit)
+        let waResult = null;
+        if (notifyWhatsApp !== false) {
+          const hostHeader = req.headers.host || `localhost:${PORT}`;
+          const protocol = req.headers['x-forwarded-proto'] || 'http';
+          const trackingUrl = `${protocol}://${hostHeader}/comanda.html?id=${encodeURIComponent(order.id)}`;
+          const waConfig = yData.whatsappConfig || (getProjectData().settings?.whatsappConfig) || { enabled: true };
+          const updateMsg = whatsappService.formatStatusUpdateWhatsAppMessage(
+            order,
+            newStatusTitle,
+            order.dataEstimataLivrare || '',
+            note || '',
+            trackingUrl
+          );
+          try {
+            waResult = await whatsappService.sendUltraGsmMessage(waConfig, updateMsg);
+            console.log(`[WHATSAPP STATUS UPDATE] Status ${status} pentru ${order.id}:`, waResult.simulated ? 'Simulare OK' : (waResult.success ? 'UltraGSM OK' : 'Eroare'));
+          } catch (e) {
+            console.error('[WHATSAPP STATUS UPDATE ERROR]:', e.message);
+          }
+        }
+
         res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
-        res.end(JSON.stringify({ success: true, order }));
+        res.end(JSON.stringify({ success: true, order, waResult }));
       } catch (err) {
         res.writeHead(400, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ success: false, error: err.message }));
@@ -563,6 +831,7 @@ const server = http.createServer((req, res) => {
     });
     return;
   }
+
 
   // Static File Serving
   let filePath = path.join(__dirname, pathname === '/' ? 'index.html' : pathname);
@@ -602,4 +871,6 @@ server.listen(PORT, '0.0.0.0', () => {
   console.log(`  -> http://localhost:${PORT}`);
   console.log(`  -> http://127.0.0.1:${PORT}`);
   console.log(`=======================================================`);
+  // Inițializare curs oficial BNR la pornire
+  fetchBnrRates(true).catch(e => console.error('[BNR INIT ERR]:', e));
 });

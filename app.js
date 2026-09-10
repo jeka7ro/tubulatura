@@ -685,6 +685,7 @@ const RECTANGULAR_CONFIGS = {
       const maxDim = Math.max(A, B, H);
       const grosime = maxDim <= 500 ? '0.6' : '0.8';
       const flansa = (A + B) * 2 > 3500 ? 'FLANSA30' : 'FLANSA20';
+      const plasaUniformizare = parseFloat((Math.sqrt(Math.pow(A / 1000, 2) + Math.pow(H / 1000, 2)) * (B / 1000) * cant).toFixed(4));
       return {
         dimText: `A=${A}; B=${B}; H=${H}; Stut=Ø${d} (${nStut}buc)`,
         sUnit: parseFloat(sUnit.toFixed(4)),
@@ -695,7 +696,8 @@ const RECTANGULAR_CONFIGS = {
         flansa,
         mlFlansa: parseFloat(((A + B) * 2 / 1000 * cant).toFixed(2)),
         coltari: cant * 4,
-        greutate: parseFloat((sTot * (grosime === '0.6' ? 4.71 : 6.28)).toFixed(2))
+        greutate: parseFloat((sTot * (grosime === '0.6' ? 4.71 : 6.28)).toFixed(2)),
+        plasaUniformizare
       };
     }
   }
@@ -998,30 +1000,184 @@ const CIRCULAR_CONFIGS = {
 };
 
 // ====================================================================
-// Fetch Live BNR Official Exchange Rate
-async function fetchAndApplyBnrRate() {
+// Fetch Live BNR Official Exchange Rate (suportă force și refresh manual)
+async function fetchAndApplyBnrRate(force = false) {
+  const btnRefresh = document.getElementById('btn-refresh-bnr-header');
+  const btnRefreshPop = document.getElementById('btn-refresh-bnr-popover');
+  [btnRefresh, btnRefreshPop].forEach(btn => {
+    if (btn) {
+      btn.classList.add('spinning');
+      btn.disabled = true;
+    }
+  });
+
   try {
-    const res = await fetch('/api/bnr');
+    const url = force ? `/api/bnr?force=true&t=${Date.now()}` : '/api/bnr';
+    const res = await fetch(url);
     if (res.ok) {
       const data = await res.json();
-      if (data && data.rate) {
-        state.settings.cursEur = data.rate;
-        state.settings.cursBnrDate = data.date || '09.09.2026';
+      if (data && (data.rates || data.rate)) {
+        const eurRate = data.rates?.EUR || data.rate || 5.2537;
+        const usdRate = data.rates?.USD || 4.5164;
+        const gbpRate = data.rates?.GBP || 6.1178;
+        const chfRate = data.rates?.CHF || 5.5707;
+        const mdlRate = data.rates?.MDL || 0.2620;
 
+        state.settings.cursEur = eurRate;
+        state.settings.cursBnrDate = data.date || '10.09.2026';
+        state.settings.cursBnrDateFormatted = data.dateFormatted || '10 Septembrie 2026';
+
+        // Update Nav Pill elements
         const dateEl = document.getElementById('header-bnr-date');
-        const numEl = document.getElementById('header-bnr-num');
         if (dateEl) dateEl.textContent = state.settings.cursBnrDate;
-        if (numEl) numEl.textContent = `${data.rate.toFixed(4)} RON`;
 
-        console.log(`[BNR LIVE] 1 EUR = ${data.rate} RON (${state.settings.cursBnrDate})`);
+        const eurEl = document.getElementById('header-bnr-eur');
+        if (eurEl) eurEl.textContent = eurRate.toFixed(4);
+
+        const usdEl = document.getElementById('header-bnr-usd');
+        if (usdEl) usdEl.textContent = usdRate.toFixed(4);
+
+        const numEl = document.getElementById('header-bnr-num');
+        if (numEl) numEl.textContent = `${eurRate.toFixed(4)} RON`;
+
+        // Update Popover elements (Exact conform machetei cerute)
+        const popDate = document.getElementById('bnr-popover-date-long');
+        if (popDate) popDate.textContent = state.settings.cursBnrDateFormatted;
+
+        const popEur = document.getElementById('popover-rate-eur');
+        if (popEur) popEur.textContent = eurRate.toFixed(4);
+
+        const popSubEur = document.getElementById('popover-subcalc-eur');
+        if (popSubEur) popSubEur.textContent = `1 EUR = ${eurRate.toFixed(4)} lei`;
+
+        const popUsd = document.getElementById('popover-rate-usd');
+        if (popUsd) popUsd.textContent = usdRate.toFixed(4);
+
+        const popSubUsd = document.getElementById('popover-subcalc-usd');
+        if (popSubUsd) popSubUsd.textContent = `1 USD = ${usdRate.toFixed(4)} lei`;
+
+        const popGbp = document.getElementById('popover-rate-gbp');
+        if (popGbp) popGbp.textContent = gbpRate.toFixed(4);
+
+        const popChf = document.getElementById('popover-rate-chf');
+        if (popChf) popChf.textContent = chfRate.toFixed(4);
+
+        const popMdl = document.getElementById('popover-rate-mdl');
+        if (popMdl) popMdl.textContent = mdlRate.toFixed(4);
+
+        console.log(`[BNR LIVE] 1 EUR = ${eurRate} RON | 1 USD = ${usdRate} RON (${state.settings.cursBnrDate})`);
         if (typeof updateKPICards === 'function') updateKPICards();
         if (typeof updateLiveCalculation === 'function') updateLiveCalculation();
         if (typeof applyFiltersAndRender === 'function') applyFiltersAndRender();
+
+        if (force && typeof showToast === 'function') {
+          showToast(`Curs BNR actualizat: 1 EUR = ${eurRate.toFixed(4)} RON | 1 USD = ${usdRate.toFixed(4)} RON (${state.settings.cursBnrDate})`, 'success');
+        }
       }
     }
   } catch (err) {
     console.warn('Nu s-a putut prelua cursul BNR:', err);
+    if (force && typeof showToast === 'function') {
+      showToast('Eroare la actualizarea cursului BNR: ' + err.message, 'error');
+    }
+  } finally {
+    setTimeout(() => {
+      [btnRefresh, btnRefreshPop].forEach(btn => {
+        if (btn) {
+          btn.classList.remove('spinning');
+          btn.disabled = false;
+        }
+      });
+    }, 350);
   }
+}
+
+// Configurare buton refresh manual BNR, dropdown popover și planificare actualizare zilnică la ora 13:00
+function setupBnrHeaderScheduler() {
+  const bnrBadge = document.getElementById('bnr-header-badge');
+  const popover = document.getElementById('bnr-popover-dropdown');
+  const btnRefresh = document.getElementById('btn-refresh-bnr-header');
+  const btnRefreshPop = document.getElementById('btn-refresh-bnr-popover');
+
+  if (bnrBadge && popover) {
+    bnrBadge.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const isOpen = popover.classList.toggle('open');
+      bnrBadge.classList.toggle('active', isOpen);
+      bnrBadge.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+      popover.setAttribute('aria-hidden', isOpen ? 'false' : 'true');
+    });
+
+    document.addEventListener('click', (e) => {
+      if (!popover.contains(e.target) && !bnrBadge.contains(e.target)) {
+        popover.classList.remove('open');
+        bnrBadge.classList.remove('active');
+        bnrBadge.setAttribute('aria-expanded', 'false');
+        popover.setAttribute('aria-hidden', 'true');
+      }
+    });
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && popover.classList.contains('open')) {
+        popover.classList.remove('open');
+        bnrBadge.classList.remove('active');
+        bnrBadge.setAttribute('aria-expanded', 'false');
+        popover.setAttribute('aria-hidden', 'true');
+      }
+    });
+  }
+
+  [btnRefresh, btnRefreshPop].forEach(btn => {
+    if (btn) {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        fetchAndApplyBnrRate(true);
+      });
+    }
+  });
+
+  // Planificare actualizare la ora 13:00 (când BNR publică cursul oficial)
+  function scheduleNext13() {
+    const now = new Date();
+    const roHour = parseInt(now.toLocaleTimeString('ro-RO', { timeZone: 'Europe/Bucharest', hour: '2-digit', hour12: false }), 10);
+    const roMin = parseInt(now.toLocaleTimeString('ro-RO', { timeZone: 'Europe/Bucharest', minute: '2-digit', hour12: false }), 10);
+    const roSec = parseInt(now.toLocaleTimeString('ro-RO', { timeZone: 'Europe/Bucharest', second: '2-digit', hour12: false }), 10);
+
+    let msUntil13 = 0;
+    if (roHour < 13) {
+      const targetSec = 13 * 3600 + 5; // 13:00:05
+      const currentSec = roHour * 3600 + roMin * 60 + roSec;
+      msUntil13 = (targetSec - currentSec) * 1000;
+    } else {
+      const remainingTodaySec = 86400 - (roHour * 3600 + roMin * 60 + roSec);
+      const tomorrowSec = 13 * 3600 + 5;
+      msUntil13 = (remainingTodaySec + tomorrowSec) * 1000;
+    }
+
+    console.log(`[BNR CLIENT CRON] Următoarea actualizare BNR programată la ora 13:00 (peste ${Math.round(msUntil13 / 60000)} minute).`);
+
+    setTimeout(async () => {
+      console.log('[BNR CLIENT CRON] Ora 13:00 atinsă! Se actualizează automat cursul BNR...');
+      await fetchAndApplyBnrRate(true);
+      setTimeout(() => fetchAndApplyBnrRate(false), 2 * 60 * 1000);
+      setTimeout(() => fetchAndApplyBnrRate(false), 5 * 60 * 1000);
+      scheduleNext13();
+    }, msUntil13);
+  }
+
+  scheduleNext13();
+
+  // Verificare periodică (la fiecare 5 minute) dacă a trecut de ora 13:00 și data este mai veche decât azi
+  setInterval(() => {
+    const now = new Date();
+    const roHour = parseInt(now.toLocaleTimeString('ro-RO', { timeZone: 'Europe/Bucharest', hour: '2-digit', hour12: false }), 10);
+    const roDate = now.toLocaleDateString('ro-RO', { timeZone: 'Europe/Bucharest' });
+    const currentShownDate = document.getElementById('header-bnr-date')?.textContent?.trim();
+    if (roHour >= 13 && currentShownDate && currentShownDate !== roDate) {
+      console.log(`[BNR CLIENT CRON] Data curentă (${roDate}) diferă de data afișată (${currentShownDate}) după ora 13:00. Se actualizează cursul.`);
+      fetchAndApplyBnrRate(false);
+    }
+  }, 5 * 60 * 1000);
 }
 
 // ====================================================================
@@ -1029,6 +1185,7 @@ async function fetchAndApplyBnrRate() {
 // ====================================================================
 document.addEventListener('DOMContentLoaded', async () => {
   try { await fetchAndApplyBnrRate(); } catch (e) { console.error('fetchAndApplyBnrRate err:', e); }
+  try { setupBnrHeaderScheduler(); } catch (e) { console.error('setupBnrHeaderScheduler err:', e); }
   try { setupThemeToggle(); } catch (e) { console.error('setupThemeToggle err:', e); }
   try { setupLogout(); } catch (e) { console.error('setupLogout err:', e); }
   try { setupTabs(); } catch (e) { console.error('setupTabs err:', e); }
@@ -1044,6 +1201,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     console.error('loadInitialData err:', e);
   }
 
+  try { renderProductCatalog(); } catch (e) { console.error('renderProductCatalog err:', e); }
   try { renderPieceSelectorGrid(); } catch (e) { console.error('renderPieceSelectorGrid err:', e); }
   try { renderPieceForm(); } catch (e) { console.error('renderPieceForm err:', e); }
   try { updateStep1SummaryBanner(); } catch (e) { console.error('updateStep1SummaryBanner err:', e); }
@@ -1112,25 +1270,390 @@ function setupLogout() {
   });
 }
 
-// Setup View Switching (Configurator View <-> Coș de Cumpărături)
+// ====================================================================
+// CATALOG PRODUSE HVAC (PAGINA DE START & PREZENTARE GAMĂ FABRICAȚIE)
+// ====================================================================
+const HVAC_CATALOG_ITEMS = [
+  // 1. Tubulatură Rectangulară
+  {
+    code: 'CRD',
+    name: 'Canal Drept Rectangular',
+    type: 'rectangular',
+    category: 'Tubulatură Rectangulară',
+    norm: 'SR EN 1505',
+    img: 'assets/icons3d/CRD.png',
+    desc: 'Tronson liniar de tubulatură din tablă zincată pentru magistrale și ramificații de distribuție aer.',
+    specs: { 'Material': 'Tablă DX51D+Z275 (0.6 - 1.0 mm)', 'Flanșe': 'MEZ 20 / 30 mm cu colțari', 'Lungime': 'Standard L=1250 mm sau la cotă' }
+  },
+  {
+    code: 'CR',
+    name: 'Cot Rectangular 90° / 45°',
+    type: 'rectangular',
+    category: 'Tubulatură Rectangulară',
+    norm: 'SR EN 1505',
+    img: 'assets/icons3d/CR.png',
+    desc: 'Schimbare curbă de direcție la 90° sau unghi variabil (15°-90°) cu rază interioară R=150mm.',
+    specs: { 'Unghiuri': '90°, 60°, 45°, 30°, 15°', 'Flanșe': 'Profil MEZ 20 / 30 mm', 'Rază': 'Standard R=150 mm' }
+  },
+  {
+    code: 'CRDr',
+    name: 'Cot Rectangular Drept (90°)',
+    type: 'rectangular',
+    category: 'Tubulatură Rectangulară',
+    norm: 'SR EN 1505',
+    img: 'assets/icons3d/CRDr.png',
+    desc: 'Cot rectangular cu profil interior drept, optimizat pentru spații tehnice înguste și traversări.',
+    specs: { 'Geometrie': 'Cot rectangular interior 90°', 'Flanșe': 'Profil MEZ 20 / 30 mm', 'Montaj': 'Compatibil șantier' }
+  },
+  {
+    code: 'CRDir',
+    name: 'Cot cu Dirijori Aerodinamici',
+    type: 'rectangular',
+    category: 'Tubulatură Rectangulară',
+    norm: 'SR EN 1505',
+    img: 'assets/icons3d/CRDir.png',
+    desc: 'Prevăzut cu lamele profilate de ghidaj aerodinamic pentru diminuarea căderilor de presiune la debite mari.',
+    specs: { 'Eficiență': 'Cădere redusă de presiune', 'Dirijori': 'Lamele din tablă zincată', 'Utilizare': 'Viteze aer > 6 m/s' }
+  },
+  {
+    code: 'TR',
+    name: 'Teu Rectangular 90°',
+    type: 'rectangular',
+    category: 'Tubulatură Rectangulară',
+    norm: 'SR EN 1505',
+    img: 'assets/icons3d/TR.png',
+    desc: 'Ramificație perpendiculară la 90° pentru racordare coloane secundare de ventilație și climatizare.',
+    specs: { 'Ieșire': 'Branșament 90° cu flanșă', 'Grosime': '0.6 - 1.0 mm conform ariei', 'Etanșeitate': 'Clasa B / C' }
+  },
+  {
+    code: 'PDE',
+    name: 'Piesă Deviație / Etaj',
+    type: 'rectangular',
+    category: 'Tubulatură Rectangulară',
+    norm: 'SR EN 1505',
+    img: 'assets/icons3d/PDE.png',
+    desc: 'Tranziție plană utilizată pentru ocolirea grinzilor, stâlpilor sau canalizărilor paralele de cabluri.',
+    specs: { 'Deplasare': 'Configurabilă pe axa X sau Y', 'Lungime': 'L adaptabil la cota șantierului', 'Etanșare': 'Mastic siliconic' }
+  },
+  {
+    code: 'Red',
+    name: 'Reducție Simetrică / Asimetrică',
+    type: 'rectangular',
+    category: 'Tubulatură Rectangulară',
+    norm: 'SR EN 1505',
+    img: 'assets/icons3d/Red.png',
+    desc: 'Element tronconic pentru adaptarea secțiunii în trepte, păstrând viteza de curgere a aerului.',
+    specs: { 'Tip': 'Simetrică sau cu fund plat', 'Flanșe': 'MEZ 20/30 mm la ambele capete', 'Calcul': 'Optimizare debit' }
+  },
+  {
+    code: 'YAKA',
+    name: 'Piesă Racord YAKA',
+    type: 'rectangular',
+    category: 'Tubulatură Rectangulară',
+    norm: 'SR EN 1505',
+    img: 'assets/icons3d/YAKA.png',
+    desc: 'Ștuț rectangular cu buză perimetrală pentru racordare directă pe canalul de tablă existent.',
+    specs: { 'Fixare': 'Prindere directă cu autoforante', 'Buză': 'Flanșă de etanșare', 'Etanșare': 'Garnitură celulară EPDM' }
+  },
+  {
+    code: 'R2C',
+    name: 'Ramificație Bilaterală (2 Coturi)',
+    type: 'rectangular',
+    category: 'Tubulatură Rectangulară',
+    norm: 'SR EN 1505',
+    img: 'assets/icons3d/R2C.png',
+    desc: 'Separare simetrică bilaterală a debitului de aer spre două ramuri paralele opuse.',
+    specs: { 'Configurație': '2 coturi opuse integrate', 'Secțiuni': 'Dimensiuni independente pe brațe', 'Aplicații': 'Distribuție etaje' }
+  },
+  {
+    code: 'RCC',
+    name: 'Ramificație Laterală (Cot + Canal)',
+    type: 'rectangular',
+    category: 'Tubulatură Rectangulară',
+    norm: 'SR EN 1505',
+    img: 'assets/icons3d/RCC.png',
+    desc: 'Piesă compusă cu trecere continuă pe magistrală și deviație laterală curbă integrată.',
+    specs: { 'Geometrie': 'Cot integrat + tronson liniar', 'Echilibrare': 'Debit proporțional ramificat', 'Montaj': 'Flanșe MEZ 20/30' }
+  },
+  {
+    code: 'RP',
+    name: 'Ramificație Pantalon',
+    type: 'rectangular',
+    category: 'Tubulatură Rectangulară',
+    norm: 'SR EN 1505',
+    img: 'assets/icons3d/RP.png',
+    desc: 'Divizare în formă de V cu unghiuri optime pentru prevenirea turbulențelor dinamice.',
+    specs: { 'Separare': '2 direcții angulare', 'Secțiune': 'A1, B1 + A2, B2 independente', 'Grosime': '0.8 - 1.0 mm rigidizat' }
+  },
+  {
+    code: 'Capac',
+    name: 'Capac Rectangular Închidere',
+    type: 'rectangular',
+    category: 'Tubulatură Rectangulară',
+    norm: 'SR EN 1505',
+    img: 'assets/icons3d/Capac.png',
+    desc: 'Element de capăt etanș pentru închiderea magistralelor sau rezervare extindere ulterioară.',
+    specs: { 'Tip': 'Capac cu flanșă și colțari', 'Etanșeitate': 'Gasket EPDM + silicon', 'Montaj': 'Demontabil pentru extindere' }
+  },
+  {
+    code: 'SSC',
+    name: 'Schimbare Secțiune Concentrică',
+    type: 'rectangular',
+    category: 'Tubulatură Rectangulară',
+    norm: 'SR EN 1505 / 1506',
+    img: 'assets/icons3d/SSC.png',
+    desc: 'Tranziție concentrică coaxială de la canal rectangular la tub circular SPIRO.',
+    specs: { 'Capăt 1': 'Flanșă rectangulară MEZ 20/30', 'Capăt 2': 'Ștuț circular SPIRO cu garnitură', 'Axa': 'Centrare concentrică' }
+  },
+  {
+    code: 'SSE',
+    name: 'Schimbare Secțiune Excentrică',
+    type: 'rectangular',
+    category: 'Tubulatură Rectangulară',
+    norm: 'SR EN 1505 / 1506',
+    img: 'assets/icons3d/SSE.png',
+    desc: 'Tranziție excentrică rectangular-circulară cu fund plat pentru montaj tangent la perete/plafon.',
+    specs: { 'Aliniere': 'Fund plat tangent', 'Racord': 'Circular SPIRO', 'Aplicație': 'Plafoane joase' }
+  },
+  {
+    code: 'Plenum',
+    name: 'Cutie Plenum Difuzor Aer',
+    type: 'rectangular',
+    category: 'Plenum & Difuzoare',
+    norm: 'SR EN 1505',
+    img: 'assets/icons3d/Plenum.png',
+    desc: 'Casetă de distribuție și atenuare acustică pentru anemostate, grile de ventilație și difuzoare.',
+    specs: { 'Ștuț': 'Lateral sau superior configurabil', 'Sită': 'Plasă perforată opțională', 'Etanșare': 'Sudură + mastic' }
+  },
+
+  // 2. Tubulatură Circulară SPIRO
+  {
+    code: 'tubSpiro',
+    name: 'Tub Circular SPIRO® Falțuit',
+    type: 'circular',
+    category: 'Tubulatură Circulară SPIRO®',
+    norm: 'SR EN 1506',
+    img: 'assets/icons3d/Spiro.png',
+    desc: 'Tub rigid din tablă zincată falțuită elicoidal, rezistență mecanică superioară la depresiune.',
+    specs: { 'Diametre': 'Ø100 mm până la Ø1250 mm', 'Lungime': 'Bare de 3000 mm standard', 'Normativ': 'SR EN 1506 / Clasa C' }
+  },
+  {
+    code: 'cot90',
+    name: 'Cot Circular SPIRO® 90°',
+    type: 'circular',
+    category: 'Tubulatură Circulară SPIRO®',
+    norm: 'SR EN 1506',
+    img: 'assets/icons3d/CotCirc90.png',
+    desc: 'Cot presat sau segmentat falțuit la 90° cu rază R = 1.0 x D.',
+    specs: { 'Rază': 'R = 1.0 x D (curbă lină)', 'Etanșare': 'Garnitură EPDM dublă', 'Montaj': 'Îmbinare mufată' }
+  },
+  {
+    code: 'cot45',
+    name: 'Cot Circular SPIRO® 45°',
+    type: 'circular',
+    category: 'Tubulatură Circulară SPIRO®',
+    norm: 'SR EN 1506',
+    img: 'assets/icons3d/CotCirc45.png',
+    desc: 'Cot circular la 45° pentru ocoliri de traseu și coborâri spre echipamente terminale.',
+    specs: { 'Unghi': '45° de înaltă precizie', 'Diametre': 'Ø100 - Ø1250 mm', 'Pierderi': 'Minime de presiune' }
+  },
+  {
+    code: 'reductie',
+    name: 'Reducție Circulară Concentrică',
+    type: 'circular',
+    category: 'Tubulatură Circulară SPIRO®',
+    norm: 'SR EN 1506',
+    img: 'assets/icons3d/RedCirc.png',
+    desc: 'Tranziție coaxială între două diametre de tubulatură circulară SPIRO.',
+    specs: { 'Diametre': 'ØD1 la ØD2 configurabile', 'Etanșare': 'Garnituri cauciucate integrate', 'Formă': 'Conică' }
+  },
+  {
+    code: 'teu90',
+    name: 'Piesă T Circulară 90° SPIRO®',
+    type: 'circular',
+    category: 'Tubulatură Circulară SPIRO®',
+    norm: 'SR EN 1506',
+    img: 'assets/icons3d/TeuCirc.png',
+    desc: 'Derivație perpendiculară la 90° cu șa profilată presată pe tronson circular.',
+    specs: { 'Branșament': 'Derivație 90°', 'Corp Principal': 'ØD1 conform magistralei', 'Ramificație': 'ØD2 configurabil' }
+  },
+  {
+    code: 'stut',
+    name: 'Ștuț Circular de Branșament',
+    type: 'circular',
+    category: 'Tubulatură Circulară SPIRO®',
+    norm: 'SR EN 1506',
+    img: 'assets/icons3d/StutCirc.png',
+    desc: 'Piesă șa pentru racordarea tubulaturii circulare direct pe canale rectangulare sau circulare.',
+    specs: { 'Guler': 'Buză presată pentru fixare', 'Diametru': 'Ø100 - Ø630 mm', 'Montaj': 'Autoforante' }
+  },
+  {
+    code: 'capac',
+    name: 'Capac Circular SPIRO®',
+    type: 'circular',
+    category: 'Tubulatură Circulară SPIRO®',
+    norm: 'SR EN 1506',
+    img: 'assets/icons3d/CapacCirc.png',
+    desc: 'Dop etanș pentru închiderea capetelor de tub circular sau fitinguri.',
+    specs: { 'Profil': 'Adâncime optimă de mufare', 'Etanșare': 'Presare fermă pe interior', 'Material': 'Tablă zincată' }
+  },
+  {
+    code: 'clapeta',
+    name: 'Clapetă Circulară Reglaj Debit',
+    type: 'circular',
+    category: 'Tubulatură Circulară SPIRO®',
+    norm: 'SR EN 1506',
+    img: 'assets/icons3d/ClapetaCirc.png',
+    desc: 'Dispozitiv de reglaj și echilibrare a debitului de aer cu disc rotativ și scală gradată.',
+    specs: { 'Mecanism': 'Pârghie manuală cu șurub', 'Scală': '0° (închis) - 90° (deschis)', 'Garnitură': 'Etanșare periferică' }
+  }
+];
+
+let currentCatalogFilter = 'all';
+let currentCatalogSearch = '';
+
+function escapeHtml(str) {
+  if (str == null) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
+window.renderProductCatalog = function() {
+  const container = document.getElementById('catalog-products-grid');
+  if (!container) return;
+
+  const filtered = HVAC_CATALOG_ITEMS.filter(it => {
+    if (currentCatalogFilter !== 'all' && it.type !== currentCatalogFilter) {
+      return false;
+    }
+    if (currentCatalogSearch.trim()) {
+      const q = currentCatalogSearch.toLowerCase().trim();
+      const matchName = it.name.toLowerCase().includes(q);
+      const matchCode = it.code.toLowerCase().includes(q);
+      const matchDesc = it.desc.toLowerCase().includes(q);
+      if (!matchName && !matchCode && !matchDesc) return false;
+    }
+    return true;
+  });
+
+  if (filtered.length === 0) {
+    container.innerHTML = `
+      <div style="grid-column: 1 / -1; text-align: center; padding: 40px 20px; background: var(--bg-card); border: 1px dashed var(--border-main); border-radius: 12px;">
+        <p style="color: var(--text-muted); font-size: 14px; margin: 0 0 12px 0;">Nu a fost găsit niciun produs conform filtrării curente.</p>
+        <button class="k-btn k-btn-secondary k-btn-sm" onclick="filterCatalogCards('all')">Resetează Filtrele</button>
+      </div>
+    `;
+    return;
+  }
+
+  container.innerHTML = filtered.map(it => {
+    const specsHtml = Object.entries(it.specs || {}).map(([k, v]) => `
+      <div class="catalog-spec-item">
+        <span>${escapeHtml(k)}:</span>
+        <strong>${escapeHtml(v)}</strong>
+      </div>
+    `).join('');
+
+    return `
+      <div class="catalog-product-card">
+        <div class="catalog-card-media">
+          <span class="catalog-card-code-badge">${escapeHtml(it.code)}</span>
+          <span class="catalog-card-norm-badge">${escapeHtml(it.norm)}</span>
+          <img src="${it.img}" alt="${escapeHtml(it.name)}" class="catalog-card-img" loading="lazy">
+        </div>
+        <div class="catalog-card-body">
+          <div class="catalog-card-category">${escapeHtml(it.category)}</div>
+          <h3 class="catalog-card-title">${escapeHtml(it.name)}</h3>
+          <p class="catalog-card-desc">${escapeHtml(it.desc)}</p>
+          <div class="catalog-card-specs">
+            ${specsHtml}
+          </div>
+          <div class="catalog-card-actions">
+            <button type="button" class="btn-card-configure" onclick="window.openConfiguratorForPiece('${it.code}', '${it.type}')">
+              <span>Configurează Piesa</span>
+              <svg class="icon-svg" viewBox="0 0 24 24" style="width: 14px; height: 14px; stroke: currentColor;"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+            </button>
+          </div>
+        </div>
+      </div>
+    `;
+  }).join('');
+};
+
+window.filterCatalogCards = function(category) {
+  currentCatalogFilter = category;
+  document.querySelectorAll('.cat-filter-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.getAttribute('data-cat') === category);
+  });
+  renderProductCatalog();
+};
+
+window.searchCatalogCards = function(query) {
+  currentCatalogSearch = query || '';
+  renderProductCatalog();
+};
+
+window.openConfiguratorForPiece = function(pieceCode, techCategory) {
+  if (techCategory === 'circular') {
+    const circBtn = document.getElementById('seg-btn-circ');
+    if (circBtn) circBtn.click();
+    state.currentCategory = 'circular';
+    state.activeCategoryMode = 'CIRCULAR';
+  } else {
+    const rectBtn = document.getElementById('seg-btn-rect');
+    if (rectBtn) rectBtn.click();
+    state.currentCategory = 'rectangular';
+    state.activeCategoryMode = 'RECTANGULAR';
+  }
+
+  state.currentPieceType = pieceCode;
+  renderPieceSelectorGrid();
+  renderPieceForm();
+  if (typeof drawPieceCAD === 'function') {
+    drawPieceCAD();
+  }
+
+  goToStep(1);
+};
+
+// Setup View Switching (0: Catalog Produse, 1: Configurator Tehnic, 2: Coș de Cumpărături)
 window.goToStep = function(stepNum) {
+  const pane0 = document.getElementById('tab-catalog');
   const pane1 = document.getElementById('tab-configurator');
   const pane2 = document.getElementById('tab-comanda');
+
+  const navBtn0 = document.getElementById('nav-btn-catalog');
+  const navBtn1 = document.getElementById('nav-btn-configurator');
+  const navBtn2 = document.getElementById('nav-btn-cart');
   const headerCartBtn = document.getElementById('btn-header-cart');
-  const pageIndicator = document.getElementById('page-view-indicator');
 
-  if (stepNum === 1) {
+  // Deactivate all panes
+  if (pane0) pane0.classList.remove('active');
+  if (pane1) pane1.classList.remove('active');
+  if (pane2) pane2.classList.remove('active');
+
+  // Deactivate all nav buttons
+  if (navBtn0) navBtn0.classList.remove('active');
+  if (navBtn1) navBtn1.classList.remove('active');
+  if (navBtn2) navBtn2.classList.remove('active');
+  if (headerCartBtn) headerCartBtn.classList.remove('active');
+
+  if (stepNum === 0) {
+    if (pane0) pane0.classList.add('active');
+    if (navBtn0) navBtn0.classList.add('active');
+    renderProductCatalog();
+  } else if (stepNum === 1) {
     if (pane1) pane1.classList.add('active');
-    if (pane2) pane2.classList.remove('active');
-    if (headerCartBtn) headerCartBtn.classList.remove('active');
-    if (pageIndicator) pageIndicator.textContent = 'Configurator Tehnic Piese Tubulatură HVAC';
-
+    if (navBtn1) navBtn1.classList.add('active');
     updateStep1SummaryBanner();
   } else if (stepNum === 2) {
-    if (pane1) pane1.classList.remove('active');
     if (pane2) pane2.classList.add('active');
+    if (navBtn2) navBtn2.classList.add('active');
     if (headerCartBtn) headerCartBtn.classList.add('active');
-    if (pageIndicator) pageIndicator.textContent = 'Coș de Cumpărături & Centralizator Ofertare';
 
     // Refresh table and totals
     applyFiltersAndRender();
@@ -1139,15 +1662,15 @@ window.goToStep = function(stepNum) {
     updateAtelierTab();
   }
 
-  // Support for any remaining tab links
-  document.querySelectorAll('.mac-tab-link').forEach(btn => {
-    const target = btn.getAttribute('data-target');
-    if ((stepNum === 1 && target === 'tab-configurator') || (stepNum === 2 && target === 'tab-comanda')) {
-      btn.classList.add('active');
-    } else {
-      btn.classList.remove('active');
-    }
-  });
+  // Update badge count
+  const navCartBadge = document.getElementById('nav-cart-badge-count');
+  if (navCartBadge) {
+    navCartBadge.textContent = state.items ? state.items.length : 0;
+  }
+  const headerBadge = document.getElementById('cart-count-badge');
+  if (headerBadge) {
+    headerBadge.textContent = state.items ? state.items.length : 0;
+  }
 
   const workspace = document.querySelector('.main-workspace');
   if (workspace) {
@@ -1156,6 +1679,14 @@ window.goToStep = function(stepNum) {
 };
 
 function updateStep1SummaryBanner() {
+  const nextBanner = document.getElementById('step1-next-container');
+  if (!state.items || state.items.length === 0) {
+    if (nextBanner) nextBanner.style.display = 'none';
+    return;
+  }
+
+  if (nextBanner) nextBanner.style.display = 'flex';
+
   const countEl = document.getElementById('step1-summary-count');
   const posEl = document.getElementById('step1-summary-positions');
   const areaEl = document.getElementById('step1-summary-area');
@@ -1171,7 +1702,7 @@ function updateStep1SummaryBanner() {
   if (areaEl) areaEl.textContent = `${totalArea.toFixed(2)} m²`;
   if (priceEl) priceEl.textContent = `${totalVal.toFixed(2)} €`;
   if (nextBtnText) {
-    nextBtnText.textContent = `Vezi Coșul de Comandă (${state.items.length} piese) →`;
+    nextBtnText.textContent = `Vezi Coșul de Comandă (${state.items.length} poziții)`;
   }
 }
 
@@ -1346,48 +1877,126 @@ function setupActionButtons() {
   }
 
   // Generate clean publication-grade official Technical Specification & Commercial Offer
-  window.prepareOfficialPrintDocument = function() {
+  window.prepareOfficialPrintDocument = function(orderData) {
     const container = document.getElementById('print-official-document');
     if (!container) return;
 
-    const clientName = document.getElementById('order-client')?.value.trim() || 'Client Nespecificat';
-    const clientCui = document.getElementById('order-cui')?.value.trim() || '-';
-    const clientRegCom = document.getElementById('order-regcom')?.value.trim() || '-';
-    const projectName = document.getElementById('order-proiect')?.value.trim() || 'Proiect Tubulatură HVAC';
-    const orderNumber = document.getElementById('order-numar')?.value.trim() || `KV-CMD-${new Date().getFullYear()}/${(state.items.length + 10).toString()}`;
-    const orderDate = document.getElementById('order-data')?.value.trim() || new Date().toLocaleDateString('ro-RO');
-    const contactTel = document.getElementById('order-contact-tel')?.value.trim() || '-';
-    const contactEmail = document.getElementById('order-contact-email')?.value.trim() || '-';
-    const deliveryAddress = document.getElementById('order-adresa')?.value.trim() || 'Sediu Fabrică KronVent Brașov';
-    const tvaRate = parseFloat(document.getElementById('order-tva-select')?.value) || 21;
-    const cursBnr = state.settings.cursEur || 5.2542;
+    let targetOrder = orderData;
+    if (!targetOrder && (!state.items || state.items.length === 0)) {
+      targetOrder = state.lastSubmittedOrder;
+      if (!targetOrder) {
+        try {
+          const cached = localStorage.getItem('kronvent_last_order');
+          if (cached) targetOrder = JSON.parse(cached);
+        } catch(e) {}
+      }
+    }
 
-    const totalPieces = state.items.reduce((acc, it) => acc + (parseFloat(it.cantitate) || 0), 0);
-    const totalArea = state.items.reduce((acc, it) => acc + (parseFloat(it.suprafata) || 0), 0);
-    const totalPriceEur = state.items.reduce((acc, it) => acc + (parseFloat(it.valoareTotala) || 0), 0);
-    const tvaValEur = totalPriceEur * (tvaRate / 100);
-    const grandTotalEur = totalPriceEur + tvaValEur;
-    const totalPriceRon = totalPriceEur * cursBnr;
-    const tvaValRon = tvaValEur * cursBnr;
-    const grandTotalRon = grandTotalEur * cursBnr;
+    let items = [];
+    let clientName = '';
+    let clientCui = '';
+    let clientRegCom = '';
+    let projectName = '';
+    let orderNumber = '';
+    let orderDate = '';
+    let contactTel = '';
+    let contactEmail = '';
+    let deliveryAddress = '';
+    let tvaRate = 21;
+    let cursBnr = (state.settings && state.settings.cursEur) || 5.2542;
+    let totalPieces = 0;
+    let totalArea = 0;
+    let totalPriceEur = 0;
+    let taxableBaseEur = 0;
+    let tvaValEur = 0;
+    let grandTotalEur = 0;
+    let totalPriceRon = 0;
+    let taxableBaseRon = 0;
+    let tvaValRon = 0;
+    let grandTotalRon = 0;
 
-    const tableRowsHtml = state.items.length > 0 ? state.items.map((it, idx) => {
+    if (targetOrder) {
+      items = Array.isArray(targetOrder.items) ? targetOrder.items : [];
+      clientName = targetOrder.client || document.getElementById('order-client')?.value.trim() || 'Client Nespecificat';
+      clientCui = targetOrder.cui || document.getElementById('order-cui')?.value.trim() || '-';
+      clientRegCom = targetOrder.regcom || document.getElementById('order-regcom')?.value.trim() || '-';
+      projectName = targetOrder.project || targetOrder.proiect || document.getElementById('order-proiect')?.value.trim() || 'Proiect Tubulatură HVAC';
+      orderNumber = targetOrder.id || targetOrder.orderNumber || document.getElementById('order-numar')?.value.trim() || `KV-CMD-${new Date().getFullYear()}/01`;
+      orderDate = targetOrder.date || targetOrder.data || document.getElementById('order-data')?.value.trim() || new Date().toLocaleDateString('ro-RO');
+      contactTel = targetOrder.telefon || targetOrder.tel || targetOrder.contactTel || document.getElementById('order-contact-tel')?.value.trim() || '-';
+      contactEmail = targetOrder.email || targetOrder.contactEmail || document.getElementById('order-contact-email')?.value.trim() || '-';
+      deliveryAddress = targetOrder.adresa || targetOrder.deliveryAddress || document.getElementById('order-adresa')?.value.trim() || 'Sediu Fabrică KronVent Brașov';
+      tvaRate = parseFloat(targetOrder.tvaPercent || targetOrder.tvaRate || document.getElementById('order-tva-select')?.value) || 21;
+      cursBnr = parseFloat(targetOrder.calculation_snapshot?.cursEur || targetOrder.cursEur || state.settings?.cursEur) || 5.2542;
+
+      totalPieces = targetOrder.totalPiese || items.reduce((acc, it) => acc + (parseFloat(it.cantitate || it.cant) || 1), 0);
+      totalArea = targetOrder.totalMp || items.reduce((acc, it) => acc + (parseFloat(it.suprafataTotala || it.suprafata) || 0), 0);
+      totalPriceEur = targetOrder.subtotalEur || targetOrder.totalPriceEur || items.reduce((acc, it) => acc + (parseFloat(it.valoareTotala || it.pretTotalEur || it.pretEur || ((parseFloat(it.pretUnitar) || 0) * (parseFloat(it.cantitate || it.cant) || 1))) || 0), 0);
+
+      taxableBaseEur = targetOrder.taxableBaseEur || totalPriceEur;
+      tvaValEur = parseFloat(targetOrder.tvaValEur) || (taxableBaseEur * (tvaRate / 100));
+      grandTotalEur = parseFloat(targetOrder.totalEur) || (taxableBaseEur + tvaValEur);
+
+      totalPriceRon = totalPriceEur * cursBnr;
+      taxableBaseRon = taxableBaseEur * cursBnr;
+      tvaValRon = tvaValEur * cursBnr;
+      grandTotalRon = parseFloat(targetOrder.totalRon) || (grandTotalEur * cursBnr);
+    } else {
+      items = state.items || [];
+      clientName = document.getElementById('order-client')?.value.trim() || 'Client Nespecificat';
+      clientCui = document.getElementById('order-cui')?.value.trim() || '-';
+      clientRegCom = document.getElementById('order-regcom')?.value.trim() || '-';
+      projectName = document.getElementById('order-proiect')?.value.trim() || 'Proiect Tubulatură HVAC';
+      orderNumber = document.getElementById('order-numar')?.value.trim() || `KV-CMD-${new Date().getFullYear()}/${(state.items.length + 10).toString()}`;
+      orderDate = document.getElementById('order-data')?.value.trim() || new Date().toLocaleDateString('ro-RO');
+      contactTel = document.getElementById('order-contact-tel')?.value.trim() || '-';
+      contactEmail = document.getElementById('order-contact-email')?.value.trim() || '-';
+      deliveryAddress = document.getElementById('order-adresa')?.value.trim() || 'Sediu Fabrică KronVent Brașov';
+      tvaRate = parseFloat(document.getElementById('order-tva-select')?.value) || 21;
+      cursBnr = state.settings?.cursEur || 5.2542;
+
+      totalPieces = items.reduce((acc, it) => acc + (parseFloat(it.cantitate) || 0), 0);
+      totalArea = items.reduce((acc, it) => acc + (parseFloat(it.suprafata) || 0), 0);
+      totalPriceEur = items.reduce((acc, it) => acc + (parseFloat(it.valoareTotala) || 0), 0);
+
+      taxableBaseEur = totalPriceEur;
+      tvaValEur = taxableBaseEur * (tvaRate / 100);
+      grandTotalEur = taxableBaseEur + tvaValEur;
+      totalPriceRon = totalPriceEur * cursBnr;
+      taxableBaseRon = taxableBaseEur * cursBnr;
+      tvaValRon = tvaValEur * cursBnr;
+      grandTotalRon = grandTotalEur * cursBnr;
+    }
+
+    const tableRowsHtml = items.length > 0 ? items.map((it, idx) => {
+      const cod = it.cod || it.code || '-';
+      const name = it.categorie || it.denumire || it.tip || it.name || 'Piesă HVAC';
+      const label = it.eticheta || '';
+      const dims = it.dimensiuni || (it.laturaA || it.laturaB || it.lungime ? `${it.laturaA || 0}×${it.laturaB || 0}${it.lungime ? ` L=${it.lungime}` : ''}` : '-');
+      const grosime = it.grosime ? (String(it.grosime).includes('mm') ? it.grosime : `${it.grosime} mm`) : '0.6 mm';
+      const flansa = it.flansa || '-';
+      const cant = parseInt(it.cantitate || it.cant || 1, 10);
+      const um = it.um || 'buc';
+      const suprafata = parseFloat(it.suprafataTotala || it.suprafata || 0);
+      const valoareTotala = parseFloat(it.valoareTotala || it.pretTotalEur || it.pretEur || ((parseFloat(it.pretUnitar) || 0) * cant) || 0);
+      const pretUnitar = parseFloat(it.pretUnitar || (cant > 0 ? valoareTotala / cant : 0));
+
       return `
         <tr>
           <td style="text-align: center; font-weight: 700;">${idx + 1}</td>
-          <td style="font-weight: 700; color: #1e3a8a; text-align: center;">${it.cod || '-'}</td>
+          <td style="font-weight: 700; color: #1e3a8a; text-align: center;">${cod}</td>
           <td>
-            <div style="font-weight: 700; color: #0f172a;">${it.categorie || 'Piesă HVAC'}</div>
-            <div style="font-size: 7.5pt; color: #64748b;">${it.eticheta || ''}</div>
+            <div style="font-weight: 700; color: #0f172a;">${name}</div>
+            ${label ? `<div style="font-size: 7pt; color: #64748b;">${label}</div>` : ''}
           </td>
-          <td style="font-size: 7.5pt; color: #1e293b;">${it.dimensiuni || '-'}</td>
-          <td style="text-align: center; font-size: 8pt;">${it.grosime ? it.grosime + ' mm' : '0.6 mm'}</td>
-          <td style="text-align: center; font-size: 7.5pt; font-weight: 600;">${it.flansa || '-'}</td>
-          <td style="text-align: right; font-weight: 700;">${it.cantitate || 1}</td>
-          <td style="text-align: center; font-size: 7.5pt;">${it.um || 'buc'}</td>
-          <td style="text-align: right;">${(parseFloat(it.suprafata) || 0).toFixed(2)}</td>
-          <td style="text-align: right;">${(parseFloat(it.pretUnitar) || 0).toFixed(2)} €</td>
-          <td style="text-align: right; font-weight: 700; color: #0f172a;">${(parseFloat(it.valoareTotala) || 0).toFixed(2)} €</td>
+          <td style="font-size: 7.5pt; color: #1e293b;">${dims}</td>
+          <td style="text-align: center; font-size: 7.5pt;">${grosime}</td>
+          <td style="text-align: center; font-size: 7.5pt; font-weight: 600;">${flansa}</td>
+          <td style="text-align: right; font-weight: 700;">${cant}</td>
+          <td style="text-align: center; font-size: 7pt;">${um}</td>
+          <td style="text-align: right;">${suprafata.toFixed(2)}</td>
+          <td style="text-align: right;">${pretUnitar.toFixed(2)} €</td>
+          <td style="text-align: right; font-weight: 700; color: #0f172a;">${valoareTotala.toFixed(2)} €</td>
         </tr>
       `;
     }).join('') : `<tr><td colspan="11" style="text-align: center; padding: 15px; color: #64748b;">Nu există articole în această comandă.</td></tr>`;
@@ -1483,9 +2092,9 @@ function setupActionButtons() {
             </ul>
           </div>
 
-            <div class="print-financial-box">
+          <div class="print-financial-box">
             <div class="fin-row">
-              <span>Valoare Fără TVA:</span>
+              <span>Subtotal Confecție (fără TVA):</span>
               <strong>${totalPriceEur.toFixed(2)} €</strong>
               <small>(${totalPriceRon.toFixed(2)} RON)</small>
             </div>
@@ -1521,11 +2130,17 @@ function setupActionButtons() {
   };
 
   const handlePrint = () => {
-    window.prepareOfficialPrintDocument();
+    window.prepareOfficialPrintDocument(state.lastSubmittedOrder);
     setTimeout(() => {
       window.print();
     }, 120);
   };
+
+  window.addEventListener('beforeprint', () => {
+    if (typeof window.prepareOfficialPrintDocument === 'function') {
+      window.prepareOfficialPrintDocument(state.lastSubmittedOrder);
+    }
+  });
 
   const btnPrint = document.getElementById('btn-print');
   if (btnPrint) btnPrint.addEventListener('click', handlePrint);
@@ -1539,7 +2154,12 @@ function setupActionButtons() {
   const btnSuccessPrint = document.getElementById('btn-success-print');
   if (btnSuccessPrint) {
     btnSuccessPrint.removeAttribute('onclick');
-    btnSuccessPrint.addEventListener('click', handlePrint);
+    btnSuccessPrint.addEventListener('click', () => {
+      window.prepareOfficialPrintDocument(state.lastSubmittedOrder);
+      setTimeout(() => {
+        window.print();
+      }, 120);
+    });
   }
 
   const btnReset = document.getElementById('btn-reset');
@@ -1614,7 +2234,13 @@ function setupActionButtons() {
       const totalValoareEur = state.items.reduce((acc, it) => acc + (parseFloat(it.valoareTotala) || 0), 0);
       const totalPieces = state.items.reduce((acc, it) => acc + (parseFloat(it.cantitate) || 0), 0);
       const totalSurface = state.items.reduce((acc, it) => acc + (parseFloat(it.suprafata) || 0), 0);
-      const totalRon = totalValoareEur * (state.settings.cursEur || 5.2542);
+
+      const taxableBaseEur = totalValoareEur;
+      const tvaRate = parseFloat(document.getElementById('order-tva-select')?.value) || (state.settings.tva !== undefined ? state.settings.tva : 21);
+      const tvaValEur = taxableBaseEur * (tvaRate / 100);
+      const grandTotalEur = taxableBaseEur + tvaValEur;
+      const cursBnr = state.settings.cursEur || 5.2542;
+      const grandTotalRon = grandTotalEur * cursBnr;
 
       const orderPayload = {
         client: clientName,
@@ -1622,8 +2248,12 @@ function setupActionButtons() {
         regCom: clientRegCom,
         project: projectName,
         date: orderDate,
-        totalEur: parseFloat(totalValoareEur.toFixed(2)),
-        totalRon: parseFloat(totalRon.toFixed(2)),
+        subtotalEur: parseFloat(totalValoareEur.toFixed(2)),
+        taxableBaseEur: parseFloat(taxableBaseEur.toFixed(2)),
+        tvaPercent: tvaRate,
+        tvaValEur: parseFloat(tvaValEur.toFixed(2)),
+        totalEur: parseFloat(grandTotalEur.toFixed(2)),
+        totalRon: parseFloat(grandTotalRon.toFixed(2)),
         totalMp: parseFloat(totalSurface.toFixed(2)),
         totalPiese: totalPieces,
         calculation_snapshot: {
@@ -1641,10 +2271,14 @@ function setupActionButtons() {
           cod: it.cod,
           dimensiuni: it.dimensiuni,
           cantitate: it.cantitate,
+          cant: it.cantitate,
           sUnit: it.sUnit,
           suprafata: it.suprafata,
+          suprafataTotala: it.suprafata,
           pretUnitar: it.pretUnitar,
           valoareTotala: it.valoareTotala,
+          pretEur: it.pretUnitar,
+          pretTotalEur: it.valoareTotala,
           flansa: it.flansa,
           grosime: it.grosime,
           greutate: it.greutate
@@ -1661,6 +2295,35 @@ function setupActionButtons() {
         const result = await resOrder.json();
         if (result.success) {
           const registeredNum = result.order?.id || result.order?.orderNumber || orderNum;
+          const finalOrder = result.order || orderPayload;
+          finalOrder.id = registeredNum;
+          finalOrder.orderNumber = registeredNum;
+          if (!finalOrder.items || finalOrder.items.length === 0) {
+            finalOrder.items = orderPayload.items;
+          }
+          finalOrder.client = clientName;
+          finalOrder.cui = clientCui;
+          finalOrder.regcom = clientRegCom;
+          finalOrder.project = projectName;
+          finalOrder.adresa = deliveryAddress;
+          finalOrder.telefon = contactTel;
+          finalOrder.email = contactEmail;
+          finalOrder.date = orderDate;
+          finalOrder.tvaRate = tvaRate;
+          finalOrder.tvaPercent = tvaRate;
+          finalOrder.subtotalEur = parseFloat(totalValoareEur.toFixed(2));
+          finalOrder.totalEur = parseFloat(grandTotalEur.toFixed(2));
+          finalOrder.totalRon = parseFloat(grandTotalRon.toFixed(2));
+          finalOrder.totalMp = parseFloat(totalSurface.toFixed(2));
+          finalOrder.totalPiese = totalPieces;
+
+          state.lastSubmittedOrder = finalOrder;
+          try {
+            localStorage.setItem('kronvent_last_order', JSON.stringify(finalOrder));
+          } catch(e) {}
+
+          // Pregătim imediat documentul oficial de tipărire pentru această comandă confirmată
+          window.prepareOfficialPrintDocument(finalOrder);
 
           const elNum = document.getElementById('success-cmd-num');
           if (elNum) elNum.textContent = registeredNum;
@@ -1669,10 +2332,65 @@ function setupActionButtons() {
           const elS = document.getElementById('success-cmd-surface');
           if (elS) elS.textContent = `${totalSurface.toFixed(2)} m²`;
           const elV = document.getElementById('success-cmd-val');
-          if (elV) elV.textContent = `${totalValoareEur.toFixed(2)} € (${totalRon.toFixed(2)} RON)`;
+          if (elV) elV.textContent = `${grandTotalEur.toFixed(2)} € (${grandTotalRon.toFixed(2)} RON)`;
+
+          // Randează lista detaliată a reperelor comandate în modalul de succes
+          const itemsListEl = document.getElementById('success-cmd-items-list');
+          const itemsCountEl = document.getElementById('success-cmd-items-count');
+          if (itemsCountEl) {
+            itemsCountEl.textContent = `${finalOrder.items.length} ${finalOrder.items.length === 1 ? 'poziție' : 'poziții'}`;
+          }
+          if (itemsListEl && Array.isArray(finalOrder.items)) {
+            itemsListEl.innerHTML = finalOrder.items.map((it, idx) => {
+              const cant = parseInt(it.cantitate || it.cant || 1, 10);
+              const name = it.categorie || it.denumire || it.tip || 'Piesă HVAC';
+              const cod = it.cod || '';
+              const dims = it.dimensiuni || '';
+              const val = parseFloat(it.valoareTotala || it.pretTotalEur || it.pretEur || ((parseFloat(it.pretUnitar) || 0) * cant) || 0);
+              return `
+                <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.03); padding: 5px 8px; border-radius: 4px; font-size: 11.5px; border-left: 3px solid var(--kronvent-blue);">
+                  <div>
+                    <span style="font-weight: 700; color: var(--text-main);">${cant} × ${name}</span>
+                    ${cod ? `<span style="color: var(--kronvent-blue); font-weight: 600; margin-left: 4px;">[${cod}]</span>` : ''}
+                    ${dims ? `<span style="color: var(--text-muted); margin-left: 4px;">(${dims})</span>` : ''}
+                  </div>
+                  <strong style="color: var(--industrial-green); white-space: nowrap; margin-left: 8px;">${val.toFixed(2)} €</strong>
+                </div>
+              `;
+            }).join('');
+          }
 
           const modalSuccess = document.getElementById('order-success-modal');
           if (modalSuccess) modalSuccess.classList.add('open');
+
+          // Configurează link-ul live de urmărire a comenzii (ca în Client B / Pontaj)
+          const origin = window.location.origin;
+          const trackingUrl = result.trackingUrl || `${origin}/comanda.html?id=${encodeURIComponent(registeredNum)}`;
+
+          const linkInput = document.getElementById('success-tracking-link-input');
+          if (linkInput) linkInput.value = trackingUrl;
+
+          const openBtn = document.getElementById('success-tracking-open-btn');
+          if (openBtn) openBtn.href = trackingUrl;
+
+          const shareBtn = document.getElementById('success-tracking-share-btn');
+          if (shareBtn) {
+            const waText = `Bună ziua! Am plasat o comandă nouă de tubulatură HVAC la KronVent (${registeredNum}). Urmărire producție live:\n${trackingUrl}`;
+            shareBtn.href = `https://wa.me/?text=${encodeURIComponent(waText)}`;
+          }
+
+          const copyBtn = document.getElementById('btn-success-copy-link');
+          if (copyBtn) {
+            copyBtn.onclick = () => {
+              navigator.clipboard.writeText(trackingUrl).then(() => {
+                const prev = copyBtn.textContent;
+                copyBtn.textContent = 'Copiat!';
+                setTimeout(() => { copyBtn.textContent = prev; }, 2000);
+              }).catch(() => {
+                prompt('Link urmărire comandă:', trackingUrl);
+              });
+            };
+          }
 
           // Reset local cart to clean state after successful order transmission
           state.items = [];
@@ -2109,6 +2827,326 @@ function applyFiltersAndRender() {
   updateTableTotalsRow();
 }
 
+// ====================================================================
+// PARSARE DIMENSIUNI & CALCUL DETALIAT BOM / CONSUMURI TEHNOLOGICE
+// ====================================================================
+function parseItemDimensions(it) {
+  let A = 500, B = 500, L = 1250, H = 350, D = 200;
+  const text = (it.dimensiuni || '') + ' ' + (it.dimText || '');
+  if (text) {
+    const matchA = text.match(/A(?:1)?\s*=\s*(\d+)/i);
+    const matchB = text.match(/B\s*=\s*(\d+)/i);
+    const matchL = text.match(/L\s*=\s*(\d+)/i);
+    const matchH = text.match(/H\s*=\s*(\d+)/i);
+    const matchD = text.match(/(?:Ø|[Dd]im_D|[Dd])\s*=?\s*(\d+)/i);
+
+    if (matchA) A = parseInt(matchA[1], 10);
+    if (matchB) B = parseInt(matchB[1], 10);
+    if (matchL) L = parseInt(matchL[1], 10);
+    if (matchH) H = parseInt(matchH[1], 10);
+    if (matchD) D = parseInt(matchD[1], 10);
+
+    if (!matchA && !matchB && !matchD) {
+      const nums = text.match(/\d+/g);
+      if (nums && nums.length >= 2) {
+        A = parseInt(nums[0], 10) || 500;
+        B = parseInt(nums[1], 10) || 500;
+        if (nums.length >= 3) L = parseInt(nums[2], 10) || 1250;
+      } else if (nums && nums.length === 1) {
+        D = parseInt(nums[0], 10) || 200;
+      }
+    }
+  }
+  return { A, B, L, H, D };
+}
+
+function computeDetailedBOM(it) {
+  const { A, B, L, H, D } = parseItemDimensions(it);
+  const cant = parseFloat(it.cantitate) || 1;
+  const sTot = parseFloat(it.suprafata) || 0;
+  const code = (it.cod || '').toUpperCase();
+  const cat = (it.categorie || '').toLowerCase();
+  const isCircular = cat.includes('spiro') || cat.includes('circular') || code.includes('SPIRO');
+
+  if (isCircular) {
+    const grosime = it.grosime || (D <= 315 ? '0.5' : (D <= 800 ? '0.6' : '0.8'));
+    const density = grosime === '0.5' ? 3.93 : (grosime === '0.6' ? 4.71 : 6.28);
+    const greutateKg = parseFloat((sTot * density).toFixed(2));
+    const nrTronsoane = Math.max(cant, Math.ceil((cant * (L || 3000)) / 3000));
+    return {
+      isCircular: true,
+      A: D, B: D, L, H, D,
+      cant,
+      tabla: {
+        tip: `Tablă zincată DX51D roluită elicoidal (Ø${D} mm)`,
+        grosime,
+        densitate: density,
+        suprafataTot: sTot,
+        greutateKg,
+        foi1x2m: Math.ceil(sTot / 2)
+      },
+      flansa: {
+        tip: 'Mufă / Niplu îmbinare Spiro cu garnitură EPDM',
+        mlTot: 0,
+        bare5m: 0
+      },
+      coltari: { tip: 'Fără colțari (secțiune circulară)', cantitate: 0 },
+      gasket: { mlTot: parseFloat(((Math.PI * D / 1000) * cant).toFixed(2)), role10m: Math.ceil(((Math.PI * D / 1000) * cant) / 10) },
+      feronerie: {
+        surubTip: 'Șuruburi autoforante HVAC 4.2x13 (sau pop-nituri)',
+        surubCant: Math.round(cant * 6),
+        clipsuriCant: 0,
+        siliconTuburi: Math.max(1, Math.ceil(cant / 20))
+      },
+      sustinere: {
+        areSustinere: true,
+        tijeTip: D >= 630 ? 'M10' : 'M8',
+        tijeMl: parseFloat((nrTronsoane * 1.0).toFixed(2)),
+        tijeBare2m: Math.ceil(nrTronsoane / 2),
+        conexpandTip: D >= 630 ? 'M10' : 'M8',
+        conexpandCant: nrTronsoane,
+        profilTip: `Colier circular Ø${D} mm cu garnitură antivibrație`,
+        profilMl: 0,
+        profilBare3m: 0,
+        garnituraMl: 0,
+        capaceCant: 0
+      },
+      plasaPlenum: 0
+    };
+  }
+
+  // Rectangular calculation
+  const maxDim = Math.max(A, B);
+  const grosime = it.grosime || (maxDim <= 500 ? '0.6' : (maxDim <= 1000 ? '0.8' : '1.0'));
+  const density = grosime === '0.6' ? 4.71 : (grosime === '0.8' ? 6.28 : 7.85);
+  const greutateKg = parseFloat((sTot * density).toFixed(2));
+  const foi1x2m = Math.ceil(sTot / 2);
+
+  const isFlansa30 = it.flansa === 'FLANSA30' || ((A + B) * 2 > 3500);
+  const flansaTip = isFlansa30 ? 'FLANSA 30 (profil zincat 30mm)' : 'FLANSA 20 (profil zincat 20mm)';
+  const coltariTip = isFlansa30 ? 'Colțari 30 (3.0 mm rigidizare)' : 'Colțari 20 (2.5 mm rigidizare)';
+
+  let nrCapete = 2;
+  if (code.includes('TEU') || cat.includes('teu') || code.includes('RAMIF') || cat.includes('ramif') || code.includes('PANTALON')) {
+    nrCapete = 3;
+  } else if (code.includes('CAPAC') || cat.includes('capac') || code.includes('YAKA') || cat.includes('yaka')) {
+    nrCapete = 1;
+  }
+
+  let mlFlansa = it.mlFlansa;
+  if (!mlFlansa || isNaN(mlFlansa)) {
+    mlFlansa = parseFloat((((A + B) * 2 * nrCapete / 1000) * cant).toFixed(2));
+  }
+  const coltariCant = it.coltari || (cant * nrCapete * 4);
+  const gasketMl = parseFloat(((mlFlansa) / 2).toFixed(2));
+
+  const surubTip = isFlansa30 ? 'M10x30 + Piulițe M10 (oțel 8.8)' : 'M8x25 + Piulițe M8 (oțel 4.8/8.8)';
+  const surubCant = cant * nrCapete * 4;
+
+  const perimFlansaM = ((A + B) * 2 / 1000);
+  const clipsuriCant = Math.ceil((perimFlansaM * nrCapete / 0.35) * cant);
+
+  const isYaka = code.includes('YAKA') || cat.includes('yaka');
+  const siliconStep = isYaka ? 8 : 18;
+  const siliconTuburi = Math.max(1, Math.ceil(cant / siliconStep));
+
+  const hasSustinere = code.includes('CRD') || code.includes('PDE') || code.includes('RED') || cat.includes('canal drept') || cat.includes('deviatie') || cat.includes('reductie');
+
+  let sustinere = {
+    areSustinere: hasSustinere,
+    tijeTip: 'M8',
+    tijeMl: 0,
+    tijeBare2m: 0,
+    conexpandTip: 'M8',
+    conexpandCant: 0,
+    profilTip: '30x20',
+    profilMl: 0,
+    profilBare3m: 0,
+    garnituraMl: 0,
+    capaceCant: 0
+  };
+
+  if (hasSustinere) {
+    const isHeavy = maxDim >= 800;
+    const tijeTip = isHeavy ? 'M10' : 'M8';
+    const conexpandTip = isHeavy ? 'M10' : 'M8';
+    const profilTip = isHeavy ? 'Profil 41x41' : 'Profil 30x20';
+
+    const lungimeTotalaM = ((L || 1250) / 1000) * cant;
+    const nrTraverse = Math.max(cant, Math.ceil(lungimeTotalaM / 2.0));
+    const nrPuncteTavan = nrTraverse * 2;
+
+    const tijeMl = parseFloat((nrPuncteTavan * 1.0).toFixed(2));
+    const tijeBare2m = Math.ceil(tijeMl / 2);
+
+    const lungimeTraversaM = (A + 100) / 1000;
+    const profilMl = parseFloat((nrTraverse * lungimeTraversaM).toFixed(2));
+    const profilBare3m = Math.ceil(profilMl / 3);
+
+    const garnituraMl = parseFloat((nrTraverse * (A / 1000)).toFixed(2));
+    const capaceCant = nrTraverse * 2;
+
+    sustinere = {
+      areSustinere: true,
+      tijeTip,
+      tijeMl,
+      tijeBare2m,
+      conexpandTip,
+      conexpandCant: nrPuncteTavan,
+      profilTip,
+      profilMl,
+      profilBare3m,
+      garnituraMl,
+      capaceCant
+    };
+  }
+
+  let plasaPlenum = 0;
+  if (code.includes('PLENUM') || cat.includes('plenum')) {
+    plasaPlenum = parseFloat((Math.sqrt(Math.pow(A / 1000, 2) + Math.pow(H / 1000, 2)) * (B / 1000) * cant).toFixed(4));
+  }
+
+  return {
+    isCircular: false,
+    A, B, L, H, D,
+    cant,
+    tabla: {
+      tip: `Tablă zincată DX51D + Z275 (grosime ${grosime} mm)`,
+      grosime,
+      densitate: density,
+      suprafataTot: sTot,
+      greutateKg,
+      foi1x2m
+    },
+    flansa: {
+      tip: flansaTip,
+      mlTot: mlFlansa,
+      bare5m: Math.ceil(mlFlansa / 5)
+    },
+    coltari: {
+      tip: coltariTip,
+      cantitate: coltariCant
+    },
+    gasket: {
+      mlTot: gasketMl,
+      role10m: Math.ceil(gasketMl / 10)
+    },
+    feronerie: {
+      surubTip,
+      surubCant,
+      clipsuriCant,
+      siliconTuburi
+    },
+    sustinere,
+    plasaPlenum
+  };
+}
+
+window.openBOMModal = function(idx) {
+  const it = state.items[idx];
+  if (!it) return;
+
+  const modal = document.getElementById('bom-modal');
+  if (!modal) return;
+
+  const bom = computeDetailedBOM(it);
+
+  const titleEl = document.getElementById('bom-modal-title');
+  const subtitleEl = document.getElementById('bom-modal-subtitle');
+  const bodyEl = document.getElementById('bom-modal-body');
+
+  if (titleEl) titleEl.innerHTML = `BOM & Necesar Tehnologic: <strong style="color: var(--kronvent-blue);">${it.categorie || 'Piesă HVAC'} (${it.cod || '-'})</strong>`;
+  if (subtitleEl) subtitleEl.textContent = `Poziția #${idx + 1} | Dimensiuni: ${it.dimensiuni || '-'} | Cantitate: ${it.cantitate} bucăți | Suprafață totală: ${(parseFloat(it.suprafata) || 0).toFixed(2)} m²`;
+
+  let sustinereHtml = '';
+  if (bom.sustinere.areSustinere) {
+    sustinereHtml = `
+      <div style="background: var(--bg-card, rgba(148, 163, 184, 0.07)); border: 1px solid var(--border-color, rgba(148, 163, 184, 0.22)); border-radius: 8px; padding: 12px 14px;">
+        <div style="font-size: 12px; font-weight: 700; color: var(--text-main); margin-bottom: 8px; display: flex; align-items: center; gap: 6px;">
+          SISTEM SUSPENDARE & ANCORARE TAVAN (PAS 2.0 m)
+        </div>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 8px; font-size: 11.5px;">
+          <div><span style="color: var(--text-muted);">Tije Filetate:</span> <strong style="color: var(--text-main); font-weight: 700;">Tije ${bom.sustinere.tijeTip} (${bom.sustinere.tijeMl} ml / ~${bom.sustinere.tijeBare2m} bare x 2m)</strong></div>
+          <div><span style="color: var(--text-muted);">Conexpanduri / Ancore:</span> <strong style="color: var(--text-main); font-weight: 700;">${bom.sustinere.conexpandCant} buc (${bom.sustinere.conexpandTip})</strong></div>
+          <div><span style="color: var(--text-muted);">Profil Traversă:</span> <strong style="color: var(--text-main); font-weight: 700;">${bom.sustinere.profilTip} (${bom.sustinere.profilMl} ml / ~${bom.sustinere.profilBare3m} bare x 3m)</strong></div>
+          <div><span style="color: var(--text-muted);">Accesorii Profil:</span> <strong style="color: var(--text-main); font-weight: 700;">${bom.sustinere.garnituraMl} ml cauciuc EPDM + ${bom.sustinere.capaceCant} capace PVC</strong></div>
+        </div>
+      </div>
+    `;
+  } else {
+    sustinereHtml = `
+      <div style="background: var(--bg-card, rgba(148, 163, 184, 0.07)); border: 1px dashed var(--border-color, rgba(148, 163, 184, 0.25)); border-radius: 8px; padding: 10px 14px; font-size: 11.5px; color: var(--text-muted);">
+        <span>Acest reper HVAC se montează direct pe tronsoanele adiacente sau racorduri fără console de tavan dedicate.</span>
+      </div>
+    `;
+  }
+
+  let plasaHtml = '';
+  if (bom.plasaPlenum > 0) {
+    plasaHtml = `
+      <div style="background: rgba(37, 99, 235, 0.08); border: 1px solid rgba(37, 99, 235, 0.28); border-radius: 8px; padding: 12px 14px;">
+        <div style="font-size: 12px; font-weight: 700; color: var(--kronvent-blue, #2563eb); margin-bottom: 4px;">
+          PLASĂ UNIFORMIZARE DEBIT AER DIFUZOR
+        </div>
+        <div style="font-size: 12px; color: var(--text-main);">
+          Necesar sită perforată: <strong style="color: #15803d; font-weight: 700;">${bom.plasaPlenum} m²</strong> (calculată după secțiunea diagonală a casetei plenum)
+        </div>
+      </div>
+    `;
+  }
+
+  if (bodyEl) {
+    bodyEl.innerHTML = `
+      <!-- Card 1: Tablă Zincată -->
+      <div style="background: var(--bg-card, rgba(148, 163, 184, 0.07)); border: 1px solid var(--border-color, rgba(148, 163, 184, 0.22)); border-radius: 8px; padding: 12px 14px;">
+        <div style="font-size: 12px; font-weight: 700; color: var(--text-main); margin-bottom: 8px; display: flex; align-items: center; gap: 6px;">
+          DEBITARE TABLĂ ZINCATĂ DX51D + Z275
+        </div>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 8px; font-size: 11.5px;">
+          <div><span style="color: var(--text-muted);">Grosime Tablă:</span> <strong style="color: var(--text-main); font-weight: 700;">${bom.tabla.grosime} mm</strong></div>
+          <div><span style="color: var(--text-muted);">Densitate Normativ:</span> <strong style="color: var(--text-main); font-weight: 700;">${bom.tabla.densitate} kg/m²</strong></div>
+          <div><span style="color: var(--text-muted);">Suprafață Totală:</span> <strong style="color: #15803d; font-weight: 700;">${bom.tabla.suprafataTot.toFixed(4)} m²</strong></div>
+          <div><span style="color: var(--text-muted);">Greutate Totală:</span> <strong style="color: var(--text-main); font-weight: 700;">${bom.tabla.greutateKg} kg</strong></div>
+          <div><span style="color: var(--text-muted);">Foi Standard (1x2m):</span> <strong style="color: var(--text-main); font-weight: 700;">~${bom.tabla.foi1x2m} foi</strong></div>
+        </div>
+      </div>
+
+      <!-- Card 2: Flanșă & Colțari -->
+      <div style="background: var(--bg-card, rgba(148, 163, 184, 0.07)); border: 1px solid var(--border-color, rgba(148, 163, 184, 0.22)); border-radius: 8px; padding: 12px 14px;">
+        <div style="font-size: 12px; font-weight: 700; color: var(--text-main); margin-bottom: 8px; display: flex; align-items: center; gap: 6px;">
+          SISTEM DE FLANȘARE & RIGIDIZARE COLȚURI
+        </div>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 8px; font-size: 11.5px;">
+          <div><span style="color: var(--text-muted);">Tip Flanșă:</span> <strong style="color: var(--text-main); font-weight: 700;">${bom.flansa.tip}</strong></div>
+          <div><span style="color: var(--text-muted);">Necesar Profil:</span> <strong style="color: var(--text-main); font-weight: 700;">${bom.flansa.mlTot} ml (~${bom.flansa.bare5m} bare x 5m)</strong></div>
+          <div><span style="color: var(--text-muted);">Colțari Rigidizare:</span> <strong style="color: var(--text-main); font-weight: 700;">${bom.coltari.cantitate} buc (${bom.coltari.tip})</strong></div>
+          <div><span style="color: var(--text-muted);">Bandă Etanșare Gasket:</span> <strong style="color: var(--text-main); font-weight: 700;">${bom.gasket.mlTot} ml (~${bom.gasket.role10m} role x 10m)</strong></div>
+        </div>
+      </div>
+
+      <!-- Card 3: Feronerie & Consumabile -->
+      <div style="background: var(--bg-card, rgba(148, 163, 184, 0.07)); border: 1px solid var(--border-color, rgba(148, 163, 184, 0.22)); border-radius: 8px; padding: 12px 14px;">
+        <div style="font-size: 12px; font-weight: 700; color: var(--text-main); margin-bottom: 8px; display: flex; align-items: center; gap: 6px;">
+          FERONERIE DE ASAMBLARE & CONSUMABILE
+        </div>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 8px; font-size: 11.5px;">
+          <div><span style="color: var(--text-muted);">Șuruburi + Piulițe:</span> <strong style="color: var(--text-main); font-weight: 700;">${bom.feronerie.surubCant} buc (${bom.feronerie.surubTip})</strong></div>
+          <div><span style="color: var(--text-muted);">Clipsuri Flanșă (pas 350mm):</span> <strong style="color: var(--text-main); font-weight: 700;">${bom.feronerie.clipsuriCant} bucăți</strong></div>
+          <div><span style="color: var(--text-muted);">Mastic Siliconic HVAC:</span> <strong style="color: var(--text-main); font-weight: 700;">${bom.feronerie.siliconTuburi} cartușe (tuburi)</strong></div>
+        </div>
+      </div>
+
+      <!-- Card 4: Suspendare -->
+      ${sustinereHtml}
+
+      <!-- Card 5: Plasa Plenum daca exista -->
+      ${plasaHtml}
+    `;
+  }
+
+  modal.classList.add('open');
+};
+
 function renderTable() {
   const tbody = document.getElementById('items-tbody');
   tbody.innerHTML = '';
@@ -2122,9 +3160,9 @@ function renderTable() {
             <div style="max-width: 440px; margin: 0 auto;">
               <svg style="width: 48px; height: 48px; color: var(--text-muted); opacity: 0.5; margin-bottom: 12px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></svg>
               <div style="font-size: 16px; font-weight: 700; color: var(--text-main); margin-bottom: 6px;">Coșul de comandă este gol (0 poziții)</div>
-              <p style="font-size: 13px; line-height: 1.5; color: var(--text-secondary); margin-bottom: 18px;">Puteți adăuga piese configurate direct din panoul tehnic de mai sus.</p>
+              <p style="font-size: 13px; line-height: 1.5; color: var(--text-secondary); margin-bottom: 18px;">Puteți adăuga piese configurate direct din catalogul de produse.</p>
               <div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
-                <button onclick="document.getElementById('step1-toggle')?.click()" class="k-btn k-btn-primary k-btn-sm" type="button">+ Deschide Configurator</button>
+                <button onclick="window.goToStep(1)" class="k-btn k-btn-primary k-btn-sm" type="button">+ Deschide Configurator Piese</button>
               </div>
             </div>
           </td>
@@ -2157,6 +3195,9 @@ function renderTable() {
     tr.innerHTML = `
       <td style="text-align: center; font-weight: 700; color: #2563eb;">${start + idx + 1}</td>
       <td style="text-align: center; white-space: nowrap;">
+        <button class="k-btn k-btn-secondary k-btn-xs" onclick="window.openBOMModal(${currentAbsIndex})" title="BOM Detaliat / Accesorii & Feronerie" style="padding: 3px 6px; margin-right: 3px; font-size: 11px; background: #e0e7ff; border: 1px solid #c7d2fe; color: #3730a3; cursor: pointer; border-radius: 6px;">
+          <svg class="icon-svg" viewBox="0 0 24 24" style="width: 13px; height: 13px; vertical-align: middle;"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+        </button>
         <button class="k-btn k-btn-secondary k-btn-xs" onclick="window.openEditModal(${currentAbsIndex})" title="Editează piesa" style="padding: 3px 6px; margin-right: 3px; font-size: 11px;">
           <svg class="icon-svg" viewBox="0 0 24 24" style="width: 13px; height: 13px; vertical-align: middle;"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
         </button>
@@ -2189,21 +3230,37 @@ function updateTableTotalsRow() {
   const totValoareEur = items.reduce((acc, it) => acc + (parseFloat(it.valoareTotala) || 0), 0);
   const totGreutate = items.reduce((acc, it) => acc + (parseFloat(it.greutate) || 0), 0);
 
+  const bazaImpozabilaEur = totValoareEur;
+  const tvaEur = bazaImpozabilaEur * (state.settings.tva / 100);
+  const totCuTvaEur = bazaImpozabilaEur + tvaEur;
+  const totCuTvaRon = totCuTvaEur * state.settings.cursEur;
   const totValoareRon = totValoareEur * state.settings.cursEur;
-  const tvaEur = totValoareEur * (state.settings.tva / 100);
-  const totCuTvaEur = totValoareEur + tvaEur;
 
   // Footer Row Elements
-  document.getElementById('foot-cantitate').textContent = `${Math.round(totCant)} buc`;
-  document.getElementById('foot-suprafata').textContent = `${totSuprafata.toFixed(2)} m²`;
-  document.getElementById('foot-valoare').textContent = `${totValoareEur.toFixed(2)} € (${totValoareRon.toFixed(2)} RON)`;
-  document.getElementById('foot-greutate').textContent = `Greutate totală: ${totGreutate.toFixed(1)} kg`;
+  const footCant = document.getElementById('foot-cantitate');
+  if (footCant) footCant.textContent = `${Math.round(totCant)} buc`;
+  const footSup = document.getElementById('foot-suprafata');
+  if (footSup) footSup.textContent = `${totSuprafata.toFixed(2)} m²`;
+  const footVal = document.getElementById('foot-valoare');
+  if (footVal) footVal.textContent = `${totValoareEur.toFixed(2)} € (${totValoareRon.toFixed(2)} RON)`;
+  const footGr = document.getElementById('foot-greutate');
+  if (footGr) footGr.textContent = `Greutate totală: ${totGreutate.toFixed(1)} kg`;
 
-  // Summary Banner
-  document.getElementById('summary-total-eur').textContent = `${totValoareEur.toFixed(2)} € / ${totValoareRon.toFixed(2)} RON`;
-  document.getElementById('summary-total-tva').textContent = `TVA (${state.settings.tva}%): ${tvaEur.toFixed(2)} € | Total cu TVA: ${totCuTvaEur.toFixed(2)} € (${(totCuTvaEur * state.settings.cursEur).toFixed(2)} RON)`;
+  // Summary Banner / Checkout Panel
+  const elSubtotal = document.getElementById('summary-subtotal-eur');
+  if (elSubtotal) elSubtotal.textContent = `${totValoareEur.toFixed(2)} €`;
 
-  document.getElementById('filter-count-badge').textContent = items.length;
+  const elTvaEur = document.getElementById('summary-tva-eur');
+  if (elTvaEur) elTvaEur.textContent = `${tvaEur.toFixed(2)} €`;
+
+  const elTotEur = document.getElementById('summary-total-eur');
+  if (elTotEur) elTotEur.textContent = `${totCuTvaEur.toFixed(2)} € / ${totCuTvaRon.toFixed(2)} RON`;
+
+  const elTotTva = document.getElementById('summary-total-tva');
+  if (elTotTva) elTotTva.textContent = `TVA (${state.settings.tva}%): ${tvaEur.toFixed(2)} € (${(tvaEur * state.settings.cursEur).toFixed(2)} RON) • Curs oficial BNR: 1 € = ${state.settings.cursEur.toFixed(4)} RON`;
+
+  const filterBadge = document.getElementById('filter-count-badge');
+  if (filterBadge) filterBadge.textContent = items.length;
 }
 
 function renderPagination() {
@@ -2271,15 +3328,16 @@ function updateKPICards() {
   const totalValoareEur = state.items.reduce((acc, it) => acc + (parseFloat(it.valoareTotala) || 0), 0);
   const totalGreutate = state.items.reduce((acc, it) => acc + (parseFloat(it.greutate) || 0), 0);
 
-  const tvaEur = totalValoareEur * (state.settings.tva / 100);
-  const totCuTvaEur = totalValoareEur + tvaEur;
+  const bazaImpozabilaEur = totalValoareEur;
+  const tvaEur = bazaImpozabilaEur * (state.settings.tva / 100);
+  const totCuTvaEur = bazaImpozabilaEur + tvaEur;
   const totCuTvaRon = totCuTvaEur * state.settings.cursEur;
 
   const elVal = document.getElementById('kpi-valoare-totala');
-  if (elVal) elVal.textContent = `${totalValoareEur.toFixed(2)} €`;
+  if (elVal) elVal.textContent = `${bazaImpozabilaEur.toFixed(2)} €`;
 
   const elRon = document.getElementById('kpi-valoare-ron');
-  if (elRon) elRon.textContent = `${(totalValoareEur * state.settings.cursEur).toFixed(2)} RON (fără TVA)`;
+  if (elRon) elRon.textContent = `${(bazaImpozabilaEur * state.settings.cursEur).toFixed(2)} RON (fără TVA)`;
 
   const elTotTva = document.getElementById('kpi-total-cu-tva');
   if (elTotTva) elTotTva.textContent = `${totCuTvaEur.toFixed(2)} €`;
@@ -2424,6 +3482,26 @@ function openBlueprintZoomModal(config, params) {
     titleEl.textContent = `${config.code} — ${config.name} (${config.category})`;
   }
 
+  // Populate Technical Description in Zoom Modal
+  const descInfo = (typeof PRODUCT_DESCRIPTIONS !== 'undefined' && PRODUCT_DESCRIPTIONS[config.code]) || {
+    title: config.name,
+    standard: 'Fabricație KronVent conform SR EN',
+    desc: `Piesă confecționată din tablă zincată calitatea DX51D+Z275, conform cerințelor tehnice de proiect HVAC.`,
+    utilizare: 'Sisteme de ventilație și climatizare.'
+  };
+
+  const zName = document.getElementById('zoom-desc-name');
+  if (zName) zName.textContent = descInfo.title;
+
+  const zStd = document.getElementById('zoom-desc-standard');
+  if (zStd) zStd.textContent = descInfo.standard;
+
+  const zText = document.getElementById('zoom-desc-text');
+  if (zText) zText.textContent = descInfo.desc;
+
+  const zUse = document.getElementById('zoom-desc-use-text');
+  if (zUse) zUse.textContent = descInfo.utilizare;
+
   if (badgesContainer && config.fields) {
     badgesContainer.innerHTML = config.fields.map(f => {
       const val = params[f.id] !== undefined ? params[f.id] : f.default;
@@ -2513,7 +3591,168 @@ function updateLiveCalculation() {
 
   const elTag = document.getElementById('blueprint-code-tag') || document.getElementById('blueprint-label');
   if (elTag) elTag.textContent = `${config.code} - ${config.name.toUpperCase()}`;
+  updateProductDescription(config);
   renderCADBlueprint(config, params);
+}
+
+const PRODUCT_DESCRIPTIONS = {
+  // Piese Rectangulare
+  'CRD': {
+    title: 'Canal Rectangular Drept (Tronson Tubulatură)',
+    standard: 'SR EN 1505 • Clasa B / C (ATC 3)',
+    desc: 'Tronson liniar de tubulatură din tablă zincată DX51D+Z275, rigidizat prin ambutisare trapezoidală și prevăzut cu profile de flanșă FL20/FL30 montate mecanic la ambele capete.',
+    utilizare: 'Magistrale de distribuție aer, coloane de ventilație și climatizare clădiri.'
+  },
+  'C90': {
+    title: 'Cot Rectangular la 90°',
+    standard: 'SR EN 1505 • Clasa B / C',
+    desc: 'Element de deviere la unghi drept pentru schimbarea direcției traseului de ventilație pe orizontală sau verticală, cu rază interioară aerodinamică pentru reducerea căderilor de presiune.',
+    utilizare: 'Ocoliri grinzi, racordări la centrale CTA și schimbări de direcție în traseu.'
+  },
+  'C45': {
+    title: 'Cot Rectangular la 45°',
+    standard: 'SR EN 1505 • Clasa B / C',
+    desc: 'Cot de deviere la 45° destinat devierilor line ale canalelor de aerisire, minimizând turbulențele și nivelul de zgomot în rețea.',
+    utilizare: 'Tranziții etaje, devieri subtile de traseu pe plafoane suspendate.'
+  },
+  'C30': {
+    title: 'Cot Rectangular la 30°',
+    standard: 'SR EN 1505 • Clasa B / C',
+    desc: 'Cot rectangular suplu la 30° pentru racordări fine la utilaje HVAC sau ocolirea altor trasee de instalații.',
+    utilizare: 'Ocoliri tehnice în spații tehnice aglomerate.'
+  },
+  'C15': {
+    title: 'Cot Rectangular la 15°',
+    standard: 'SR EN 1505 • Clasa B / C',
+    desc: 'Piesă de deviere angulară minoră (15°) pentru alinierea precisă a canalelor de ventilație cu gurile de refulare sau aspirație.',
+    utilizare: 'Corecții de aliniament și pante pe șantier.'
+  },
+  'C60': {
+    title: 'Cot Rectangular la 60°',
+    standard: 'SR EN 1505 • Clasa B / C',
+    desc: 'Cot de deviere intermediar la 60° pentru adaptări specifice ale traseelor de tubulatură în șantiere complexe.',
+    utilizare: 'Traversări unghiulare între goluri de planșeu.'
+  },
+  'TR': {
+    title: 'Teu Rectangular Simetric 90°',
+    standard: 'SR EN 1505 • Clasa B / C',
+    desc: 'Piesă de ramificare în formă de T pentru separarea sau combinarea a două fluxuri de aer, asigurând distribuția echilibrată către zone distincte.',
+    utilizare: 'Bifurcații din magistrala principală către ramuri secundare.'
+  },
+  'RR': {
+    title: 'Reducție Rectangulară (Concentrică / Asimetrică)',
+    standard: 'SR EN 1505 • Clasa B / C',
+    desc: 'Element de tranziție secțională între două dimensiuni de tubulatură, calculat cu unghi optim pentru menținerea vitezei constante a aerului.',
+    utilizare: 'Reducerea secțiunii după fiecare ramificare pe lungimea magistralei.'
+  },
+  'RC-R': {
+    title: 'Reducție Rectangulară la Rotundă (Transformare)',
+    standard: 'SR EN 1505 / SR EN 1506',
+    desc: 'Piesă specială de transformare pentru racordarea directă a canalelor rectangulare la tubulatură circulară Spiro sau difuzoare rotunde.',
+    utilizare: 'Interfață între magistrale rectangulare și rețeaua circulară terminală.'
+  },
+  'CAP': {
+    title: 'Capac Terminal Rectangular',
+    standard: 'SR EN 1505 • Etanșeitate garantată',
+    desc: 'Capac de capăt rigidizat din tablă zincată, montat cu profil de flanșă pentru închiderea etanșă a capetelor de canal sau extinderi viitoare.',
+    utilizare: 'Închiderea etanșă a terminalelor de coloane de aer.'
+  },
+  'ST': {
+    title: 'Ștuț / Ramificație Rectangulară',
+    standard: 'SR EN 1505 • FL20/FL30',
+    desc: 'Ștuț de branșament montat direct pe peretele canalului de aer pentru racordarea grilelor de ventilație sau a tubulaturilor secundare.',
+    utilizare: 'Racordare anemostate și grile liniare direct pe canal.'
+  },
+  'CL': {
+    title: 'Clapetă Rectangulară de Reglaj Debit',
+    standard: 'SR EN 1751 • Clasa 2 etanșeitate lamele',
+    desc: 'Dispozitiv de echilibrare a debitului de aer prevăzut cu jaluzele opuse acționate manual sau prin servomotor.',
+    utilizare: 'Echilibrarea și reglarea debitului pe fiecare ramură a instalației.'
+  },
+  'GR': {
+    title: 'Racord Grilă Ventilație / Cutie Plenum',
+    standard: 'SR EN 1505',
+    desc: 'Piesă de adaptare specială pentru susținerea și racordarea etanșă a grilelor decorative de introducere sau evacuare a aerului.',
+    utilizare: 'Montaj grile de tavan și perete în birouri și spații comerciale.'
+  },
+  'RAC': {
+    title: 'Racord Elastic Atenuator Vibrații',
+    standard: 'Pânză rezistentă la foc conform normativelor',
+    desc: 'Element flexibil montat între echipamentele dinamice (ventilatoare, CTA) și tubulatura metalică pentru decuplarea vibrațiilor și a zgomotului.',
+    utilizare: 'Decuplare fonică și mecanică la refularea/aspirația ventilatoarelor.'
+  },
+
+  // Piese Circulare SPIRO
+  'TS': {
+    title: 'Tubulatură Circulară SPIRO® (Țeavă Fălțuită)',
+    standard: 'SR EN 1506 • SR EN 12237 Clasa C/D',
+    desc: 'Conductă rigidă din bandă continuă de tablă zincată DX51D, fălțuită elicoidal la exterior pentru o rezistență mecanică superioară și pierderi minime de sarcină.',
+    utilizare: 'Rețele principale și secundare de aerisire în hale industriale, spații comerciale și birouri.'
+  },
+  'CC90': {
+    title: 'Cot Circular SPIRO® la 90°',
+    standard: 'SR EN 1506 • Garnitură EPDM dublă',
+    desc: 'Cot circular presat sau segmentat mecanic, echipat cu garnitură dublă din cauciuc EPDM pentru îmbinare etanșă sigură (Clasa C / ATC 3).',
+    utilizare: 'Schimbări de direcție la 90° în rețelele de tubulatură circulară.'
+  },
+  'CC45': {
+    title: 'Cot Circular SPIRO® la 45°',
+    standard: 'SR EN 1506 • Garnitură EPDM dublă',
+    desc: 'Cot circular calibrat la 45° pentru devieri aerodinamice optime fără căderi mari de presiune, etanșat din fabrică cu garnitură EPDM integrată.',
+    utilizare: 'Devieri subtile pe plafoane și adaptări la structura clădirii.'
+  },
+  'TC90': {
+    title: 'Teu Circular Simetric SPIRO® la 90°',
+    standard: 'SR EN 1506 • Clasa C etanșeitate',
+    desc: 'Piesă de ramificare la 90° cu corp principal și derivație circulară, ambele prevăzute cu garnituri de etanșare pentru montaj rapid prin presare.',
+    utilizare: 'Derivarea aerului din coloana magistrală către difuzoare terminale.'
+  },
+  'RC': {
+    title: 'Reducție Circulară Conică Concentrică',
+    standard: 'SR EN 1506 • Tranziție conică lină',
+    desc: 'Reducție conică pentru conectarea a două conducte Spiro de diametre diferite (Ød1 la Ød2), asigurând o tranziție curgătoare și silențioasă a fluxului de aer.',
+    utilizare: 'Coborârea treptată a secțiunii tubulaturii odată cu scăderea debitului de aer.'
+  },
+  'MUFA': {
+    title: 'Mufă de Îmbinare / Niplu Tub Circular Spiro',
+    standard: 'SR EN 1506 • Cu garnitură EPDM',
+    desc: 'Element de legătură calibrat pentru unirea cap la cap a două tronsoane de tubulatură spiromatică, cu nervură centrală de oprire și garnituri etanșe.',
+    utilizare: 'Prelungirea conductelor Spiro pe distanțe mari.'
+  },
+  'CAP-C': {
+    title: 'Capac Terminal Circular SPIRO®',
+    standard: 'SR EN 1506 • Cu garnitură EPDM',
+    desc: 'Capac presat pentru obturarea etanșă a capetelor de tub circular, împiedicând pierderile de presiune și pătrunderea prafului pe durata execuției.',
+    utilizare: 'Închiderea capetelor de linie sau a racordurilor temporare.'
+  },
+  'CL-C': {
+    title: 'Clapetă Fluture Circulară de Reglaj',
+    standard: 'SR EN 1751 • Acționare manuală / servomotor',
+    desc: 'Clapetă circulară cu disc interior etanșabil și manetă gradată 0-90° pentru reglarea și echilibrarea debitelor de aer pe fiecare racord.',
+    utilizare: 'Echilibrarea debitelor către fiecare difuzor de aer din încăpere.'
+  }
+};
+
+function updateProductDescription(config) {
+  if (!config) return;
+  const info = PRODUCT_DESCRIPTIONS[config.code] || {
+    title: config.name,
+    standard: 'Fabricație KronVent conform SR EN',
+    desc: `Piesă confecționată din tablă zincată calitatea DX51D+Z275, conform cerințelor tehnice de proiect HVAC.`,
+    utilizare: 'Sisteme de ventilație și climatizare.'
+  };
+
+  const elTitle = document.getElementById('product-desc-title');
+  if (elTitle) elTitle.textContent = info.title;
+
+  const elStd = document.getElementById('product-desc-standard');
+  if (elStd) elStd.textContent = info.standard;
+
+  const elDesc = document.getElementById('product-desc-text');
+  if (elDesc) elDesc.textContent = info.desc;
+
+  const elUse = document.getElementById('product-desc-use-text');
+  if (elUse) elUse.textContent = info.utilizare;
 }
 
 function generateCADDimensionOverlaySVG(config, params, prefix = 'main') {
@@ -2578,36 +3817,60 @@ function generateCADDimensionOverlaySVG(config, params, prefix = 'main') {
 
   let content = markers;
 
-  if (code === 'CRD') {
+  if (code === 'Capac') {
+    // Capac Rectangular - Aliniere matematica perpendiculara pe rama de flansa 3D
+    // 1. Inaltime B (latura verticala stanga a ramei de flansa)
+    content += drawDim({
+      p1: [160, 465],
+      p2: [160, 935],
+      ext1: [225, 465],
+      ext2: [225, 935],
+      badgePos: [130, 700],
+      label: 'B',
+      value: getField('dim_B', 300),
+      unit: 'mm'
+    });
+    // 2. Latime A (latura orizontala in perspectiva, paralela cu baza)
+    content += drawDim({
+      p1: [260, 987],
+      p2: [900, 612],
+      ext1: [230, 935],
+      ext2: [870, 560],
+      badgePos: [580, 800],
+      label: 'A',
+      value: getField('dim_A', 400),
+      unit: 'mm'
+    });
+  } else if (code === 'CRD') {
     // 1. Inaltime B (stanga, flansa verticala)
     content += drawDim({
-      p1: [95, 380],
-      p2: [95, 760],
-      ext1: [135, 380],
-      ext2: [135, 760],
-      badgePos: [95, 570],
+      p1: [140, 390],
+      p2: [140, 710],
+      ext1: [180, 390],
+      ext2: [180, 710],
+      badgePos: [130, 550],
       label: 'B',
       value: getField('dim_B', 500),
       unit: 'mm'
     });
     // 2. Latime A (fata, baza orizontala inclinata)
     content += drawDim({
-      p1: [80, 810],
-      p2: [360, 965],
-      ext1: [110, 760],
-      ext2: [390, 915],
-      badgePos: [220, 888],
+      p1: [160, 765],
+      p2: [370, 905],
+      ext1: [185, 730],
+      ext2: [395, 870],
+      badgePos: [265, 835],
       label: 'A',
       value: getField('dim_A', 500),
       unit: 'mm'
     });
     // 3. Lungime L (sus, lungimea canalului spre spate)
     content += drawDim({
-      p1: [255, 305],
-      p2: [580, 65],
-      ext1: [290, 350],
-      ext2: [615, 110],
-      badgePos: [418, 185],
+      p1: [310, 330],
+      p2: [580, 120],
+      ext1: [340, 370],
+      ext2: [610, 160],
+      badgePos: [445, 225],
       label: 'L',
       value: getField('dim_L', 1250),
       unit: 'mm'
@@ -2708,45 +3971,101 @@ function generateCADDimensionOverlaySVG(config, params, prefix = 'main') {
       value: getField('dim_L', 500),
       unit: 'mm'
     });
-  } else if (code === 'TR' || code === 'TC90') {
+  } else if (code === 'TR') {
     // Teuri rectangulare
     content += drawDim({
-      p1: [80, 810],
-      p2: [360, 965],
-      ext1: [110, 760],
-      ext2: [390, 915],
-      badgePos: [220, 888],
+      p1: [110, 780],
+      p2: [350, 920],
+      ext1: [130, 750],
+      ext2: [370, 890],
+      badgePos: [230, 850],
       label: 'A1',
       value: getField('dim_A1', 500),
       unit: 'mm'
     });
     content += drawDim({
-      p1: [95, 380],
-      p2: [95, 760],
-      ext1: [135, 380],
-      ext2: [135, 760],
-      badgePos: [95, 570],
+      p1: [95, 400],
+      p2: [95, 750],
+      ext1: [135, 400],
+      ext2: [135, 750],
+      badgePos: [95, 575],
       label: 'B1',
       value: getField('dim_B1', 400),
       unit: 'mm'
     });
     content += drawDim({
-      p1: [620, 110],
-      p2: [790, 190],
-      badgePos: [705, 150],
+      p1: [620, 160],
+      p2: [790, 230],
+      badgePos: [705, 195],
       label: 'A2',
       value: getField('dim_A2', 300),
       unit: 'mm'
     });
     content += drawDim({
-      p1: [255, 305],
-      p2: [580, 65],
-      badgePos: [418, 185],
+      p1: [255, 330],
+      p2: [580, 120],
+      badgePos: [418, 225],
       label: 'L',
       value: getField('dim_L', 600),
       unit: 'mm'
     });
-  } else if (code === 'SPIRO' || code === 'NIPC' || code === 'CRC' || code === 'RedCirc' || code === 'TeuCirc') {
+  } else if (code === 'TC90') {
+    // Teu circular simetric 90° Spiro (Ød1 corp principal, Ød2 ramificație)
+    content += drawDim({
+      p1: [150, 470],
+      p2: [330, 340],
+      ext1: [130, 490],
+      ext2: [350, 320],
+      badgePos: [240, 405],
+      label: 'Ød1',
+      value: getField('dim_D', 200),
+      unit: 'mm'
+    });
+    content += drawDim({
+      p1: [430, 240],
+      p2: [550, 170],
+      ext1: [410, 260],
+      ext2: [570, 150],
+      badgePos: [490, 205],
+      label: 'Ød2',
+      value: getField('dim_D2', 160),
+      unit: 'mm'
+    });
+  } else if (code === 'RC') {
+    // Reducție circulară conică Spiro (Ød1 mare, Ød2 mic)
+    content += drawDim({
+      p1: [140, 770],
+      p2: [340, 650],
+      ext1: [120, 790],
+      ext2: [360, 630],
+      badgePos: [240, 710],
+      label: 'Ød1',
+      value: getField('dim_D', 250),
+      unit: 'mm'
+    });
+    content += drawDim({
+      p1: [550, 360],
+      p2: [720, 270],
+      ext1: [530, 380],
+      ext2: [740, 250],
+      badgePos: [635, 315],
+      label: 'Ød2',
+      value: getField('dim_D2', 200),
+      unit: 'mm'
+    });
+  } else if (code === 'STC' || code === 'CAPC' || code === 'CLAPC') {
+    // Fitinguri circulare cu un singur diametru
+    content += drawDim({
+      p1: [140, 770],
+      p2: [340, 650],
+      ext1: [120, 790],
+      ext2: [360, 630],
+      badgePos: [240, 710],
+      label: 'Ød',
+      value: getField('dim_D', 200),
+      unit: 'mm'
+    });
+  } else if (code === 'SPIRO' || code === 'NIPC' || code === 'CRC') {
     // Tubulatura circulara Spiro / Accesorii
     const unitL = config.fields && config.fields.some(f => f.id === 'dim_L_ml') ? 'ml' : 'mm';
     content += drawDim({
@@ -2887,10 +4206,11 @@ function alignWorkbenchCards() {
     return;
   }
 
-  // 1. Aliniere perfecta a cardurilor superioare (Schița are fix aceeasi inaltime ca selectorul de piese)
+  // 1. Aliniere perfecta a cardurilor superioare (Schița are fix aceeasi inaltime ca selectorul de piese, min 360px)
   const gridHeight = pieceGrid.offsetHeight;
   if (gridHeight > 0) {
-    blueprintBox.style.height = `${gridHeight}px`;
+    const targetH = Math.max(gridHeight, 360);
+    blueprintBox.style.height = `${targetH}px`;
     blueprintBox.style.flex = 'none';
   }
 
@@ -3187,7 +4507,7 @@ function renderBlueprintSVG(type, p) {
 }
 
 // ====================================================================
-// ATELIER PRODUCTION BREAKDOWN
+// ATELIER PRODUCTION BREAKDOWN (BALANȚĂ MATERIALE DETALIATĂ)
 // ====================================================================
 function updateAtelierTab() {
   let tabla06 = { s: 0, w: 0 };
@@ -3197,39 +4517,62 @@ function updateAtelierTab() {
   let flansa30 = 0;
   let coltari20 = 0;
   let coltari30 = 0;
+  let garnitura = 0;
+
+  let tijeM8_ml = 0;
+  let tijeM10_ml = 0;
+  let conexpandM8 = 0;
+  let conexpandM10 = 0;
+  let profil30x20_ml = 0;
+  let profil41x41_ml = 0;
+  let profilGarnitura_ml = 0;
+  let profilCapace = 0;
+  let clipsuri = 0;
+  let silicon = 0;
+  let plasaPlenum = 0;
 
   state.items.forEach(it => {
-    const s = parseFloat(it.suprafata) || 0;
-    const g = it.grosime ? it.grosime.toString().trim() : '0.8';
-    const c = it.coltari || 0;
+    const bom = computeDetailedBOM(it);
 
-    if (g === '0.6') {
-      tabla06.s += s;
-      tabla06.w += s * 4.71;
-    } else if (g === '1.0' || g === '1') {
-      tabla10.s += s;
-      tabla10.w += s * 7.85;
+    if (bom.tabla.grosime === '0.6') {
+      tabla06.s += bom.tabla.suprafataTot;
+      tabla06.w += bom.tabla.greutateKg;
+    } else if (bom.tabla.grosime === '1.0' || bom.tabla.grosime === '1') {
+      tabla10.s += bom.tabla.suprafataTot;
+      tabla10.w += bom.tabla.greutateKg;
     } else {
-      tabla08.s += s;
-      tabla08.w += s * 6.28;
+      tabla08.s += bom.tabla.suprafataTot;
+      tabla08.w += bom.tabla.greutateKg;
     }
 
-    if (it.dimensiuni && it.categorie !== 'Tubulatura Circulara Spiro' && it.categorie !== 'Materiale montaj') {
-      const nums = it.dimensiuni.match(/\d+/g);
-      if (nums && nums.length >= 2) {
-        const a = parseInt(nums[0], 10) || 0;
-        const b = parseInt(nums[1], 10) || 0;
-        const cant = it.cantitate || 1;
-        const ml = ((a + b) * 4 / 1000) * cant;
-        if (it.flansa === 'FLANSA30') {
-          flansa30 += ml;
-          coltari30 += c;
-        } else {
-          flansa20 += ml;
-          coltari20 += c;
-        }
+    if (!bom.isCircular) {
+      if (it.flansa === 'FLANSA30' || bom.flansa.tip.includes('30')) {
+        flansa30 += bom.flansa.mlTot;
+        coltari30 += bom.coltari.cantitate;
+      } else {
+        flansa20 += bom.flansa.mlTot;
+        coltari20 += bom.coltari.cantitate;
       }
     }
+    garnitura += bom.gasket.mlTot;
+
+    if (bom.sustinere && bom.sustinere.areSustinere) {
+      if (bom.sustinere.tijeTip === 'M10') {
+        tijeM10_ml += bom.sustinere.tijeMl;
+        conexpandM10 += bom.sustinere.conexpandCant;
+        profil41x41_ml += bom.sustinere.profilMl;
+      } else {
+        tijeM8_ml += bom.sustinere.tijeMl;
+        conexpandM8 += bom.sustinere.conexpandCant;
+        profil30x20_ml += bom.sustinere.profilMl;
+      }
+      profilGarnitura_ml += bom.sustinere.garnituraMl;
+      profilCapace += bom.sustinere.capaceCant;
+    }
+
+    clipsuri += (bom.feronerie.clipsuriCant || 0);
+    silicon += (bom.feronerie.siliconTuburi || 0);
+    plasaPlenum += (bom.plasaPlenum || 0);
   });
 
   const totS = tabla06.s + tabla08.s + tabla10.s;
@@ -3240,7 +4583,7 @@ function updateAtelierTab() {
     if (el) el.textContent = txt;
   };
 
-  // Set values for tab-materiale table in index.html
+  // Balanță Materiale
   setTxt('mat-tabla-06', `${tabla06.s.toFixed(2)} m² (${tabla06.w.toFixed(1)} kg)`);
   setTxt('mat-tabla-08', `${tabla08.s.toFixed(2)} m² (${tabla08.w.toFixed(1)} kg)`);
   setTxt('mat-tabla-10', `${tabla10.s.toFixed(2)} m² (${tabla10.w.toFixed(1)} kg)`);
@@ -3248,8 +4591,16 @@ function updateAtelierTab() {
   setTxt('mat-flansa-30', `${flansa30.toFixed(1)} ml (~${Math.ceil(flansa30 / 5)} bare x 5m)`);
   setTxt('mat-coltari-20', `${coltari20} buc`);
   setTxt('mat-coltari-30', `${coltari30} buc`);
-  const garnitura = (flansa20 + flansa30) / 2;
   setTxt('mat-gasket', `${garnitura.toFixed(1)} ml (~${Math.ceil(garnitura / 10)} role x 10m)`);
+
+  setTxt('mat-tije-m8', `${tijeM8_ml.toFixed(1)} ml (~${Math.ceil(tijeM8_ml / 2)} bare x 2m)`);
+  setTxt('mat-tije-m10', `${tijeM10_ml.toFixed(1)} ml (~${Math.ceil(tijeM10_ml / 2)} bare x 2m)`);
+  setTxt('mat-conexpand', `${conexpandM8 + conexpandM10} buc (M8: ${conexpandM8} | M10: ${conexpandM10})`);
+  setTxt('mat-profile-sustinere', `${(profil30x20_ml + profil41x41_ml).toFixed(1)} ml (30x20: ${profil30x20_ml.toFixed(1)} ml | 41x41: ${profil41x41_ml.toFixed(1)} ml)`);
+  setTxt('mat-accesorii-profil', `${profilGarnitura_ml.toFixed(1)} ml EPDM / ${profilCapace} capace PVC`);
+  setTxt('mat-clipsuri', `${clipsuri} buc`);
+  setTxt('mat-silicon', `${silicon} tuburi`);
+  setTxt('mat-plasa-plenum', `${plasaPlenum.toFixed(2)} m²`);
 
   // Fallback legacy IDs if present
   setTxt('atelier-tabla-06', `${tabla06.s.toFixed(2)} m² (${tabla06.w.toFixed(1)} kg)`);
@@ -3264,8 +4615,8 @@ function updateAtelierTab() {
   setTxt('atelier-coltari-20', `${coltari20} bucăți`);
   setTxt('atelier-coltari-30', `${coltari30} bucăți`);
   setTxt('atelier-suruburi', `${Math.round((coltari20 + coltari30) / 2)} seturi`);
-  setTxt('atelier-cleme', `${Math.ceil((flansa20 + flansa30) * 1.5)} bucăți`);
-  setTxt('atelier-mastic', `${Math.ceil((flansa20 + flansa30) / 15)} tuburi`);
+  setTxt('atelier-cleme', `${clipsuri} bucăți`);
+  setTxt('atelier-mastic', `${silicon} tuburi`);
 }
 
 // ====================================================================
@@ -3273,15 +4624,30 @@ function updateAtelierTab() {
 // ====================================================================
 function setupModal() {
   const modal = document.getElementById('edit-modal');
-  if (!modal) return;
 
   const btnClose = document.getElementById('modal-close') || document.getElementById('btn-close-modal');
   const btnCancel = document.getElementById('modal-cancel') || document.getElementById('btn-cancel-modal');
   const btnSave = document.getElementById('modal-save');
   const editForm = document.getElementById('modal-edit-form');
 
-  if (btnClose) btnClose.addEventListener('click', () => modal.classList.remove('open'));
-  if (btnCancel) btnCancel.addEventListener('click', () => modal.classList.remove('open'));
+  if (btnClose && modal) btnClose.addEventListener('click', () => modal.classList.remove('open'));
+  if (btnCancel && modal) btnCancel.addEventListener('click', () => modal.classList.remove('open'));
+
+  // Wire BOM Modal events
+  const bomModal = document.getElementById('bom-modal');
+  const bomCloseBtn = document.getElementById('bom-modal-close');
+  const bomBtnClose = document.getElementById('bom-modal-btn-close');
+  if (bomCloseBtn && bomModal) {
+    bomCloseBtn.addEventListener('click', () => bomModal.classList.remove('open'));
+  }
+  if (bomBtnClose && bomModal) {
+    bomBtnClose.addEventListener('click', () => bomModal.classList.remove('open'));
+  }
+  if (bomModal) {
+    bomModal.addEventListener('click', (e) => {
+      if (e.target === bomModal) bomModal.classList.remove('open');
+    });
+  }
 
   const handleSave = (e) => {
     if (e && e.preventDefault) e.preventDefault();
@@ -3300,12 +4666,11 @@ function setupModal() {
     if (elSup) state.items[idx].suprafata = parseFloat(elSup.value) || 0;
     if (elPret) state.items[idx].valoareTotala = parseFloat(elPret.value) || 0;
 
-    modal.classList.remove('open');
-    saveCartToStorage();
     applyFiltersAndRender();
-    updateKPICards();
-    updateAtelierTab();
-    showToast('Piesa a fost actualizată!');
+    if (typeof updateKPICards === 'function') updateKPICards();
+    if (typeof updateAtelierTab === 'function') updateAtelierTab();
+    if (modal) modal.classList.remove('open');
+    showToast('Piesa a fost actualizată cu succes!', 'success');
   };
 
   if (btnSave) btnSave.addEventListener('click', handleSave);
