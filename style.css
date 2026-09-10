@@ -3284,9 +3284,23 @@ select.calc-param-input {
     gap: 12px !important;
   }
 
+  .print-logo-box {
+    background: #0f172a !important;
+    border-radius: 8px !important;
+    padding: 6px 14px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12) !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
   .print-logo {
-    height: 38px !important;
+    height: 32px !important;
     width: auto !important;
+    display: block !important;
+    object-fit: contain !important;
   }
 
   .print-company-details .company-name {

@@ -1395,7 +1395,9 @@ function setupActionButtons() {
       <div class="print-doc-container">
         <div class="print-header-bar">
           <div class="print-header-left">
-            <img src="kronvent-logo.png" alt="KronVent Brașov" class="print-logo">
+            <div class="print-logo-box" style="background: #0f172a !important; border-radius: 8px !important; padding: 6px 14px !important; display: inline-flex !important; align-items: center !important; justify-content: center !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; box-shadow: 0 1px 3px rgba(0,0,0,0.12) !important;">
+              <img src="kronvent-logo.png" alt="KronVent Brașov" class="print-logo" style="height: 32px !important; width: auto !important; display: block !important; object-fit: contain !important;">
+            </div>
             <div class="print-company-details">
               <div class="company-name">KRONVENT TUBULATURĂ HVAC S.R.L.</div>
               <div class="company-line">Fabrică & Centru Prelucrare Tablă Zincată • Brașov, România</div>
