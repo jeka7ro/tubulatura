@@ -40,8 +40,8 @@
         <div class="sidebar-section-title">PRODUCȚIE & ATELIER</div>
         <button class="sidebar-nav-item admin-tab-btn" data-target="admin-tab-comenzi" role="tab">
           <svg class="icon-svg" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="9" y1="21" x2="9" y2="9"></line></svg>
-          <span>Editor Fișier Excel</span>
-          <span class="sidebar-pill-badge badge-neutral" id="admin-items-count-badge">51</span>
+          <span>Centralizator Fabricație</span>
+          <span class="sidebar-pill-badge badge-neutral" id="admin-items-count-badge">Poziții</span>
         </button>
 
         <button class="sidebar-nav-item admin-tab-btn" data-target="admin-tab-materiale" role="tab">
@@ -256,20 +256,20 @@
           <div class="metric-sub">Standard SR EN 1505 / 1506</div>
         </div>
       </section>
-      <!-- File Management & Actions Toolbar -->
+      <!-- Actions Toolbar -->
       <div class="enterprise-card excel-file-manager-card" style="padding: 16px; margin-bottom: 16px;">
-        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 12px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
           <div style="display: flex; align-items: center; gap: 10px;">
             <div class="excel-file-badge">
-              <svg class="icon-svg" viewBox="0 0 24 24" style="width: 22px; height: 22px; stroke: #16a34a;"><rect x="3" y="3" width="18" height="18" rx="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="9" y1="21" x2="9" y2="9"></line></svg>
+              <svg class="icon-svg" viewBox="0 0 24 24" style="width: 22px; height: 22px; stroke: #16a34a;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
             </div>
             <div>
               <div style="font-size: 14px; font-weight: 700; color: var(--text-main); display: flex; align-items: center; gap: 8px;">
-                <span>Fișier de Producție: Program Calcul EXACT.xlsx</span>
-                <span class="k-badge" style="background: #dcfce7; color: #15803d; font-weight: 700;">ACTIV PE SERVER</span>
+                <span>Registru Tehnic de Fabricație & Debitări</span>
+                <span class="k-badge" style="background: #dcfce7; color: #15803d; font-weight: 700;">FORMULE NATIVE ACTIVE</span>
               </div>
               <p style="font-size: 12px; color: var(--text-muted); margin-top: 2px;">
-                Modificați orice celulă direct în tabel, adăugați poziții noi, încărcați un fișier Excel actualizat sau salvați baza de date.
+                Calcul dinamic direct în aplicație (SR EN 1505 / 1506): suprafețe m², greutate tablă zincată, flanșe, colțari și export pentru atelier.
               </p>
             </div>
           </div>
@@ -280,50 +280,30 @@
               <span>+ Adaugă Poziție Nouă</span>
             </button>
 
-            <button id="admin-btn-upload-excel" class="k-btn k-btn-secondary" title="Încarcă un fișier Excel (.xlsx) complet">
-              <svg class="icon-svg" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
-              <span>Încarcă Excel (.xlsx)</span>
-            </button>
-            <input type="file" id="admin-excel-file-input" accept=".xlsx, .xls" style="display: none;">
-
-            <button id="admin-btn-download-excel-file" class="k-btn k-btn-success" title="Descarcă fișierul Excel curent">
+            <button id="admin-btn-download-excel-file" class="k-btn k-btn-success" title="Descarcă fișierul Excel de producție pentru atelier">
               <svg class="icon-svg" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
-              <span>Descarcă Excel (.xlsx)</span>
+              <span>Export Producție (.xlsx)</span>
             </button>
 
             <button id="admin-btn-save-inline" class="k-btn k-btn-primary" style="background: #15803d; border-color: #15803d;" title="Salvează modificările pe server">
               <svg class="icon-svg" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg>
               <span>Salvează Modificările</span>
             </button>
-
-            <button id="admin-btn-reset" class="k-btn k-btn-secondary k-btn-sm" style="color: var(--text-muted);" title="Reîncarcă pozițiile inițiale din fișierul Excel de pe server">
-              <svg class="icon-svg" viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"></polyline><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path></svg>
-              <span>Reîncarcă Fișierul Original</span>
-            </button>
           </div>
-        </div>
-
-        <!-- Dropzone drag & drop -->
-        <div id="admin-excel-dropzone" class="excel-dropzone">
-          <svg class="icon-svg" viewBox="0 0 24 24" style="width: 22px; height: 22px; stroke: var(--kronvent-blue);"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="12" y1="18" x2="12" y2="12"></line><line x1="9" y1="15" x2="12" y2="12"></line><line x1="15" y1="15" x2="12" y2="12"></line></svg>
-          <span style="font-size: 12px; font-weight: 600; color: var(--text-main);">
-            Trageți aici fișierul Excel (.xlsx) sau faceți clic pentru a importa tabelul complet de calcul
-          </span>
-          <span style="font-size: 11px; color: var(--text-muted);">(compatibil cu Program Calcul EXACT.xlsx)</span>
         </div>
       </div>
 
       <!-- Main Spreadsheet Card -->
       <div class="enterprise-card">
-        <!-- Excel Multi-Sheet Workbook Navigator (Excel Tabs) -->
+        <!-- Multi-Sheet Navigator -->
         <div class="excel-workbook-container">
           <div class="excel-sheet-nav-header">
             <div class="excel-sheet-nav-label">
               <svg class="icon-svg" viewBox="0 0 24 24" style="width: 15px; height: 15px; stroke: #15803d;"><rect x="3" y="3" width="18" height="18" rx="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="9" y1="21" x2="9" y2="9"></line></svg>
-              <span>Foi de Calcul Excel (Program Calcul EXACT.xlsx)</span>
+              <span>Secțiuni & Registre Tehnice</span>
             </div>
             <div id="admin-sheet-active-title" style="font-size: 12px; font-weight: 700; color: var(--kronvent-blue);">
-              Comanda (Centralizator 51 poziții)
+              Centralizator Poziții
             </div>
           </div>
           <div class="excel-sheets-tab-bar" id="admin-sheet-tabs-container">

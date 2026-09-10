@@ -153,8 +153,8 @@ function setupAdminTabs() {
       subtitle: 'Sinteză comenzi clienți B2B • Anul de Fabricație 2026'
     },
     'admin-tab-comenzi': {
-      title: 'Editor Fișier Excel & Nomenclator Comenzi',
-      subtitle: 'Modificare poziții, prețuri și calcul dinamic de producție'
+      title: 'Centralizator Tehnic & Nomenclator Fabricație',
+      subtitle: 'Calcul dinamic nativ de producție (SR EN 1505 / 1506) fără dependențe externe'
     },
     'admin-tab-materiale': {
       title: 'Necesar Materiale Atelier',
