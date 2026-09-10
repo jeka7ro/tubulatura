@@ -1639,10 +1639,14 @@ function renderOrdersTable() {
       <td style="text-align: right; font-weight: 700; color: #15803d;">${o.totalEur ? o.totalEur.toFixed(2) : '-'} €</td>
       <td style="text-align: right;">${o.totalRon ? o.totalRon.toFixed(2) : '-'} RON</td>
       <td style="text-align: center;">
-        <button class="k-btn k-btn-secondary k-btn-sm" style="padding: 3px 8px; font-size: 11px; white-space: nowrap;" onclick="inspectOrderSnapshot(${idx})">
-          <svg class="icon-svg" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
-          <span>Vezi Snapshot</span>
-        </button>
+        <div style="display: inline-flex; gap: 6px; justify-content: center;">
+          <button class="k-btn k-btn-secondary k-btn-icon-only" onclick="inspectOrderDetails(${idx})" title="Vezi repere tehnice & piese" aria-label="Detalii Comandă">
+            <svg class="icon-svg" viewBox="0 0 24 24" style="width: 15px; height: 15px; stroke: currentColor;"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+          </button>
+          <button class="k-btn k-btn-primary k-btn-icon-only" onclick="loadOrderIntoCentralizer('${o.id}')" title="Încarcă în atelier pentru debitare" aria-label="Trimite în Atelier">
+            <svg class="icon-svg" viewBox="0 0 24 24" style="width: 15px; height: 15px; stroke: currentColor;"><polyline points="15 3 21 3 21 9"></polyline><polyline points="9 21 3 21 3 15"></polyline><line x1="21" y1="3" x2="14" y2="10"></line><line x1="3" y1="21" x2="10" y2="14"></line></svg>
+          </button>
+        </div>
       </td>
     `;
     tbody.appendChild(tr);
@@ -2276,14 +2280,15 @@ function renderDashOrdersTable() {
         </select>
       </td>
       <td style="text-align: center; white-space: nowrap;">
-        <div style="display: inline-flex; gap: 6px;">
-          <button class="k-btn k-btn-secondary k-btn-sm" style="padding: 4px 8px; font-size: 11px;" onclick="inspectOrderDetails(${orderIndexInAll})" title="Vizualizează piesele, dimensiunile și detaliile comenzii">
-            <svg class="icon-svg" viewBox="0 0 24 24" style="width: 13px; height: 13px;"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
-            <span>Detalii</span>
+        <div style="display: inline-flex; gap: 6px; justify-content: center;">
+          <button class="k-btn k-btn-secondary k-btn-icon-only" onclick="inspectOrderDetails(${orderIndexInAll})" title="Vezi repere tehnice & piese comandă" aria-label="Detalii Comandă">
+            <svg class="icon-svg" viewBox="0 0 24 24" style="width: 15px; height: 15px; stroke: currentColor;"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
           </button>
-          <button class="k-btn k-btn-primary k-btn-sm" style="padding: 4px 8px; font-size: 11px;" onclick="loadOrderIntoCentralizer('${o.id}')" title="Încarcă în atelier pentru debitare">
-            <svg class="icon-svg" viewBox="0 0 24 24" style="width: 13px; height: 13px;"><polyline points="15 3 21 3 21 9"></polyline><polyline points="9 21 3 21 3 15"></polyline><line x1="21" y1="3" x2="14" y2="10"></line><line x1="3" y1="21" x2="10" y2="14"></line></svg>
-            <span>Atelier</span>
+          <button class="k-btn k-btn-primary k-btn-icon-only" onclick="loadOrderIntoCentralizer('${o.id}')" title="Încarcă în atelier pentru debitare" aria-label="Trimite în Atelier">
+            <svg class="icon-svg" viewBox="0 0 24 24" style="width: 15px; height: 15px; stroke: currentColor;"><polyline points="15 3 21 3 21 9"></polyline><polyline points="9 21 3 21 3 15"></polyline><line x1="21" y1="3" x2="14" y2="10"></line><line x1="3" y1="21" x2="10" y2="14"></line></svg>
+          </button>
+          <button class="k-btn k-btn-secondary k-btn-icon-only" onclick="quickPrintOrder('${o.id}')" title="Printează bon debitare atelier" aria-label="Printează">
+            <svg class="icon-svg" viewBox="0 0 24 24" style="width: 15px; height: 15px; stroke: currentColor;"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
           </button>
         </div>
       </td>
@@ -2345,10 +2350,15 @@ window.inspectOrderDetails = function(orderIndexInAll) {
   }
 
   // Setup buttons
+  const closeModal = () => {
+    modal.classList.remove('open');
+    setTimeout(() => { modal.style.display = 'none'; }, 200);
+  };
+
   const btnLoad = document.getElementById('order-modal-load-centralizer-btn');
   if (btnLoad) {
     btnLoad.onclick = () => {
-      modal.style.display = 'none';
+      closeModal();
       loadOrderIntoCentralizer(o.id || o.orderNumber);
     };
   }
@@ -2359,12 +2369,18 @@ window.inspectOrderDetails = function(orderIndexInAll) {
   }
 
   const btnClose = document.getElementById('order-modal-close-btn');
-  if (btnClose) btnClose.onclick = () => modal.style.display = 'none';
+  if (btnClose) btnClose.onclick = closeModal;
 
   const btnOk = document.getElementById('order-modal-ok-btn');
-  if (btnOk) btnOk.onclick = () => modal.style.display = 'none';
+  if (btnOk) btnOk.onclick = closeModal;
+
+  // Click outside to close
+  modal.onclick = (e) => {
+    if (e.target === modal) closeModal();
+  };
 
   modal.style.display = 'flex';
+  requestAnimationFrame(() => modal.classList.add('open'));
 };
 
 window.handleOrderStatusChange = async function(orderId, newStatus) {
@@ -2583,63 +2599,17 @@ window.activateYearDirectly = async function(year) {
 };
 
 window.inspectOrderSnapshot = function(orderIndex) {
-  const order = adminState.yearsData.orders[orderIndex];
-  if (!order) return;
-  openSnapshotModal(order);
+  window.inspectOrderDetails(orderIndex);
 };
 
-function openSnapshotModal(order) {
-  const modal = document.getElementById('admin-snapshot-modal');
-  if (!modal) return;
-
-  const title = document.getElementById('snapshot-modal-title');
-  const sub = document.getElementById('snapshot-modal-sub');
-  const pills = document.getElementById('snapshot-modal-pills');
-  const jsonPre = document.getElementById('snapshot-modal-json');
-
-  if (title) title.textContent = `Snapshot Imuabil Comandă: ${order.orderNumber || order.id}`;
-  if (sub) sub.textContent = `Beneficiar: ${order.client} • Proiect: ${order.project} • Dată: ${order.date}`;
-
-  const snap = order.calculation_snapshot || {};
-  if (pills) {
-    pills.innerHTML = `
-      <span class="snapshot-pill">An Audit: ${snap.year || order.year || 2026}</span>
-      <span class="snapshot-pill">Curs Snapshot: ${snap.cursEur || snap.settings?.cursEur || 5.2542} RON</span>
-      <span class="snapshot-pill">Preț Bază: ${snap.settings?.pretMpRectangular || 15} €/m²</span>
-      <span class="snapshot-pill">TVA: ${snap.settings?.tva || 21}%</span>
-      <span class="snapshot-pill">Prag Flanșă: ${snap.settings?.flansaPerimeterThreshold || 3500} mm</span>
-      <span class="snapshot-pill">Poziții Salvate: ${(order.items || []).length}</span>
-    `;
+window.quickPrintOrder = function(orderId) {
+  const orders = adminState.yearsData.orders || [];
+  const idx = orders.findIndex(o => o.id === orderId || o.orderNumber === orderId);
+  if (idx >= 0) {
+    window.inspectOrderDetails(idx);
+    setTimeout(() => window.print(), 350);
   }
-
-  const cleanSnap = {
-    orderNumber: order.orderNumber || order.id,
-    year: order.year,
-    client: order.client,
-    project: order.project,
-    date: order.date,
-    totalEur: order.totalEur,
-    totalRon: order.totalRon,
-    totalMp: order.totalMp,
-    totalPiese: order.totalPiese,
-    calculation_snapshot: snap,
-    items: order.items
-  };
-
-  if (jsonPre) {
-    jsonPre.textContent = JSON.stringify(cleanSnap, null, 2);
-  }
-
-  modal.style.display = 'flex';
-  requestAnimationFrame(() => modal.classList.add('open'));
-}
-
-function closeSnapshotModal() {
-  const modal = document.getElementById('admin-snapshot-modal');
-  if (!modal) return;
-  modal.classList.remove('open');
-  setTimeout(() => { modal.style.display = 'none'; }, 200);
-}
+};
 
 async function saveAllSettings() {
   const pretMp = parseFloat(document.getElementById('admin-setting-pret-mp').value) || 15.0;
@@ -2776,32 +2746,6 @@ function setupYearListeners() {
   if (btnSaveAll) {
     btnSaveAll.addEventListener('click', saveAllSettings);
   }
-
-  // Modal close buttons
-  const modalCloseBtn = document.getElementById('snapshot-modal-close-btn');
-  const modalOkBtn = document.getElementById('snapshot-modal-ok-btn');
-  const modalOverlay = document.getElementById('admin-snapshot-modal');
-  const copyBtn = document.getElementById('snapshot-modal-copy-btn');
-
-  if (modalCloseBtn) modalCloseBtn.addEventListener('click', closeSnapshotModal);
-  if (modalOkBtn) modalOkBtn.addEventListener('click', closeSnapshotModal);
-  if (modalOverlay) {
-    modalOverlay.addEventListener('click', (e) => {
-      if (e.target === modalOverlay) closeSnapshotModal();
-    });
-  }
-
-  if (copyBtn) {
-    copyBtn.addEventListener('click', () => {
-      const jsonPre = document.getElementById('snapshot-modal-json');
-      if (jsonPre) {
-        navigator.clipboard.writeText(jsonPre.textContent).then(() => {
-          showToast('Snapshot-ul JSON a fost copiat în clipboard!', 'success');
-        }).catch(() => {
-          showToast('Nu s-a putut copia automat.', 'warning');
-        });
-      }
-    });
-  }
 }
+
 
