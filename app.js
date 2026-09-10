@@ -1036,6 +1036,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   try { setupFilterListeners(); } catch (e) { console.error('setupFilterListeners err:', e); }
   try { setupActionButtons(); } catch (e) { console.error('setupActionButtons err:', e); }
   try { setupModal(); } catch (e) { console.error('setupModal err:', e); }
+  try { setupAnafLookup(); } catch (e) { console.error('setupAnafLookup err:', e); }
   
   try {
     await loadInitialData();
@@ -1349,6 +1350,8 @@ function setupActionButtons() {
     if (!container) return;
 
     const clientName = document.getElementById('order-client')?.value.trim() || 'Client Nespecificat';
+    const clientCui = document.getElementById('order-cui')?.value.trim() || '-';
+    const clientRegCom = document.getElementById('order-regcom')?.value.trim() || '-';
     const projectName = document.getElementById('order-proiect')?.value.trim() || 'Proiect Tubulatură HVAC';
     const orderNumber = document.getElementById('order-numar')?.value.trim() || `KV-CMD-${new Date().getFullYear()}/${(state.items.length + 10).toString()}`;
     const orderDate = document.getElementById('order-data')?.value.trim() || new Date().toLocaleDateString('ro-RO');
@@ -1416,6 +1419,8 @@ function setupActionButtons() {
             <div class="box-title">BENEFICIAR / DATE CUMPĂRĂTOR</div>
             <table class="box-meta-table">
               <tr><td>Companie:</td><td><strong>${clientName}</strong></td></tr>
+              <tr><td>Cod Fiscal (CUI):</td><td><strong>${clientCui}</strong></td></tr>
+              <tr><td>Nr. Reg. Com.:</td><td><strong>${clientRegCom}</strong></td></tr>
               <tr><td>Contact / Tel:</td><td><strong>${contactTel}</strong></td></tr>
               <tr><td>Email:</td><td><strong>${contactEmail}</strong></td></tr>
             </table>
@@ -1584,6 +1589,8 @@ function setupActionButtons() {
       }
 
       const clientName = document.getElementById('order-client')?.value?.trim() || 'Beneficiar Nespecificat';
+      const clientCui = document.getElementById('order-cui')?.value?.trim() || '';
+      const clientRegCom = document.getElementById('order-regcom')?.value?.trim() || '';
       const projectName = document.getElementById('order-proiect')?.value?.trim() || 'Proiect Tubulatură HVAC';
       const tel = document.getElementById('order-contact-tel')?.value?.trim() || '';
       const email = document.getElementById('order-contact-email')?.value?.trim() || '';
@@ -1592,6 +1599,8 @@ function setupActionButtons() {
       const orderDate = document.getElementById('order-data')?.value?.trim() || new Date().toLocaleDateString('ro-RO');
 
       state.meta.client = clientName;
+      state.meta.cui = clientCui;
+      state.meta.regCom = clientRegCom;
       state.meta.subiect = projectName;
       state.meta.telefon = tel;
       state.meta.email = email;
@@ -1606,6 +1615,8 @@ function setupActionButtons() {
 
       const orderPayload = {
         client: clientName,
+        cui: clientCui,
+        regCom: clientRegCom,
         project: projectName,
         date: orderDate,
         totalEur: parseFloat(totalValoareEur.toFixed(2)),
@@ -1723,6 +1734,119 @@ function setupActionButtons() {
 }
 
 // ====================================================================
+// CĂUTARE & COMPLETARE AUTOMATĂ DATE FISCALE ANAF
+// ====================================================================
+function setupAnafLookup() {
+  const cuiInput = document.getElementById('order-cui');
+  const searchBtn = document.getElementById('btn-search-anaf');
+  const btnText = document.getElementById('btn-search-anaf-text');
+  const badge = document.getElementById('anaf-status-badge');
+
+  if (!cuiInput || !searchBtn) return;
+
+  async function performAnafSearch() {
+    const rawVal = cuiInput.value.trim();
+    const cleanCui = rawVal.replace(/[^0-9]/g, '');
+
+    if (!cleanCui) {
+      showToast('Vă rugăm introduceți un cod fiscal (CUI/CIF) valid.', 'warning');
+      cuiInput.focus();
+      return;
+    }
+
+    const originalText = btnText ? btnText.textContent : 'Caută ANAF';
+    if (btnText) btnText.textContent = 'Se verifică...';
+    searchBtn.disabled = true;
+    if (badge) badge.style.display = 'none';
+
+    try {
+      const res = await fetch(`/api/anaf?cui=${encodeURIComponent(cleanCui)}`);
+      const data = await res.json();
+
+      if (data && data.success) {
+        // Completează Nume Companie
+        const elClient = document.getElementById('order-client');
+        if (elClient && data.denumire) {
+          elClient.value = data.denumire;
+          elClient.classList.add('field-highlight');
+          setTimeout(() => elClient.classList.remove('field-highlight'), 1800);
+        }
+
+        // Completează Nr. Reg. Comerțului
+        const elRegCom = document.getElementById('order-regcom');
+        if (elRegCom && data.nrRegCom) {
+          elRegCom.value = data.nrRegCom;
+          elRegCom.classList.add('field-highlight');
+          setTimeout(() => elRegCom.classList.remove('field-highlight'), 1800);
+        }
+
+        // Completează Adresă / Sediu Social
+        const elAdresa = document.getElementById('order-adresa');
+        if (elAdresa && data.adresa) {
+          elAdresa.value = data.adresa;
+          elAdresa.classList.add('field-highlight');
+          setTimeout(() => elAdresa.classList.remove('field-highlight'), 1800);
+        }
+
+        // Telefon dacă este disponibil
+        const elTel = document.getElementById('order-contact-tel');
+        if (elTel && data.telefon) {
+          elTel.value = data.telefon;
+        }
+
+        // Actualizare CUI la forma curățată
+        cuiInput.value = data.cui ? `RO ${data.cui}` : cleanCui;
+
+        // Regim TVA automat în funcție de starea la ANAF
+        const elTva = document.getElementById('order-tva-select');
+        if (elTva) {
+          elTva.value = data.tva ? '21' : '0';
+        }
+
+        // Afișare badge status TVA ANAF
+        if (badge) {
+          badge.style.display = 'inline-block';
+          if (data.tva) {
+            badge.className = 'k-badge k-badge-success';
+            badge.textContent = 'ANAF: Plătitor TVA';
+          } else {
+            badge.className = 'k-badge k-badge-warning';
+            badge.textContent = 'ANAF: Neplătitor TVA';
+          }
+        }
+
+        showToast(`Date preluate cu succes din ANAF: ${data.denumire}`, 'success');
+      } else {
+        if (badge) {
+          badge.style.display = 'inline-block';
+          badge.className = 'k-badge k-badge-danger';
+          badge.textContent = 'Negăsit ANAF';
+        }
+        showToast(data.message || 'Compania nu a fost găsită în registrul oficial ANAF.', 'error');
+      }
+    } catch (err) {
+      console.error('Eroare la apelul /api/anaf:', err);
+      showToast('Eroare de comunicare cu serverul ANAF: ' + err.message, 'error');
+    } finally {
+      if (btnText) btnText.textContent = originalText;
+      searchBtn.disabled = false;
+    }
+  }
+
+  searchBtn.addEventListener('click', (e) => {
+    e.preventDefault();
+    performAnafSearch();
+  });
+
+  cuiInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      performAnafSearch();
+    }
+  });
+}
+
+// ====================================================================
 // DATA LOADING & ENRICHMENT WITH 15 €/m²
 // ====================================================================
 // Helper pentru persistența sigură a coșului clientului în localStorage
@@ -1800,6 +1924,8 @@ async function loadInitialData() {
     state.meta = {
       furnizor: 'KronVent Brașov',
       client: '',
+      cui: '',
+      regCom: '',
       subiect: '',
       numar: nextOrderNum,
       data: todayStr,
@@ -1813,6 +1939,24 @@ async function loadInitialData() {
 
     const elData = document.getElementById('order-data');
     if (elData && !elData.value) elData.value = todayStr;
+
+    // Inițializare explicită câmpuri formular GOALE pentru o comandă nouă curată
+    const elClient = document.getElementById('order-client');
+    if (elClient) elClient.value = '';
+    const elCui = document.getElementById('order-cui');
+    if (elCui) elCui.value = '';
+    const elRegCom = document.getElementById('order-regcom');
+    if (elRegCom) elRegCom.value = '';
+    const elProiect = document.getElementById('order-proiect');
+    if (elProiect) elProiect.value = '';
+    const elAdresa = document.getElementById('order-adresa');
+    if (elAdresa) elAdresa.value = '';
+    const elTel = document.getElementById('order-contact-tel');
+    if (elTel) elTel.value = '';
+    const elEmail = document.getElementById('order-contact-email');
+    if (elEmail) elEmail.value = '';
+    const anafBadge = document.getElementById('anaf-status-badge');
+    if (anafBadge) anafBadge.style.display = 'none';
 
     // 3. Restaurare coș din sesiunea locală a utilizatorului (sau inițializare cu coș gol)
     const savedCartJson = localStorage.getItem('kronvent_client_cart');
@@ -3086,6 +3230,8 @@ function exportToExcel() {
   const wb = XLSX.utils.book_new();
 
   const client = document.getElementById('order-client')?.value?.trim() || state.meta.client || 'Client B2B';
+  const cui = document.getElementById('order-cui')?.value?.trim() || state.meta.cui || '';
+  const regCom = document.getElementById('order-regcom')?.value?.trim() || state.meta.regCom || '';
   const proiect = document.getElementById('order-proiect')?.value?.trim() || state.meta.subiect || 'Oferta HVAC Proiect';
   const numarCmd = document.getElementById('order-numar')?.value?.trim() || state.meta.numar || `CMD-KV-${new Date().getFullYear()}/${Math.floor(100 + Math.random() * 900)}`;
   const dataCmd = document.getElementById('order-data')?.value?.trim() || state.meta.data || new Date().toLocaleDateString('ro-RO');
@@ -3118,9 +3264,10 @@ function exportToExcel() {
     ['NOTĂ DE COMANDĂ & SPECIFICAȚIE TEHNICĂ DE PRODUCȚIE'],
     [],
     ['Număr Comandă:', numarCmd, '', 'Data:', dataCmd],
-    ['Beneficiar / Client:', client, '', 'Curs BNR:', `1 EUR = ${cursBnr.toFixed(4)} RON (${state.settings.cursBnrDate || '09.09.2026'})`],
+    ['Beneficiar / Client:', client, '', 'CUI / CIF:', cui || '-'],
+    ['Nr. Reg. Comerț:', regCom || '-', '', 'Curs BNR:', `1 EUR = ${cursBnr.toFixed(4)} RON (${state.settings.cursBnrDate || '09.09.2026'})`],
     ['Proiect / Șantier:', proiect, '', 'Telefon Contact:', tel],
-    ['Adresă Livrare:', adresa, '', 'Email:', email],
+    ['Adresă Sediu / Livrare:', adresa, '', 'Email:', email],
     ['Bază Calcul Rectangular:', `${state.settings.pretMpRectangular} €/mp`, '', 'Regim TVA:', `${tvaPercent}%`],
     [],
     [

@@ -205,6 +205,117 @@ const server = http.createServer((req, res) => {
     return;
   }
 
+  // ====================================================================
+  // ANAF WEB SERVICES V9 (VERIFICARE DATE FISCALE & COMPANII CUI)
+  // ====================================================================
+  function fetchAnafCompany(cui) {
+    return new Promise((resolve, reject) => {
+      const cleanCui = parseInt(String(cui).replace(/[^0-9]/g, ''), 10);
+      if (!cleanCui || isNaN(cleanCui)) {
+        return reject(new Error('CUI invalid. Introduceți doar cifre (ex: 14399840).'));
+      }
+
+      const today = new Date();
+      const yyyy = today.getFullYear();
+      const mm = String(today.getMonth() + 1).padStart(2, '0');
+      const dd = String(today.getDate()).padStart(2, '0');
+      const dateStr = `${yyyy}-${mm}-${dd}`;
+
+      const postData = JSON.stringify([{ cui: cleanCui, data: dateStr }]);
+
+      const options = {
+        hostname: 'webservicesp.anaf.ro',
+        port: 443,
+        path: '/api/PlatitorTvaRest/v9/tva',
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Content-Length': Buffer.byteLength(postData),
+          'User-Agent': 'KronVent-HVAC-Platform/1.0'
+        },
+        timeout: 10000
+      };
+
+      const req = https.request(options, (res) => {
+        let data = '';
+        res.on('data', (chunk) => { data += chunk; });
+        res.on('end', () => {
+          try {
+            const json = JSON.parse(data);
+            if (json.found && json.found.length > 0) {
+              const comp = json.found[0];
+              const dg = comp.date_generale || {};
+              const tva = comp.inregistrare_scop_Tva || {};
+              const sediu = comp.adresa_sediu_social || {};
+              const dom = comp.adresa_domiciliu_fiscal || {};
+
+              let fullAddress = (dg.adresa || '').trim();
+              if (!fullAddress && sediu.sdenumire_Localitate) {
+                const parts = [
+                  sediu.sdenumire_Strada ? `${sediu.sdenumire_Strada} ${sediu.snumar_Strada || ''}` : '',
+                  sediu.sdetalii_Adresa || '',
+                  sediu.sdenumire_Localitate || '',
+                  sediu.sdenumire_Judet || ''
+                ].filter(Boolean);
+                fullAddress = parts.join(', ');
+              }
+
+              resolve({
+                success: true,
+                cui: dg.cui || cleanCui,
+                denumire: (dg.denumire || '').trim(),
+                adresa: fullAddress,
+                nrRegCom: (dg.nrRegCom || '').trim(),
+                telefon: (dg.telefon || '').trim(),
+                tva: Boolean(tva.scpTVA),
+                stare: (dg.stare_inregistrare || 'ACTIV').trim(),
+                judet: (sediu.sdenumire_Judet || dom.ddenumire_Judet || '').trim(),
+                localitate: (sediu.sdenumire_Localitate || dom.ddenumire_Localitate || '').trim()
+              });
+            } else {
+              resolve({
+                success: false,
+                message: `Codul fiscal (CUI) ${cleanCui} nu a fost găsit în registrul oficial ANAF.`
+              });
+            }
+          } catch (err) {
+            reject(new Error('Eroare la procesarea răspunsului ANAF: ' + err.message));
+          }
+        });
+      });
+
+      req.on('error', (err) => {
+        reject(new Error('Nu s-a putut contacta serverul ANAF: ' + err.message));
+      });
+
+      req.on('timeout', () => {
+        req.destroy();
+        reject(new Error('Conexiunea la ANAF a expirat (timeout 10s).'));
+      });
+
+      req.write(postData);
+      req.end();
+    });
+  }
+
+  if (pathname === '/api/anaf') {
+    const cuiQuery = parsedUrl.query.cui || '';
+    if (!cuiQuery) {
+      res.writeHead(400, { 'Content-Type': 'application/json; charset=utf-8' });
+      res.end(JSON.stringify({ success: false, message: 'Parametrul CUI este obligatoriu.' }));
+      return;
+    }
+
+    fetchAnafCompany(cuiQuery).then(result => {
+      res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+      res.end(JSON.stringify(result));
+    }).catch(err => {
+      res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+      res.end(JSON.stringify({ success: false, message: err.message }));
+    });
+    return;
+  }
+
   if (pathname === '/api/status') {
     res.writeHead(200, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify({
