@@ -1871,9 +1871,9 @@ window.loadDemoProject = async function() {
     
     if (data.meta) {
       const elClient = document.getElementById('order-client');
-      if (elClient) elClient.value = data.meta.client || 'RADOIA ISOLIRUNG';
+      if (elClient) elClient.value = (data.meta.client || '').replace(/^Pentru\s*:\s*/i, '').trim();
       const elProiect = document.getElementById('order-proiect');
-      if (elProiect) elProiect.value = data.meta.subiect || 'Oferta HVAC HOTEL VALIUG';
+      if (elProiect) elProiect.value = (data.meta.subiect || '').replace(/^Subiect\s*:\s*/i, '').trim();
     }
 
     state.items = (data.items || []).map((it, idx) => enrichItemData(it, idx + 1));

@@ -2029,7 +2029,28 @@ function renderAdminDashboard() {
   if (elPipelineDet) elPipelineDet.textContent = `${countGata} Gata Livrare • ${countFin} Finalizate • ${countNoua} Noi`;
   if (elBadgeCount) elBadgeCount.textContent = `${orders.length}`;
 
-  // 2. Update Executive Insights Cards
+  // 2. Compute Client Revenue Ranking (Pure Sales Focus)
+  const clientMap = {};
+  orders.forEach(o => {
+    const cName = (o.client || 'Client B2B').trim();
+    if (!clientMap[cName]) {
+      clientMap[cName] = {
+        name: cName,
+        totalEur: 0,
+        totalRon: 0,
+        ordersCount: 0,
+        latestProject: o.project || 'Proiect'
+      };
+    }
+    const valEur = o.totalEur || 0;
+    const valRon = o.totalRon || (valEur * cursEur);
+    clientMap[cName].totalEur += valEur;
+    clientMap[cName].totalRon += valRon;
+    clientMap[cName].ordersCount++;
+  });
+  const sortedClients = Object.values(clientMap).sort((a, b) => b.totalEur - a.totalEur);
+
+  // 3. Update Executive Insights Cards
   const insProd = document.getElementById('dash-insight-top-product');
   const insProdSub = document.getElementById('dash-insight-product-sub');
   if (insProd) insProd.textContent = 'Canale Rectangulare';
@@ -2037,8 +2058,15 @@ function renderAdminDashboard() {
 
   const insClient = document.getElementById('dash-insight-top-client');
   const insClientSub = document.getElementById('dash-insight-client-sub');
-  if (insClient) insClient.textContent = 'RADOIA ISOLIRUNG';
-  if (insClientSub) insClientSub.textContent = `${orders.length} comenzi în portofoliul de producție`;
+  if (insClient) {
+    if (sortedClients.length > 0) {
+      insClient.textContent = sortedClients[0].name;
+      if (insClientSub) insClientSub.textContent = `${sortedClients[0].ordersCount} comenzi • ${sortedClients[0].totalEur.toLocaleString('ro-RO', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €`;
+    } else {
+      insClient.textContent = 'Portofoliu Clienți';
+      if (insClientSub) insClientSub.textContent = 'Fără comenzi înregistrate';
+    }
+  }
 
   const insRate = document.getElementById('dash-insight-rate');
   if (insRate) {
@@ -2046,32 +2074,11 @@ function renderAdminDashboard() {
     insRate.textContent = `${rate.toFixed(2)} € / m²`;
   }
 
-  // 3. Update Client Revenue Ranking (Pure Sales Focus)
   const elRankingTotal = document.getElementById('dash-ranking-total-eur');
   if (elRankingTotal) elRankingTotal.textContent = `${totEur.toLocaleString('ro-RO', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €`;
 
   const rankingContainer = document.getElementById('dash-sales-clients-ranking');
   if (rankingContainer) {
-    const clientMap = {};
-    orders.forEach(o => {
-      const cName = (o.client || 'Client B2B').trim();
-      if (!clientMap[cName]) {
-        clientMap[cName] = {
-          name: cName,
-          totalEur: 0,
-          totalRon: 0,
-          ordersCount: 0,
-          latestProject: o.project || 'Proiect'
-        };
-      }
-      const valEur = o.totalEur || 0;
-      const valRon = o.totalRon || (valEur * cursEur);
-      clientMap[cName].totalEur += valEur;
-      clientMap[cName].totalRon += valRon;
-      clientMap[cName].ordersCount++;
-    });
-
-    const sortedClients = Object.values(clientMap).sort((a, b) => b.totalEur - a.totalEur);
     rankingContainer.innerHTML = sortedClients.map((c, idx) => {
       const pct = totEur > 0 ? ((c.totalEur / totEur) * 100).toFixed(1) : '0.0';
       return `
