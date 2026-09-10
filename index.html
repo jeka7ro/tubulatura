@@ -10,7 +10,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=2026-anaf-v14">
+  <link rel="stylesheet" href="style.css?v=2026-layout-v15">
 </head>
 <body>
 
@@ -295,6 +295,114 @@
         </div>
       </div>
       
+      <!-- Date Beneficiar & Livrare Comandă (Panou Profesional Structurat - PLASAT SUS) -->
+      <div class="enterprise-card order-details-panel" style="margin-top: 14px; margin-bottom: 20px;">
+        <div class="order-details-header">
+          <div class="order-details-icon">
+            <svg class="icon-svg" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+          </div>
+          <div>
+            <h3 class="order-details-title">Date Beneficiar & Livrare Comandă</h3>
+            <p class="order-details-subtitle">Informațiile oficiale care vor fi incluse în specificația tehnică și în comanda transmisă fabricii</p>
+          </div>
+        </div>
+
+        <div class="order-client-grid">
+          <!-- Coloana 1: Beneficiar & Date Fiscale ANAF -->
+          <div class="client-form-card">
+            <div class="client-card-header">
+              <span class="client-card-icon">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+              </span>
+              <span>1. Informații Beneficiar & Date Fiscale ANAF</span>
+            </div>
+
+            <div class="client-fields-stack">
+              <!-- CUI & Reg. Com cu Căutare Automată ANAF -->
+              <div class="form-row-2col">
+                <div class="form-group">
+                  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                    <label for="order-cui" style="margin: 0; font-weight: 700;">Cod Fiscal (CUI / CIF)</label>
+                    <span id="anaf-status-badge" class="k-badge" style="display: none; font-size: 10px; padding: 2px 6px; font-weight: 700;"></span>
+                  </div>
+                  <div style="display: flex; gap: 6px;">
+                    <input type="text" id="order-cui" class="form-input" placeholder="Ex: 14399840 sau RO..." autocomplete="off" style="font-weight: 700;">
+                    <button type="button" id="btn-search-anaf" class="k-btn k-btn-primary" style="padding: 6px 12px; font-size: 11.5px; font-weight: 700; white-space: nowrap; display: inline-flex; align-items: center; gap: 4px;" title="Verifică și preia automat datele firmei din ANAF">
+                      <svg class="icon-svg" viewBox="0 0 24 24" style="width: 13px; height: 13px;"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                      <span id="btn-search-anaf-text">Caută ANAF</span>
+                    </button>
+                  </div>
+                </div>
+
+                <div class="form-group">
+                  <label for="order-regcom">Nr. Reg. Comerțului (J)</label>
+                  <input type="text" id="order-regcom" class="form-input" placeholder="Ex: J40/1234/2020">
+                </div>
+              </div>
+
+              <!-- Denumire Companie & Proiect -->
+              <div class="form-row-2col" style="margin-top: 4px;">
+                <div class="form-group">
+                  <label for="order-client">Client / Companie Beneficiară</label>
+                  <input type="text" id="order-client" class="form-input" placeholder="Denumire firmă (completată automat din ANAF)">
+                </div>
+                <div class="form-group">
+                  <label for="order-proiect">Denumire Proiect / Șantier</label>
+                  <input type="text" id="order-proiect" class="form-input" placeholder="Ex: Tronson Birouri Clădire A">
+                </div>
+              </div>
+
+              <!-- Sediu Social / Adresă -->
+              <div class="form-group" style="margin-top: 4px;">
+                <label for="order-adresa">Sediu Social / Adresă Livrare Șantier</label>
+                <input type="text" id="order-adresa" class="form-input" placeholder="Sediu social preluat automat sau adresă de descărcare tubulatură...">
+              </div>
+            </div>
+          </div>
+
+          <!-- Coloana 2: Document & Contact -->
+          <div class="client-form-card">
+            <div class="client-card-header">
+              <span class="client-card-icon">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"></rect><path d="M7 15h0M2 9.5h20"></path></svg>
+              </span>
+              <span>2. Date Document & Contact Tehnic</span>
+            </div>
+
+            <div class="client-fields-stack">
+              <div class="form-row-3col">
+                <div class="form-group">
+                  <label for="order-numar">Număr Ofertă</label>
+                  <input type="text" id="order-numar" class="form-input" placeholder="Ex: CMD-2026-00044">
+                </div>
+                <div class="form-group">
+                  <label for="order-data">Data Ofertării</label>
+                  <input type="text" id="order-data" class="form-input" placeholder="Ex: 10.09.2026">
+                </div>
+                <div class="form-group">
+                  <label for="order-tva-select">Regim TVA</label>
+                  <select id="order-tva-select" class="form-select">
+                    <option value="21" selected>21% (Standard)</option>
+                    <option value="0">0% (Taxare Inversă)</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="form-row-2col" style="margin-top: 4px;">
+                <div class="form-group">
+                  <label for="order-contact-tel">Telefon de Contact</label>
+                  <input type="text" id="order-contact-tel" class="form-input" placeholder="07xx xxx xxx">
+                </div>
+                <div class="form-group">
+                  <label for="order-contact-email">Email Confirmare Ofertă</label>
+                  <input type="email" id="order-contact-email" class="form-input" placeholder="contact@firma.ro">
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <div class="enterprise-card">
         <!-- Card Toolbar -->
         <div class="card-header-toolbar">
@@ -404,115 +512,9 @@
         </div>
       </div>
 
-      <!-- Date Beneficiar & Livrare Comandă (Panou Profesional Structurat) -->
-      <div class="enterprise-card order-details-panel">
-        <div class="order-details-header">
-          <div class="order-details-icon">
-            <svg class="icon-svg" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
-          </div>
-          <div>
-            <h3 class="order-details-title">Date Beneficiar & Livrare Comandă</h3>
-            <p class="order-details-subtitle">Informațiile oficiale care vor fi incluse în specificația tehnică și în comanda transmisă fabricii</p>
-          </div>
-        </div>
-
-        <div class="order-client-grid">
-          <!-- Coloana 1: Beneficiar & Date Fiscale ANAF -->
-          <div class="client-form-card">
-            <div class="client-card-header">
-              <span class="client-card-icon">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
-              </span>
-              <span>1. Informații Beneficiar & Date Fiscale ANAF</span>
-            </div>
-
-            <div class="client-fields-stack">
-              <!-- CUI & Reg. Com cu Căutare Automată ANAF -->
-              <div class="form-row-2col">
-                <div class="form-group">
-                  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
-                    <label for="order-cui" style="margin: 0; font-weight: 700;">Cod Fiscal (CUI / CIF)</label>
-                    <span id="anaf-status-badge" class="k-badge" style="display: none; font-size: 10px; padding: 2px 6px; font-weight: 700;"></span>
-                  </div>
-                  <div style="display: flex; gap: 6px;">
-                    <input type="text" id="order-cui" class="form-input" placeholder="Ex: 14399840 sau RO..." autocomplete="off" style="font-weight: 700;">
-                    <button type="button" id="btn-search-anaf" class="k-btn k-btn-primary" style="padding: 6px 12px; font-size: 11.5px; font-weight: 700; white-space: nowrap; display: inline-flex; align-items: center; gap: 4px;" title="Verifică și preia automat datele firmei din ANAF">
-                      <svg class="icon-svg" viewBox="0 0 24 24" style="width: 13px; height: 13px;"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-                      <span id="btn-search-anaf-text">Caută ANAF</span>
-                    </button>
-                  </div>
-                </div>
-
-                <div class="form-group">
-                  <label for="order-regcom">Nr. Reg. Comerțului (J)</label>
-                  <input type="text" id="order-regcom" class="form-input" placeholder="Ex: J40/1234/2020">
-                </div>
-              </div>
-
-              <!-- Denumire Companie & Proiect -->
-              <div class="form-row-2col" style="margin-top: 4px;">
-                <div class="form-group">
-                  <label for="order-client">Client / Companie Beneficiară</label>
-                  <input type="text" id="order-client" class="form-input" placeholder="Denumire firmă (completată automat din ANAF)">
-                </div>
-                <div class="form-group">
-                  <label for="order-proiect">Denumire Proiect / Șantier</label>
-                  <input type="text" id="order-proiect" class="form-input" placeholder="Ex: Tronson Birouri Clădire A">
-                </div>
-              </div>
-
-              <!-- Sediu Social / Adresă -->
-              <div class="form-group" style="margin-top: 4px;">
-                <label for="order-adresa">Sediu Social / Adresă Livrare Șantier</label>
-                <input type="text" id="order-adresa" class="form-input" placeholder="Sediu social preluat automat sau adresă de descărcare tubulatură...">
-              </div>
-            </div>
-          </div>
-
-          <!-- Coloana 2: Document & Contact -->
-          <div class="client-form-card">
-            <div class="client-card-header">
-              <span class="client-card-icon">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"></rect><path d="M7 15h0M2 9.5h20"></path></svg>
-              </span>
-              <span>2. Date Document & Contact Tehnic</span>
-            </div>
-
-            <div class="client-fields-stack">
-              <div class="form-row-3col">
-                <div class="form-group">
-                  <label for="order-numar">Număr Ofertă</label>
-                  <input type="text" id="order-numar" class="form-input" placeholder="Ex: CMD-2026-00044">
-                </div>
-                <div class="form-group">
-                  <label for="order-data">Data Ofertării</label>
-                  <input type="text" id="order-data" class="form-input" placeholder="Ex: 10.09.2026">
-                </div>
-                <div class="form-group">
-                  <label for="order-tva-select">Regim TVA</label>
-                  <select id="order-tva-select" class="form-select">
-                    <option value="21" selected>21% (Standard)</option>
-                    <option value="0">0% (Taxare Inversă)</option>
-                  </select>
-                </div>
-              </div>
-
-              <div class="form-row-2col" style="margin-top: 4px;">
-                <div class="form-group">
-                  <label for="order-contact-tel">Telefon de Contact</label>
-                  <input type="text" id="order-contact-tel" class="form-input" placeholder="07xx xxx xxx">
-                </div>
-                <div class="form-group">
-                  <label for="order-contact-email">Email Confirmare Ofertă</label>
-                  <input type="email" id="order-contact-email" class="form-input" placeholder="contact@firma.ro">
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Checkout Action Bar (La finalizarea comenzii din Coș) -->
-        <div class="cart-checkout-bar" style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border-light); padding-top: 16px; flex-wrap: wrap; gap: 14px;">
+      <!-- Checkout Action Bar (La finalizarea comenzii din Coș - JOS) -->
+      <div class="enterprise-card cart-checkout-panel" style="margin-top: 20px; padding: 20px;">
+        <div class="cart-checkout-bar" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px;">
           <div>
             <div style="font-size: 11px; color: var(--text-muted); font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em;">Total General Ofertă (Fără TVA)</div>
             <div style="font-size: 24px; font-weight: 700; color: var(--text-main);" id="summary-total-eur">0.00 € / 0.00 RON</div>
@@ -685,6 +687,6 @@
   <!-- SheetJS Library -->
   <script src="xlsx.full.min.js"></script>
   <!-- Application Logic -->
-  <script src="app.js?v=2026-anaf-v14"></script>
+  <script src="app.js?v=2026-layout-v15"></script>
 </body>
 </html>
