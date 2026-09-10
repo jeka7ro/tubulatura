@@ -1686,7 +1686,7 @@ function setupActionButtons() {
             } catch (e) {}
           }
 
-          showToast(`Comanda ${registeredNum} a fost transmisă fabricii cu succes!`, 'success');
+          showToast(`Comanda ${registeredNum} a fost transmisă către producători! Veți fi contactat de echipă în cel mai scurt timp.`, 'success');
         } else {
           showToast('Eroare la transmiterea comenzii: ' + (result.error || 'Server error'), 'error');
         }
