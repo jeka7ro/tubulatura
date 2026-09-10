@@ -1,0 +1,655 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+  <title>KronVent - Portal Comenzi & Ofertare Tubulatură HVAC</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css?v=2026-multiyear-snapshot-v9">
+</head>
+<body>
+
+  <!-- ====================================================================
+       1. TOP CLIENT HEADER (DARK NAVY - KRONVENT OFFICIAL BRANDING)
+       ==================================================================== -->
+  <header class="kronvent-header">
+    <div class="header-container">
+      <div class="header-left">
+        <a href="index.html" class="header-logo-link" title="KronVent Brașov - Portal Comenzi Tubulatură HVAC">
+          <img src="kronvent-logo.png" alt="KronVent Brașov" class="kronvent-logo-img">
+        </a>
+      </div>
+
+      <div class="header-right">
+        <button id="btn-header-cart" class="k-btn-header-cart" type="button" title="Deschide Coșul de Comandă">
+          <svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="9" cy="21" r="1"></circle>
+            <circle cx="20" cy="21" r="1"></circle>
+            <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
+          </svg>
+          <span class="cart-btn-title">Coș Comandă</span>
+          <span class="cart-pill-count" id="cart-count-badge">51</span>
+        </button>
+
+        <button id="btn-theme-toggle" class="k-btn-icon-header" title="Comută mod luminos / întunecat" aria-label="Comută temă">
+          <svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- ====================================================================
+       2. WORKSPACE STATUS & LIVE BNR RATE BAR (NO TABS)
+       ==================================================================== -->
+  <nav class="workspace-nav-bar">
+    <div class="workspace-nav-container">
+      <div class="workspace-nav-status">
+        <div class="status-indicator-dot"></div>
+        <span id="page-view-indicator" class="workspace-status-label">Configurator Piese Tubulatură HVAC</span>
+      </div>
+
+      <!-- Live BNR Exchange Rate Badge -->
+      <div class="bnr-live-card bnr-nav-pill" id="bnr-header-badge" title="Curs valutar oficial preluat automat de la Banca Națională a României (curs.bnr.ro)">
+        <div class="bnr-card-top">
+          <span class="bnr-badge-pill">CURS BNR</span>
+          <span class="bnr-date-text" id="header-bnr-date">09.09.2026</span>
+        </div>
+        <div class="bnr-card-val" id="header-bnr-rate">
+          1 EUR = <strong id="header-bnr-num">5.2542 RON</strong>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- ====================================================================
+       3. CLIENT MAIN WORKSPACE
+       ==================================================================== -->
+  <main class="main-workspace">
+
+    <!-- METRICS RIBBON (CLIENT SUMMARY BAR) -->
+    <section class="metrics-ribbon">
+      <div class="metric-panel">
+        <div class="metric-label">Valoare Comandă Curentă (Fără TVA)</div>
+        <div class="metric-value" id="kpi-valoare-totala">0.00 €</div>
+        <div class="metric-sub" id="kpi-valoare-ron">0.00 RON</div>
+      </div>
+
+      <div class="metric-panel">
+        <div class="metric-label">TVA (21%) & Total General</div>
+        <div class="metric-value" id="kpi-total-cu-tva">0.00 €</div>
+        <div class="metric-sub" id="kpi-total-cu-tva-ron">TVA calculat automat</div>
+      </div>
+
+      <div class="metric-panel">
+        <div class="metric-label">Suprafață Desfășurată Totală</div>
+        <div class="metric-value" id="kpi-suprafata">0.00 m²</div>
+        <div class="metric-sub">Tablă zincată DX51D + Z275</div>
+      </div>
+
+      <div class="metric-panel">
+        <div class="metric-label">Număr Piese în Comandă</div>
+        <div class="metric-value" id="kpi-piese">0 bucăți</div>
+        <div class="metric-sub" id="kpi-categorii-count">0 poziții distincte</div>
+      </div>
+    </section>
+
+    <!-- ==================================================================
+         TAB 1: CONFIGURATOR TEHNIC PIESE (CLIENT FLOW PASUL 1)
+         ================================================================== -->
+    <div id="tab-configurator" class="tab-pane active" role="tabpanel">
+
+      <!-- SELECTOR TEHNOLOGIE FABRICAȚIE (RECTANGULAR VS CIRCULAR SPIRO) -->
+      <div class="tech-category-panel">
+        <div class="tech-category-heading">
+          <span class="tech-step-badge">1</span>
+          <div>
+            <strong>Selectează Tehnologia de Fabricație HVAC:</strong>
+            <p>Alege categoria de tubulatură dorită pentru configurare</p>
+          </div>
+        </div>
+        <div class="tech-category-tabs" role="tablist">
+          <button id="seg-btn-rect" class="tech-category-tab active" type="button">
+            <span class="tech-tab-icon">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
+            </span>
+            <div class="tech-tab-info">
+              <span class="tech-tab-title">Tubulatură & Piese Rectangulare</span>
+              <span class="tech-tab-sub">Calcul suprafață debitată • 15.00 €/m²</span>
+            </div>
+          </button>
+          <button id="seg-btn-circ" class="tech-category-tab" type="button">
+            <span class="tech-tab-icon">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3"/></svg>
+            </span>
+            <div class="tech-tab-info">
+              <span class="tech-tab-title">Tubulatură Circulară SPIRO®</span>
+              <span class="tech-tab-sub">Țeavă falțuită & fitinguri • Ø100 - Ø1250 mm</span>
+            </div>
+          </button>
+        </div>
+      </div>
+
+      <div class="enterprise-card" style="padding: 16px;">
+        <div class="configurator-workbench-layout">
+
+          <!-- Left Column: Piece selection & Inputs -->
+          <div class="workbench-form-side">
+            <div class="workbench-panel-header">
+              <h2 id="config-picker-title" class="workbench-panel-title">
+                Alege Tipul de Piesă HVAC
+              </h2>
+            </div>
+
+            <!-- Grid of piece types -->
+            <div id="piece-selector-grid" class="piece-selector-grid">
+              <!-- Rendered via JS -->
+            </div>
+
+            <!-- Dynamic dimension form -->
+            <div class="piece-form-box">
+              <div id="dynamic-inputs-container" class="form-inputs-grid">
+                <!-- Inputs rendered via JS -->
+              </div>
+
+              <div class="form-bottom-row" style="display: grid; grid-template-columns: 140px 1fr; gap: 10px; margin-top: 12px;">
+                <div class="form-group">
+                  <label for="input-cantitate">
+                    <span class="field-title">Cantitate</span>
+                    <span class="unit-pill">buc</span>
+                  </label>
+                  <input type="number" id="input-cantitate" class="form-input" value="1" min="1" step="1">
+                </div>
+                <div class="form-group">
+                  <label for="input-sistem">
+                    <span class="field-title">Sistem / Tronson HVAC</span>
+                    <span class="unit-pill">Etichetă</span>
+                  </label>
+                  <input type="text" id="input-sistem" class="form-input" value="Tubulatura Ventilatie" placeholder="Ex: Tronson Introducere Birouri">
+                </div>
+              </div>
+
+              <div style="margin-top: 16px;">
+                <button id="btn-add-item-to-order" class="k-btn k-btn-primary" style="width: 100%; padding: 11px; font-size: 13px;">
+                  <svg class="icon-svg" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                  <span>Adaugă Piesa în Coșul de Comandă</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Right Column: 2D CAD Blueprint & Real-Time Price Calculation -->
+          <div class="blueprint-workbench">
+            <div class="workbench-panel-header" style="justify-content: space-between;">
+              <h2 class="workbench-panel-title">
+                Schiță Tehnică & Calcul Instant
+              </h2>
+              <button type="button" id="btn-zoom-blueprint" class="view-switch-btn" title="Fă clic pentru mărire schiță tehnică">
+                <svg class="icon-svg" viewBox="0 0 24 24" style="width: 14px; height: 14px; stroke: currentColor;"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line><line x1="11" y1="8" x2="11" y2="14"></line><line x1="8" y1="11" x2="14" y2="11"></line></svg>
+                <span>Mărește Schița 🔍</span>
+              </button>
+            </div>
+
+            <div class="blueprint-canvas-box" id="blueprint-canvas-box" title="Fă clic pe schiță pentru a o vizualiza mărită">
+              <div class="blueprint-label-tag" id="blueprint-code-tag">SCHIȚĂ TEHNICĂ PIESĂ</div>
+              <div class="blueprint-zoom-hint">
+                <svg class="icon-svg" viewBox="0 0 24 24" style="width: 12px; height: 12px; stroke: currentColor;"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                <span>Click pentru mărire</span>
+              </div>
+              <div id="blueprint-cad-wrapper" class="blueprint-cad-wrapper">
+                <img id="blueprint-cad-img" class="blueprint-cad-img" src="assets/icons3d/CRD.png" alt="Model 3D Piesă HVAC">
+              </div>
+              <div id="blueprint-dim-badges" class="blueprint-dim-badges"></div>
+            </div>
+
+            <div class="live-spec-summary" id="live-price-box">
+              <div class="live-price-highlight">
+                <span style="font-size: 12px; font-weight: 700; color: var(--text-muted);">PREȚ ESTIMATIV PIESĂ:</span>
+                <span class="live-price-num" id="live-price-eur">0.00 €</span>
+              </div>
+              <div class="live-spec-row">
+                <span>Suprafață totală piesă:</span>
+                <strong id="live-spec-suprafata">0.000 m²</strong>
+              </div>
+              <div class="live-spec-row">
+                <span>Preț unitar calculat:</span>
+                <strong id="live-spec-unitar">0.00 € / buc</strong>
+              </div>
+              <div class="live-spec-row">
+                <span>Grosime tablă recomandată:</span>
+                <strong id="live-spec-grosime">-</strong>
+              </div>
+              <div class="live-spec-row">
+                <span>Profil conectare flanșă:</span>
+                <strong id="live-spec-flansa">-</strong>
+              </div>
+              <div class="live-spec-row">
+                <span>Colțari necesari:</span>
+                <strong id="live-spec-coltari">0 buc</strong>
+              </div>
+              <div class="live-spec-row">
+                <span>Greutate tablă estimată:</span>
+                <strong id="live-spec-greutate">0.0 kg</strong>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- CONTAINER 3: PASUL URMĂTOR - REZUMAT COȘ & BUTON NEXT -->
+      <div class="stepper-next-container" id="step1-next-container">
+        <div class="stepper-next-left">
+          <div class="stepper-next-icon">
+            <svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="9" cy="21" r="1"></circle>
+              <circle cx="20" cy="21" r="1"></circle>
+              <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
+            </svg>
+          </div>
+          <div class="stepper-next-details">
+            <div class="stepper-next-title">
+              Coș de Comandă: <strong id="step1-summary-count">51 bucăți</strong> (<span id="step1-summary-positions">51 poziții</span>)
+            </div>
+            <div class="stepper-next-metrics">
+              <span>Suprafață totală: <strong id="step1-summary-area">141.52 m²</strong></span>
+              <span class="sep">•</span>
+              <span>Valoare fără TVA: <strong id="step1-summary-price">2,122.80 €</strong></span>
+              <span class="sep">•</span>
+              <span class="stepper-hint">Poți adăuga piese suplimentare sau poți trece la pasul următor</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="stepper-next-right">
+          <button id="btn-goto-step-2" class="k-btn-next-step" type="button" title="Mergi la Coșul de Comandă pentru a vizualiza lista completă și a finaliza comanda">
+            <span id="step1-next-btn-text">Vezi Coșul de Comandă & Finalizează →</span>
+            <svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================================================================
+         TAB 2: COȘUL MEU DE COMANDĂ (CLIENT FLOW PASUL 2)
+         ================================================================== -->
+    <div id="tab-comanda" class="tab-pane" role="tabpanel">
+
+      <!-- Cart Header Context & Return Navigation (E-Commerce Style, No Tabs) -->
+      <div class="cart-header-action-bar">
+        <button id="btn-back-to-step1" class="k-btn k-btn-secondary" type="button" title="Revino la Configurator pentru a adăuga mai multe piese">
+          <svg class="icon-svg" viewBox="0 0 24 24"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+          <span>← Înapoi la Configurator Piese</span>
+        </button>
+
+        <div class="cart-title-indicator">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle>
+            <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
+          </svg>
+          <span>Coș de Cumpărături & Centralizator Comandă HVAC</span>
+        </div>
+      </div>
+      
+      <div class="enterprise-card">
+        <!-- Card Toolbar -->
+        <div class="card-header-toolbar">
+          <div class="toolbar-left">
+            <div class="toolbar-search-wrap">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="11" cy="11" r="8"></circle>
+                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+              </svg>
+              <input type="text" id="table-search" class="form-input toolbar-search-input" placeholder="Caută după etichetă, cod, dimensiuni...">
+            </div>
+            
+            <select id="filter-categorie" class="form-select toolbar-select">
+              <option value="all">Toate Categoriile</option>
+              <option value="Canal drept">Canale Drepte</option>
+              <option value="Cot rectangular">Coturi Rectangulare</option>
+              <option value="Teu">Teuri</option>
+              <option value="Reductie">Reducții</option>
+              <option value="Capac">Capace</option>
+              <option value="Tubulatura Circulara Spiro">Circulară Spiro</option>
+            </select>
+
+            <select id="filter-flansa" class="form-select toolbar-select">
+              <option value="all">Toate Flanșele</option>
+              <option value="FLANSA20">FLANSA 20</option>
+              <option value="FLANSA30">FLANSA 30</option>
+            </select>
+          </div>
+
+          <div class="toolbar-right">
+            <button id="btn-quick-add" class="k-btn k-btn-primary k-btn-sm" title="Adaugă o piesă nouă prin configurator">
+              <svg class="icon-svg" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+              <span>+ Adaugă Piesă Nouă</span>
+            </button>
+
+            <button id="btn-clear-cart" class="k-btn k-btn-secondary k-btn-sm" style="color: #dc2626; border-color: #fca5a5; background: #fff1f2; font-weight: 600;" title="Șterge toate piesele din coșul curent">
+              <svg class="icon-svg" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+              <span>Golește Coșul</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Data Grid -->
+        <div class="table-scroll-container">
+          <table class="enterprise-grid" id="main-items-table">
+            <thead>
+              <tr>
+                <th style="width: 42px; text-align: center;">Nr.</th>
+                <th style="width: 86px; text-align: center;">Acțiuni</th>
+                <th>Denumire / Etichetă</th>
+                <th>Tip Piesă</th>
+                <th>Cod</th>
+                <th>Dimensiuni (mm)</th>
+                <th style="text-align: center;">U.M.</th>
+                <th style="text-align: right;">Cant.</th>
+                <th style="text-align: right;">S. Unitar (m²)</th>
+                <th style="text-align: right;">S. Total (m²)</th>
+                <th style="text-align: right;">Preț Unitar</th>
+                <th style="text-align: right;">Valoare Totală</th>
+                <th>Flanșă</th>
+                <th>Grosime</th>
+              </tr>
+            </thead>
+            <tbody id="items-tbody">
+              <!-- Rendered via JS -->
+            </tbody>
+            <tfoot>
+              <tr class="tfoot-totals-row">
+                <td colspan="7" style="text-align: right;"><strong>TOTALURI COMANDĂ KRONVENT:</strong></td>
+                <td style="text-align: right;"><strong id="foot-cantitate">0 buc</strong></td>
+                <td></td>
+                <td style="text-align: right; color: var(--industrial-green);"><strong id="foot-suprafata">0.00 m²</strong></td>
+                <td></td>
+                <td style="text-align: right;"><strong id="foot-valoare" class="foot-total-highlight">0.00 €</strong></td>
+                <td colspan="2"><span id="foot-greutate" style="font-size: 11px; color: var(--text-secondary);">Greutate totală: 0 kg</span></td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+
+        <!-- Table Pagination Footer -->
+        <div class="grid-pagination-bar">
+          <div class="pagination-left">
+            <span class="pagination-info" id="pagination-info">Se afișează 0 - 0 din 0 înregistrări</span>
+            <span class="pagination-filter-count">• Total articole: <strong id="filter-count-badge">0</strong></span>
+          </div>
+
+          <div class="pagination-controls" id="pagination-buttons">
+            <!-- Buttons rendered via JS -->
+          </div>
+
+          <div class="pagination-right">
+            <label for="rows-per-page-select" class="pagination-rows-label">Rânduri pe pagină:</label>
+            <select id="rows-per-page-select" class="pagination-rows-select">
+              <option value="15" selected>15</option>
+              <option value="25">25</option>
+              <option value="50">50</option>
+              <option value="all">Toate</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- Date Beneficiar & Livrare Comandă (Panou Profesional Structurat) -->
+      <div class="enterprise-card order-details-panel">
+        <div class="order-details-header">
+          <div class="order-details-icon">
+            <svg class="icon-svg" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+          </div>
+          <div>
+            <h3 class="order-details-title">Date Beneficiar & Livrare Comandă</h3>
+            <p class="order-details-subtitle">Informațiile oficiale care vor fi incluse în specificația tehnică și în comanda transmisă fabricii</p>
+          </div>
+        </div>
+
+        <div class="order-client-grid">
+          <!-- Coloana 1: Beneficiar & Șantier -->
+          <div class="client-form-card">
+            <div class="client-card-header">
+              <span class="client-card-icon">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+              </span>
+              <span>1. Informații Beneficiar & Proiect</span>
+            </div>
+
+            <div class="client-fields-stack">
+              <div class="form-row-2col">
+                <div class="form-group">
+                  <label for="order-client">Client / Companie Beneficiară</label>
+                  <input type="text" id="order-client" class="form-input" placeholder="Ex: RADOIA ISOLIRUNG">
+                </div>
+                <div class="form-group">
+                  <label for="order-proiect">Denumire Proiect / Șantier</label>
+                  <input type="text" id="order-proiect" class="form-input" placeholder="Ex: Oferta HVAC HOTEL VALIUG">
+                </div>
+              </div>
+
+              <div class="form-group" style="margin-top: 4px;">
+                <label for="order-adresa">Adresă Livrare Șantier / Notițe Speciale</label>
+                <input type="text" id="order-adresa" class="form-input" placeholder="Adresa de descărcare a tubulaturii sau instrucțiuni speciale de etichetare/ambalare...">
+              </div>
+            </div>
+          </div>
+
+          <!-- Coloana 2: Document & Contact -->
+          <div class="client-form-card">
+            <div class="client-card-header">
+              <span class="client-card-icon">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"></rect><path d="M7 15h0M2 9.5h20"></path></svg>
+              </span>
+              <span>2. Date Document & Contact Tehnic</span>
+            </div>
+
+            <div class="client-fields-stack">
+              <div class="form-row-3col">
+                <div class="form-group">
+                  <label for="order-numar">Număr Ofertă</label>
+                  <input type="text" id="order-numar" class="form-input" placeholder="CMD-2023/45">
+                </div>
+                <div class="form-group">
+                  <label for="order-data">Data Ofertării</label>
+                  <input type="text" id="order-data" class="form-input" placeholder="21.03.2023">
+                </div>
+                <div class="form-group">
+                  <label for="order-tva-select">Regim TVA</label>
+                  <select id="order-tva-select" class="form-select">
+                    <option value="21" selected>21% (Standard)</option>
+                    <option value="0">0% (Taxare Inversă)</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="form-row-2col" style="margin-top: 4px;">
+                <div class="form-group">
+                  <label for="order-contact-tel">Telefon de Contact</label>
+                  <input type="text" id="order-contact-tel" class="form-input" placeholder="07xx xxx xxx">
+                </div>
+                <div class="form-group">
+                  <label for="order-contact-email">Email Confirmare Ofertă</label>
+                  <input type="email" id="order-contact-email" class="form-input" placeholder="contact@firma.ro">
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Checkout Action Bar (La finalizarea comenzii din Coș) -->
+        <div class="cart-checkout-bar" style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border-light); padding-top: 16px; flex-wrap: wrap; gap: 14px;">
+          <div>
+            <div style="font-size: 11px; color: var(--text-muted); font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em;">Total General Ofertă (Fără TVA)</div>
+            <div style="font-size: 24px; font-weight: 700; color: var(--text-main);" id="summary-total-eur">0.00 € / 0.00 RON</div>
+            <div style="font-size: 12px; color: var(--text-secondary); margin-top: 2px;" id="summary-total-tva">TVA (21%): 0.00 € | Total cu TVA: 0.00 €</div>
+          </div>
+
+          <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
+            <button id="btn-back-to-step1-bottom" class="k-btn k-btn-secondary" style="font-size: 13px; font-weight: 600; padding: 10px 18px;" type="button" title="Revino la Configurator pentru a adăuga mai multe piese în comandă">
+              <svg class="icon-svg" viewBox="0 0 24 24"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+              <span>← Înapoi la Configurator (Adaugă piese)</span>
+            </button>
+
+            <button id="btn-cart-export-excel" class="k-btn k-btn-success" style="font-size: 13px; font-weight: 600; padding: 10px 18px;" title="Descarcă specificația tehnică a comenzii în format Excel (.xlsx)">
+              <svg class="icon-svg" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="9" y1="21" x2="9" y2="9"></line></svg>
+              <span>Export Excel (.xlsx)</span>
+            </button>
+
+            <button id="btn-cart-print" class="k-btn k-btn-secondary" style="font-size: 13px; font-weight: 600; padding: 10px 18px;" title="Tipărește oferta sau salvează ca document PDF">
+              <svg class="icon-svg" viewBox="0 0 24 24"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
+              <span>Tipărire / Salvează PDF</span>
+            </button>
+
+            <button id="btn-submit-order" class="k-btn k-btn-primary" style="font-size: 14px; font-weight: 700; padding: 10px 22px;" title="Transmite comanda către fabrica KronVent Brașov">
+              <svg class="icon-svg" viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+              <span>Trimite Comanda la Producție</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+  </main>
+
+  <!-- ====================================================================
+       EDIT PIECE MODAL
+       ==================================================================== -->
+  <div id="edit-modal" class="mac-modal-overlay">
+    <div class="mac-modal-window">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; border-bottom: 1px solid var(--border-main); padding-bottom: 8px;">
+        <h3 style="font-size: 14px; font-weight: 700; color: var(--text-main);">Editare Parametri Piesă</h3>
+        <button id="modal-close" style="background: none; border: none; font-size: 18px; cursor: pointer; color: var(--text-muted);">&times;</button>
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 10px;">
+        <div class="form-group">
+          <label for="modal-eticheta">Etichetă / Descriere</label>
+          <input type="text" id="modal-eticheta" class="form-input">
+        </div>
+        <div class="form-group">
+          <label for="modal-dimensiuni">Dimensiuni (mm)</label>
+          <input type="text" id="modal-dimensiuni" class="form-input">
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px;">
+          <div class="form-group">
+            <label for="modal-cantitate">Cantitate</label>
+            <input type="number" id="modal-cantitate" class="form-input" min="1">
+          </div>
+          <div class="form-group">
+            <label for="modal-suprafata">Suprafață Totală (m²)</label>
+            <input type="number" id="modal-suprafata" class="form-input" step="0.01">
+          </div>
+          <div class="form-group">
+            <label for="modal-pret">Valoare Totală (€)</label>
+            <input type="number" id="modal-pret" class="form-input" step="0.01">
+          </div>
+        </div>
+      </div>
+
+      <div style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px; border-top: 1px solid var(--border-light); padding-top: 12px;">
+        <button id="modal-cancel" class="k-btn k-btn-secondary">Anulează</button>
+        <button id="modal-save" class="k-btn k-btn-primary">Salvează Modificările</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ====================================================================
+       ORDER SUBMITTED SUCCESS MODAL
+       ==================================================================== -->
+  <div id="order-success-modal" class="mac-modal-overlay">
+    <div class="mac-modal-window" style="max-width: 500px; text-align: center; padding: 28px 24px;">
+      <div style="width: 56px; height: 56px; border-radius: 50%; background: #dcfce7; color: #15803d; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px;">
+        <svg class="icon-svg" style="width: 32px; height: 32px;" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg>
+      </div>
+      <h2 style="font-size: 18px; font-weight: 700; color: var(--text-main); margin-bottom: 6px;">
+        Comanda a fost trimisă spre fabricație!
+      </h2>
+      <p style="font-size: 13px; color: var(--text-secondary); margin-bottom: 16px;" id="order-success-msg">
+        Comanda a fost înregistrată cu succes în sistemul fabricii KronVent Brașov.
+      </p>
+      <div style="background: #f8fafc; border: 1px solid var(--border-light); border-radius: var(--radius-xs); padding: 12px; margin-bottom: 18px; text-align: left; font-size: 12px;">
+        <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+          <span style="color: var(--text-muted);">Număr Înregistrare Comandă:</span>
+          <strong id="success-cmd-num" style="color: var(--kronvent-blue);">CMD-2026/01</strong>
+        </div>
+        <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+          <span style="color: var(--text-muted);">Total Articole:</span>
+          <strong id="success-cmd-pieces">0 bucăți</strong>
+        </div>
+        <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+          <span style="color: var(--text-muted);">Suprafață Desfășurată:</span>
+          <strong id="success-cmd-surface">0.00 m²</strong>
+        </div>
+        <div style="display: flex; justify-content: space-between;">
+          <span style="color: var(--text-muted);">Valoare Totală Ofertată:</span>
+          <strong id="success-cmd-val" style="color: var(--industrial-green);">0.00 €</strong>
+        </div>
+      </div>
+      <div style="display: flex; gap: 8px; justify-content: center;">
+        <button id="btn-success-print" class="k-btn k-btn-secondary" onclick="window.print()">
+          <svg class="icon-svg" viewBox="0 0 24 24"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
+          <span>Tipărește Confirmarea</span>
+        </button>
+        <button id="btn-success-close" class="k-btn k-btn-primary">
+          <span>Continuă Navigarea</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Zoom Schiță Tehnică & Randare 3D -->
+  <div id="blueprint-zoom-modal" class="mac-modal-overlay">
+    <div class="mac-modal-window zoom-modal-window">
+      <div class="zoom-modal-header">
+        <div class="zoom-modal-title">
+          <svg class="icon-svg" viewBox="0 0 24 24" style="width: 18px; height: 18px; stroke: var(--kronvent-blue);"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+          <span id="zoom-modal-piece-title">Schiță Tehnică Detaliată</span>
+        </div>
+        <button type="button" id="zoom-modal-close-btn" class="modal-close-btn" title="Închide">✕</button>
+      </div>
+
+      <div class="zoom-modal-body">
+        <div class="zoom-img-container">
+          <img id="zoom-modal-img" src="assets/icons3d/CRD.png" alt="Schiță Mărită Piesă HVAC" class="zoom-large-img">
+        </div>
+        <div class="zoom-modal-specs">
+          <div class="zoom-specs-heading">DIMENSIUNI & COTE DINAMICE SELECTATE</div>
+          <div id="zoom-modal-dim-badges" class="zoom-dim-badges-grid">
+            <!-- Dynamic pills with dimensions -->
+          </div>
+          <div class="zoom-calc-summary-row" id="zoom-modal-calc-summary">
+            <!-- Dynamic technical specs -->
+          </div>
+        </div>
+      </div>
+
+      <div class="zoom-modal-footer">
+        <button type="button" id="zoom-modal-ok-btn" class="k-btn k-btn-primary">Închide Schița</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Client Footer (Bara de Jos) -->
+  <footer class="kronvent-client-footer">
+    <div class="footer-container">
+      <div class="footer-copy">
+        <strong>KronVent Brașov</strong> • Producție Tubulatură HVAC (Capacitate 25.000 m²/lună) • Comenzi & Asistență Tehnică: <a href="tel:0725003187">0725 003 187</a> • Email Fabrică: <a href="mailto:adrian@kronvent.ro">adrian@kronvent.ro</a>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Official Technical Specification & Commercial Offer Container for PDF / Print -->
+  <div id="print-official-document" class="print-official-document"></div>
+
+  <!-- SheetJS Library -->
+  <script src="xlsx.full.min.js"></script>
+  <!-- Application Logic -->
+  <script src="app.js?v=2026-multiyear-snapshot-v8"></script>
+</body>
+</html>

@@ -1,0 +1,279 @@
+{
+  "activeYear": 2026,
+  "years": {
+    "2026": {
+      "year": 2026,
+      "isActive": true,
+      "settings": {
+        "pretMpRectangular": 15,
+        "cursEur": 5.2542,
+        "cursBnrDate": "09.09.2026",
+        "tva": 21,
+        "flansaPerimeterThreshold": 3500,
+        "dimGrosimePrag1": 500,
+        "dimGrosimePrag2": 1000,
+        "density06": 4.71,
+        "density08": 6.28,
+        "density10": 7.85,
+        "clipsStep": 350,
+        "siliconStep": 18
+      },
+      "spiroPrices": {
+        "100": {
+          "spiro": 8.8,
+          "cot90": 12,
+          "cot45": 9.8,
+          "teu": 17.5,
+          "red": 12,
+          "stut": 6,
+          "capac": 5.3,
+          "clapeta": 21
+        },
+        "125": {
+          "spiro": 9.5,
+          "cot90": 13.1,
+          "cot45": 10.7,
+          "teu": 19.1,
+          "red": 13,
+          "stut": 6.5,
+          "capac": 5.7,
+          "clapeta": 22.7
+        },
+        "150": {
+          "spiro": 10.2,
+          "cot90": 14.2,
+          "cot45": 11.7,
+          "teu": 20.7,
+          "red": 14,
+          "stut": 7,
+          "capac": 6.2,
+          "clapeta": 24.5
+        },
+        "160": {
+          "spiro": 10.5,
+          "cot90": 14.7,
+          "cot45": 12.1,
+          "teu": 21.4,
+          "red": 14.4,
+          "stut": 7.2,
+          "capac": 6.4,
+          "clapeta": 25.2
+        },
+        "200": {
+          "spiro": 11.6,
+          "cot90": 16.5,
+          "cot45": 13.6,
+          "teu": 24,
+          "red": 16,
+          "stut": 8,
+          "capac": 7.1,
+          "clapeta": 28
+        },
+        "250": {
+          "spiro": 13,
+          "cot90": 18.7,
+          "cot45": 15.5,
+          "teu": 27.2,
+          "red": 18,
+          "stut": 9,
+          "capac": 8,
+          "clapeta": 31.5
+        },
+        "315": {
+          "spiro": 14.8,
+          "cot90": 21.7,
+          "cot45": 18,
+          "teu": 31.5,
+          "red": 20.6,
+          "stut": 10.3,
+          "capac": 9.2,
+          "clapeta": 36
+        },
+        "355": {
+          "spiro": 15.9,
+          "cot90": 23.5,
+          "cot45": 19.5,
+          "teu": 34.1,
+          "red": 22.2,
+          "stut": 11.1,
+          "capac": 9.9,
+          "clapeta": 38.8
+        },
+        "400": {
+          "spiro": 17.2,
+          "cot90": 25.5,
+          "cot45": 21.2,
+          "teu": 37,
+          "red": 24,
+          "stut": 12,
+          "capac": 10.7,
+          "clapeta": 42
+        },
+        "500": {
+          "spiro": 20,
+          "cot90": 30,
+          "cot45": 25,
+          "teu": 43.5,
+          "red": 28,
+          "stut": 14,
+          "capac": 12.5,
+          "clapeta": 49
+        },
+        "630": {
+          "spiro": 23.6,
+          "cot90": 35.8,
+          "cot45": 29.9,
+          "teu": 52,
+          "red": 33.2,
+          "stut": 16.6,
+          "capac": 14.8,
+          "clapeta": 58.1
+        },
+        "710": {
+          "spiro": 25.9,
+          "cot90": 39.4,
+          "cot45": 33,
+          "teu": 57.1,
+          "red": 36.4,
+          "stut": 18.2,
+          "capac": 16.3,
+          "clapeta": 63.7
+        },
+        "800": {
+          "spiro": 28.4,
+          "cot90": 43.5,
+          "cot45": 36.4,
+          "teu": 63,
+          "red": 40,
+          "stut": 20,
+          "capac": 17.9,
+          "clapeta": 70
+        },
+        "1000": {
+          "spiro": 34,
+          "cot90": 52.5,
+          "cot45": 44,
+          "teu": 76,
+          "red": 48,
+          "stut": 24,
+          "capac": 21.5,
+          "clapeta": 84
+        },
+        "1250": {
+          "spiro": 41,
+          "cot90": 63.7,
+          "cot45": 53.5,
+          "teu": 92.2,
+          "red": 58,
+          "stut": 29,
+          "capac": 26,
+          "clapeta": 101.5
+        }
+      },
+      "ordersCount": 5
+    }
+  },
+  "orders": [
+    {
+      "id": "CMD-2026-00042",
+      "orderNumber": "2026-00042",
+      "year": 2026,
+      "client": "RADOIA ISOLIRUNG",
+      "project": "Oferta HVAC HOTEL VALIUG",
+      "date": "21.03.2023",
+      "status": "IN_PRODUCTIE",
+      "totalEur": 5146.43,
+      "totalRon": 27040.37,
+      "totalMp": 234.43,
+      "totalPiese": 3357,
+      "calculation_snapshot": {
+        "year": 2026,
+        "timestamp": "2026-09-09T18:30:00Z",
+        "pretMp": 15,
+        "cursEur": 5.2542,
+        "cursBnrDate": "09.09.2026",
+        "tva": 21
+      }
+    },
+    {
+      "id": "CMD-2026-00043",
+      "orderNumber": "2026-00043",
+      "year": 2026,
+      "client": "KRONTECH INSTAL SRL",
+      "project": "Hală Logistică Ghimbav - Tronson Introducere A",
+      "date": "12.05.2026",
+      "status": "FINALIZATA",
+      "totalEur": 8420,
+      "totalRon": 44240.36,
+      "totalMp": 412.5,
+      "totalPiese": 1240,
+      "calculation_snapshot": {
+        "year": 2026,
+        "timestamp": "2026-05-12T10:15:00Z",
+        "pretMp": 15,
+        "cursEur": 5.2542,
+        "tva": 21
+      }
+    },
+    {
+      "id": "CMD-2026-00044",
+      "orderNumber": "2026-00044",
+      "year": 2026,
+      "client": "PROCLIMA HVAC BRAȘOV",
+      "project": "Ansamblu Rezidențial Coresi Faza 2",
+      "date": "28.06.2026",
+      "status": "GATA_LIVRARE",
+      "totalEur": 12150.8,
+      "totalRon": 63842.74,
+      "totalMp": 580.2,
+      "totalPiese": 2180,
+      "calculation_snapshot": {
+        "year": 2026,
+        "timestamp": "2026-06-28T14:20:00Z",
+        "pretMp": 15,
+        "cursEur": 5.2542,
+        "tva": 21
+      }
+    },
+    {
+      "id": "CMD-2026-00045",
+      "orderNumber": "2026-00045",
+      "year": 2026,
+      "client": "AUTOLIV ROMÂNIA",
+      "project": "Extindere Clădire Producție Modul B",
+      "date": "15.08.2026",
+      "status": "IN_PRODUCTIE",
+      "totalEur": 14680,
+      "totalRon": 77131.66,
+      "totalMp": 720,
+      "totalPiese": 1850,
+      "calculation_snapshot": {
+        "year": 2026,
+        "timestamp": "2026-08-15T09:00:00Z",
+        "pretMp": 15,
+        "cursEur": 5.2542,
+        "tva": 21
+      }
+    },
+    {
+      "id": "CMD-2026-00046",
+      "orderNumber": "2026-00046",
+      "year": 2026,
+      "client": "AEROCOND INSTALAȚII",
+      "project": "Centru Comercial Mall Brașov Vest",
+      "date": "04.09.2026",
+      "status": "GATA_LIVRARE",
+      "totalEur": 9350.5,
+      "totalRon": 49129.4,
+      "totalMp": 445.8,
+      "totalPiese": 1620,
+      "calculation_snapshot": {
+        "year": 2026,
+        "timestamp": "2026-09-04T16:45:00Z",
+        "pretMp": 15,
+        "cursEur": 5.2542,
+        "tva": 21
+      }
+    }
+  ]
+}

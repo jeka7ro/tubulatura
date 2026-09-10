@@ -1,0 +1,861 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <title>KronVent - Panou Administrare Fabrică & Backoffice</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css?v=2026-multiyear-snapshot-v9">
+</head>
+<body>
+
+  <!-- ====================================================================
+       ADMIN APP SHELL: SIDEBAR NAVIGATION + MAIN VIEWPORT
+       ==================================================================== -->
+  <div class="admin-app-shell">
+
+    <!-- ==================================================================
+         SIDEBAR NAVIGATION (LEFT)
+         ================================================================== -->
+    <aside class="admin-sidebar">
+      <div class="sidebar-brand">
+        <a href="admin.html" class="sidebar-logo-link" title="KronVent - Administrare Fabrică">
+          <img src="kronvent-logo.png" alt="KronVent Fabrică" class="sidebar-logo-img">
+        </a>
+        <span class="sidebar-badge">ADMIN FABRICĂ</span>
+      </div>
+
+      <nav class="sidebar-nav" role="tablist">
+        <div class="sidebar-section-title">RAPOARTE & VÂNZĂRI</div>
+        <button class="sidebar-nav-item admin-tab-btn active" data-target="admin-tab-dashboard" role="tab">
+          <svg class="icon-svg" viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
+          <span>Vânzări & Comenzi</span>
+          <span class="sidebar-pill-badge" id="admin-orders-count-badge">5</span>
+        </button>
+
+        <div class="sidebar-section-title">PRODUCȚIE & ATELIER</div>
+        <button class="sidebar-nav-item admin-tab-btn" data-target="admin-tab-comenzi" role="tab">
+          <svg class="icon-svg" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="9" y1="21" x2="9" y2="9"></line></svg>
+          <span>Editor Fișier Excel</span>
+          <span class="sidebar-pill-badge badge-neutral" id="admin-items-count-badge">51</span>
+        </button>
+
+        <button class="sidebar-nav-item admin-tab-btn" data-target="admin-tab-materiale" role="tab">
+          <svg class="icon-svg" viewBox="0 0 24 24"><polygon points="12 2 2 7 12 12 22 7 12 2"></polygon><polyline points="2 17 12 22 22 17"></polyline><polyline points="2 12 12 17 22 12"></polyline></svg>
+          <span>Necesar Materiale</span>
+        </button>
+
+        <div class="sidebar-section-title">CONFIGURARE FABRICĂ</div>
+        <button class="sidebar-nav-item admin-tab-btn" data-target="admin-tab-setari" role="tab">
+          <svg class="icon-svg" viewBox="0 0 24 24"><line x1="4" y1="21" x2="4" y2="14"></line><line x1="4" y1="10" x2="4" y2="3"></line><line x1="12" y1="21" x2="12" y2="12"></line><line x1="12" y1="8" x2="12" y2="3"></line><line x1="20" y1="21" x2="20" y2="16"></line><line x1="20" y1="12" x2="20" y2="3"></line><line x1="1" y1="14" x2="7" y2="14"></line><line x1="9" y1="8" x2="15" y2="8"></line><line x1="17" y1="16" x2="23" y2="16"></line></svg>
+          <span>Setări Comerciale & BNR</span>
+        </button>
+
+        <button class="sidebar-nav-item admin-tab-btn" data-target="admin-tab-ani" role="tab">
+          <svg class="icon-svg" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+          <span>Versionare pe Ani</span>
+          <span class="sidebar-pill-badge badge-success" id="admin-active-year-badge">2026</span>
+        </button>
+      </nav>
+
+      <!-- Sidebar Footer -->
+      <div class="sidebar-footer">
+        <!-- Live BNR Badge in Sidebar -->
+        <div class="sidebar-bnr-pill" id="bnr-admin-badge" title="Curs valutar oficial preluat automat de la Banca Națională a României">
+          <div class="sidebar-bnr-top">
+            <span class="sidebar-bnr-tag">CURS OFICIAL BNR</span>
+            <span class="sidebar-bnr-date" id="admin-bnr-date">09.09.2026</span>
+          </div>
+          <div class="sidebar-bnr-val" id="admin-bnr-rate">
+            1 EUR = <strong id="admin-bnr-num">5.2542 RON</strong>
+          </div>
+        </div>
+
+        <!-- Direct link to Client Portal -->
+        <a href="index.html" class="sidebar-portal-btn" title="Deschide portalul de ofertare văzut de clienți">
+          <svg class="icon-svg" viewBox="0 0 24 24"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+          <span>Mergi la Portal Client</span>
+        </a>
+
+        <!-- User Profile & Action Tools -->
+        <div class="sidebar-user-card">
+          <div class="sidebar-user-avatar">AP</div>
+          <div class="sidebar-user-meta">
+            <span class="sidebar-user-name">Ing. Adrian Popa</span>
+            <span class="sidebar-user-role">Admin Fabrică</span>
+          </div>
+          <button id="btn-theme-toggle" class="sidebar-action-icon" title="Comută mod luminos / întunecat" aria-label="Comută temă">
+            <svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+          </button>
+          <button id="btn-logout" class="sidebar-action-icon" title="Delogare" aria-label="Delogare">
+            <svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+          </button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- ==================================================================
+         MAIN CONTENT VIEWPORT (RIGHT)
+         ================================================================== -->
+    <div class="admin-main-viewport">
+      <!-- Topbar Header -->
+      <header class="admin-topbar">
+        <div class="admin-topbar-title-box">
+          <h1 id="admin-page-title">Vânzări & Dashboard Executiv</h1>
+          <span id="admin-page-subtitle">Sinteză comenzi clienți B2B • Anul de Fabricație 2026</span>
+        </div>
+
+        <div class="admin-topbar-right">
+          <span class="topbar-status-badge">
+            <span class="topbar-status-dot"></span>
+            An de Fabricație 2026 • Activ
+          </span>
+        </div>
+      </header>
+
+      <!-- Content Workspace -->
+      <div class="admin-content-container">
+        <!-- ==============================================================
+             TAB 0: VÂNZĂRI & COMENZI (FOCUSED ON SALES & EASY TO ANALYZE)
+             ============================================================== -->
+        <div id="admin-tab-dashboard" class="tab-pane active" role="tabpanel">
+
+          <!-- 1. Pure Sales KPIs Row -->
+          <section class="sales-kpis-row">
+            <div class="sales-kpi-card kpi-accent">
+              <div class="sales-kpi-label">Total Vânzări 2026 (fără TVA)</div>
+              <div class="sales-kpi-number" id="dash-kpi-sales-eur">49.747,73 €</div>
+              <div class="sales-kpi-sub" id="dash-kpi-sales-ron">261.384,53 RON (curs BNR: 5.2542)</div>
+            </div>
+
+            <div class="sales-kpi-card">
+              <div class="sales-kpi-label">Portofoliu Comenzi</div>
+              <div class="sales-kpi-number" id="dash-kpi-orders-count">5 comenzi</div>
+              <div class="sales-kpi-sub" id="dash-kpi-avg-order">Valoare medie: 9.949,55 € / comandă</div>
+            </div>
+
+            <div class="sales-kpi-card">
+              <div class="sales-kpi-label">Suprafață Tablă Facturată</div>
+              <div class="sales-kpi-number" id="dash-kpi-volume-mp">2.392,93 m²</div>
+              <div class="sales-kpi-sub" id="dash-kpi-volume-tonaj">~15.195 kg tablă zincată DX51D</div>
+            </div>
+
+            <div class="sales-kpi-card">
+              <div class="sales-kpi-label">Status Producție & Livrări</div>
+              <div class="sales-kpi-number" id="dash-kpi-pipeline-summary" style="color: #b45309;">2 În Producție</div>
+              <div class="sales-kpi-sub" id="dash-kpi-pipeline-details">1 Gata Livrare • 1 Finalizată • 1 Nouă</div>
+            </div>
+          </section>
+
+          <!-- 2. Client Revenue Ranking (Pure Sales Breakdown) -->
+          <section class="sales-ranking-card">
+            <div class="sales-ranking-header">
+              <div class="sales-ranking-title">
+                <svg class="icon-svg" viewBox="0 0 24 24" style="stroke: var(--kronvent-blue); width: 18px; height: 18px;"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
+                <span>Venituri & Comenzi per Client B2B (Anul 2026)</span>
+              </div>
+              <div style="font-size: 12px; font-weight: 700; color: var(--text-muted);">
+                Total: <span id="dash-ranking-total-eur" style="color: var(--industrial-green);">49.747,73 €</span> (100%)
+              </div>
+            </div>
+
+            <div id="dash-sales-clients-ranking">
+              <!-- Dynamically populated by admin.js -->
+            </div>
+          </section>
+
+          <!-- 3. Registru Centralizator Comenzi Clienți (CRM Table) -->
+          <div class="sales-crm-card">
+            <div class="sales-crm-toolbar">
+              <div class="sales-crm-title">
+                <svg class="icon-svg" viewBox="0 0 24 24" style="stroke: var(--kronvent-blue); width: 18px; height: 18px;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+                <span>Registru Vânzări & Comenzi Clienți</span>
+                <span class="tab-badge" id="dash-orders-table-count" style="background: rgba(37,99,235,0.1); color: var(--kronvent-blue); font-size: 11px;">5 COMENZI</span>
+              </div>
+
+              <div class="sales-crm-controls">
+                <input type="text" id="dash-orders-search-input" class="sales-search-input" placeholder="Caută client, proiect, nr. comandă...">
+
+                <select id="dash-orders-status-filter" class="sales-status-select" title="Filtrează după status">
+                  <option value="ALL">Toate Statusurile</option>
+                  <option value="NOUA">Ofertă Nouă</option>
+                  <option value="IN_PRODUCTIE">În Producție</option>
+                  <option value="GATA_LIVRARE">Gata de Livrare</option>
+                  <option value="FINALIZATA">Finalizată</option>
+                </select>
+
+                <button id="admin-btn-export-dash-excel" class="k-btn k-btn-success k-btn-sm" title="Descarcă raportul în format Excel">
+                  <svg class="icon-svg" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                  <span>Export Raport Vânzări</span>
+                </button>
+
+                <button id="admin-btn-print-dash" class="k-btn k-btn-secondary k-btn-sm" title="Printează lista de comenzi">
+                  <svg class="icon-svg" viewBox="0 0 24 24"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
+                  <span>Printează</span>
+                </button>
+              </div>
+            </div>
+
+            <div style="overflow-x: auto;">
+              <table class="enterprise-table" style="margin: 0; width: 100%;">
+                <thead>
+                  <tr>
+                    <th style="width: 45px; text-align: center;">Nr.</th>
+                    <th style="width: 120px;">Nr. Comandă</th>
+                    <th style="width: 95px; text-align: center;">Dată</th>
+                    <th>Beneficiar / Client B2B</th>
+                    <th>Proiect / Obiectiv</th>
+                    <th style="text-align: right; width: 95px;">Suprafață</th>
+                    <th style="text-align: right; width: 80px;">Piese</th>
+                    <th style="text-align: right; width: 115px;">Valoare EUR</th>
+                    <th style="text-align: right; width: 125px;">Valoare RON</th>
+                    <th style="width: 150px; text-align: center;">Status</th>
+                    <th style="width: 170px; text-align: center;">Acțiuni</th>
+                  </tr>
+                </thead>
+                <tbody id="dash-orders-tbody">
+                  <!-- Populated by admin.js -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- ==============================================================
+             TAB 1: EDITOR FIȘIER EXCEL & NOMENCLATOR COMENZI
+             ============================================================== -->
+        <div id="admin-tab-comenzi" class="tab-pane" role="tabpanel">
+
+      <!-- EXCEL SHEET METRICS RIBBON -->
+      <section class="metrics-ribbon" style="margin-bottom: 16px;">
+        <div class="metric-panel">
+          <div class="metric-label">Valoare Poziții Fișă Excel</div>
+          <div class="metric-value" id="admin-kpi-valoare">5146.43 €</div>
+          <div class="metric-sub" id="admin-kpi-ron">25577.76 RON (fără TVA)</div>
+        </div>
+
+        <div class="metric-panel">
+          <div class="metric-label">Suprafață Tablă de Debitat</div>
+          <div class="metric-value" id="admin-kpi-suprafata">234.43 m²</div>
+          <div class="metric-sub">Tablă zincată DX51D + Z275</div>
+        </div>
+
+        <div class="metric-panel">
+          <div class="metric-label">Număr Total Piese Producție</div>
+          <div class="metric-value" id="admin-kpi-piese">3357 bucăți</div>
+          <div class="metric-sub" id="admin-kpi-pozitii">51 poziții în lucru</div>
+        </div>
+
+        <div class="metric-panel">
+          <div class="metric-label">Greutate Tablă Estimată</div>
+          <div class="metric-value" id="admin-kpi-greutate">1454.2 kg</div>
+          <div class="metric-sub">Standard SR EN 1505 / 1506</div>
+        </div>
+      </section>
+      <!-- File Management & Actions Toolbar -->
+      <div class="enterprise-card excel-file-manager-card" style="padding: 16px; margin-bottom: 16px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 12px;">
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <div class="excel-file-badge">
+              <svg class="icon-svg" viewBox="0 0 24 24" style="width: 22px; height: 22px; stroke: #16a34a;"><rect x="3" y="3" width="18" height="18" rx="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="9" y1="21" x2="9" y2="9"></line></svg>
+            </div>
+            <div>
+              <div style="font-size: 14px; font-weight: 700; color: var(--text-main); display: flex; align-items: center; gap: 8px;">
+                <span>Fișier de Producție: Program Calcul EXACT.xlsx</span>
+                <span class="k-badge" style="background: #dcfce7; color: #15803d; font-weight: 700;">ACTIV PE SERVER</span>
+              </div>
+              <p style="font-size: 12px; color: var(--text-muted); margin-top: 2px;">
+                Modificați orice celulă direct în tabel, adăugați poziții noi, încărcați un fișier Excel actualizat sau salvați baza de date.
+              </p>
+            </div>
+          </div>
+
+          <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+            <button id="admin-btn-add-row" class="k-btn k-btn-primary" title="Adaugă un rând nou în tabel">
+              <svg class="icon-svg" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+              <span>+ Adaugă Poziție Nouă</span>
+            </button>
+
+            <button id="admin-btn-upload-excel" class="k-btn k-btn-secondary" title="Încarcă un fișier Excel (.xlsx) complet">
+              <svg class="icon-svg" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+              <span>Încarcă Excel (.xlsx)</span>
+            </button>
+            <input type="file" id="admin-excel-file-input" accept=".xlsx, .xls" style="display: none;">
+
+            <button id="admin-btn-download-excel-file" class="k-btn k-btn-success" title="Descarcă fișierul Excel curent">
+              <svg class="icon-svg" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+              <span>Descarcă Excel (.xlsx)</span>
+            </button>
+
+            <button id="admin-btn-save-inline" class="k-btn k-btn-primary" style="background: #15803d; border-color: #15803d;" title="Salvează modificările pe server">
+              <svg class="icon-svg" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg>
+              <span>Salvează Modificările</span>
+            </button>
+
+            <button id="admin-btn-reset" class="k-btn k-btn-secondary k-btn-sm" style="color: var(--text-muted);" title="Reîncarcă pozițiile inițiale din fișierul Excel de pe server">
+              <svg class="icon-svg" viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"></polyline><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path></svg>
+              <span>Reîncarcă Fișierul Original</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Dropzone drag & drop -->
+        <div id="admin-excel-dropzone" class="excel-dropzone">
+          <svg class="icon-svg" viewBox="0 0 24 24" style="width: 22px; height: 22px; stroke: var(--kronvent-blue);"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="12" y1="18" x2="12" y2="12"></line><line x1="9" y1="15" x2="12" y2="12"></line><line x1="15" y1="15" x2="12" y2="12"></line></svg>
+          <span style="font-size: 12px; font-weight: 600; color: var(--text-main);">
+            Trageți aici fișierul Excel (.xlsx) sau faceți clic pentru a importa tabelul complet de calcul
+          </span>
+          <span style="font-size: 11px; color: var(--text-muted);">(compatibil cu Program Calcul EXACT.xlsx)</span>
+        </div>
+      </div>
+
+      <!-- Main Spreadsheet Card -->
+      <div class="enterprise-card">
+        <!-- Excel Multi-Sheet Workbook Navigator (Excel Tabs) -->
+        <div class="excel-workbook-container">
+          <div class="excel-sheet-nav-header">
+            <div class="excel-sheet-nav-label">
+              <svg class="icon-svg" viewBox="0 0 24 24" style="width: 15px; height: 15px; stroke: #15803d;"><rect x="3" y="3" width="18" height="18" rx="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="9" y1="21" x2="9" y2="9"></line></svg>
+              <span>Foi de Calcul Excel (Program Calcul EXACT.xlsx)</span>
+            </div>
+            <div id="admin-sheet-active-title" style="font-size: 12px; font-weight: 700; color: var(--kronvent-blue);">
+              Comanda (Centralizator 51 poziții)
+            </div>
+          </div>
+          <div class="excel-sheets-tab-bar" id="admin-sheet-tabs-container">
+            <!-- Sheet tabs dynamically populated by admin.js -->
+          </div>
+        </div>
+
+        <div class="card-header-toolbar" id="admin-comanda-toolbar">
+          <div class="toolbar-left">
+            <input type="text" id="admin-table-search" class="form-input" placeholder="Caută după etichetă, dimensiuni, cod...">
+            <select id="admin-filter-categorie" class="form-select">
+              <option value="all">Toate Categoriile</option>
+              <option value="Canal drept">Canale Drepte</option>
+              <option value="Cot rectangular ( fara dirijori )">Coturi Rectangulare</option>
+              <option value="Cot rectangular drept">Coturi Rectangulare Drepte</option>
+              <option value="Cot rectangular cu dirijori">Coturi cu Dirijori</option>
+              <option value="Teu">Teuri</option>
+              <option value="Piesa de deviatie (etaj)">Piese de Deviație</option>
+              <option value="Reductie simetrica/asimetrica">Reducții</option>
+              <option value="Capac">Capace</option>
+              <option value="YAKA">Ștuțuri Racord (YAKA)</option>
+              <option value="Plenum">Plenum Difuzor</option>
+              <option value="Tubulatura Circulara Spiro">Tubulatură Spiro</option>
+              <option value="Materiale montaj">Materiale Montaj</option>
+            </select>
+          </div>
+          <div class="toolbar-right">
+            <span style="font-size: 12px; color: var(--text-muted);">
+              Total poziții: <strong id="admin-filter-count" style="color: var(--text-main);">51</strong>
+            </span>
+          </div>
+        </div>
+
+        <!-- CAD Technical Drawing Banner for Piece Sheets -->
+        <div id="admin-sheet-cad-box" class="admin-sheet-cad-banner" style="display: none;">
+          <img id="admin-sheet-cad-img" src="" alt="Schiță Tehnică CAD">
+          <div class="admin-sheet-cad-info">
+            <h4 id="admin-sheet-cad-title">Schiță Tehnică</h4>
+            <p id="admin-sheet-cad-desc">Standard tehnic de execuție conform catalogului de producție.</p>
+          </div>
+        </div>
+
+        <div class="table-scroll-container">
+          <table class="enterprise-grid admin-editable-grid">
+            <thead id="admin-table-thead">
+              <tr>
+                <th style="width: 36px; text-align: center;">Nr.</th>
+                <th style="min-width: 170px;">Denumire / Etichetă</th>
+                <th style="min-width: 150px;">Tip / Categorie Piesă</th>
+                <th style="width: 70px;">Cod</th>
+                <th style="min-width: 150px;">Dimensiuni (mm)</th>
+                <th style="width: 80px; text-align: right;">Cant. [buc]</th>
+                <th style="width: 85px; text-align: right;">S. Unit [m²]</th>
+                <th style="width: 85px; text-align: right;">S. Tot [m²]</th>
+                <th style="width: 85px; text-align: right;">Preț Unit [€]</th>
+                <th style="width: 95px; text-align: right;">Total [€]</th>
+                <th style="width: 110px;">Flanșă</th>
+                <th style="width: 85px;">Grosime</th>
+                <th style="width: 75px; text-align: center;">Acțiuni</th>
+              </tr>
+            </thead>
+            <tbody id="admin-items-tbody">
+              <!-- Rendered via JS with inline spreadsheet editing -->
+            </tbody>
+            <tfoot id="admin-table-tfoot">
+              <tr>
+                <td colspan="5"><strong>TOTALURI GENERALE FABRICĂ:</strong></td>
+                <td style="text-align: right;"><strong id="admin-foot-cantitate">3357 buc</strong></td>
+                <td></td>
+                <td style="text-align: right;"><strong id="admin-foot-suprafata">234.43 m²</strong></td>
+                <td></td>
+                <td style="text-align: right;"><strong id="admin-foot-valoare" class="foot-total-highlight">5146.43 €</strong></td>
+                <td colspan="2"><span id="admin-foot-greutate">Greutate: 1454.2 kg</span></td>
+                <td></td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================================================================
+         TAB 2: NECESAR MATERIALE ATELIER
+         ================================================================== -->
+    <div id="admin-tab-materiale" class="tab-pane" role="tabpanel">
+      <div class="enterprise-card" style="padding: 16px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; border-bottom: 1px solid var(--border-main); padding-bottom: 10px;">
+          <div>
+            <h2 style="font-size: 15px; font-weight: 700; color: var(--text-main);">
+              Bon Consum Materiale Atelier de Producție (Debitări CNC & Asamblare)
+            </h2>
+            <p style="font-size: 12px; color: var(--text-muted); margin-top: 2px;">
+              Calculat automat pe baza pieselor active conform standardului tehnologic KronVent
+            </p>
+          </div>
+          <button id="btn-print-atelier" class="k-btn k-btn-secondary" onclick="window.print()">
+            <svg class="icon-svg" viewBox="0 0 24 24"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
+            <span>Tipărește Fișa de Producție</span>
+          </button>
+        </div>
+        
+        <div class="table-scroll-container">
+          <table class="enterprise-grid">
+            <thead>
+              <tr>
+                <th>Categorie Material</th>
+                <th>Specificație Tehnică Fabrică</th>
+                <th style="text-align: right;">Necesar Calculat</th>
+                <th style="text-align: center;">U.M.</th>
+                <th>Rol Tehnologic în Fabricație</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>Tablă Zincată DX51D (0.6 mm)</strong></td>
+                <td>Grosime 0.6 mm (laturi max. ≤ 500 mm)</td>
+                <td style="text-align: right; font-weight: 700;" id="mat-tabla-06">11.46 m² (54.0 kg)</td>
+                <td style="text-align: center;">m²</td>
+                <td>Debitare canale mici și fitinguri ușoare</td>
+              </tr>
+              <tr>
+                <td><strong>Tablă Zincată DX51D (0.8 mm)</strong></td>
+                <td>Grosime 0.8 mm (laturi între 500 și 1000 mm)</td>
+                <td style="text-align: right; font-weight: 700;" id="mat-tabla-08">222.97 m² (1400.3 kg)</td>
+                <td style="text-align: center;">m²</td>
+                <td>Secțiuni medii conform normativ SR EN 1505</td>
+              </tr>
+              <tr>
+                <td><strong>Tablă Zincată DX51D (1.0 mm)</strong></td>
+                <td>Grosime 1.0 mm (laturi mari > 1000 mm)</td>
+                <td style="text-align: right; font-weight: 700;" id="mat-tabla-10">0.00 m² (0.0 kg)</td>
+                <td style="text-align: center;">m²</td>
+                <td>Secțiuni mari industriale / deschideri mari</td>
+              </tr>
+              <tr>
+                <td><strong>Profil Flanșă 20</strong></td>
+                <td>Bare din oțel zincat la 5 metri liniari</td>
+                <td style="text-align: right; font-weight: 700;" id="mat-flansa-20">439.1 ml (~88 bare x 5m)</td>
+                <td style="text-align: center;">bare (5m)</td>
+                <td>Îmbinare tronsoane perimetru ≤ 3500 mm</td>
+              </tr>
+              <tr>
+                <td><strong>Profil Flanșă 30</strong></td>
+                <td>Bare din oțel zincat la 5 metri liniari</td>
+                <td style="text-align: right; font-weight: 700;" id="mat-flansa-30">281.4 ml (~57 bare x 5m)</td>
+                <td style="text-align: center;">bare (5m)</td>
+                <td>Îmbinare tronsoane perimetru > 3500 mm</td>
+              </tr>
+              <tr>
+                <td><strong>Colțari Flanșă 20</strong></td>
+                <td>Oțel zincat ambutisat 2.5 mm</td>
+                <td style="text-align: right; font-weight: 700;" id="mat-coltari-20">880 buc</td>
+                <td style="text-align: center;">buc</td>
+                <td>Rigidizare colțuri flanșe 20 (8 buc / piesă)</td>
+              </tr>
+              <tr>
+                <td><strong>Colțari Flanșă 30</strong></td>
+                <td>Oțel zincat ambutisat 3.0 mm</td>
+                <td style="text-align: right; font-weight: 700;" id="mat-coltari-30">280 buc</td>
+                <td style="text-align: center;">buc</td>
+                <td>Rigidizare colțuri flanșe mari 30</td>
+              </tr>
+              <tr>
+                <td><strong>Bandă Etanșare (Gasket)</strong></td>
+                <td>Autoadezivă PE / EPDM expandat</td>
+                <td style="text-align: right; font-weight: 700;" id="mat-gasket">360.2 ml (~37 role x 10m)</td>
+                <td style="text-align: center;">ml</td>
+                <td>Etanșare între flanșe la montaj</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================================================================
+         TAB 3: SETĂRI COMERCIALE & REGULI TEHNOLOGICE FABRICĂ
+         ================================================================== -->
+    <div id="admin-tab-setari" class="tab-pane" role="tabpanel">
+      <!-- 1. Commercial Settings -->
+      <div class="enterprise-card" style="padding: 20px; margin-bottom: 20px;">
+        <h2 style="font-size: 15px; font-weight: 700; color: var(--text-main); margin-bottom: 4px;">
+          Setări Comerciale & Curs Valutar BNR
+        </h2>
+        <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 16px;">
+          Aceste valori determină prețurile de bază calculate în portalul de comandă pentru clienți.
+        </p>
+
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; margin-bottom: 16px;">
+          <div class="form-group">
+            <label for="admin-setting-pret-mp" style="font-weight: 700; display: block; margin-bottom: 6px;">
+              Preț de Bază Tubulatură Rectangulară (€/m²):
+            </label>
+            <input type="number" id="admin-setting-pret-mp" class="form-input" style="width: 100%;" step="0.5" value="15.0">
+            <span style="font-size: 11px; color: var(--text-muted); display: block; margin-top: 4px;">
+              Prețul per metru pătrat calculat la suprafața desfășurată a pieselor rectangulare.
+            </span>
+          </div>
+
+          <div class="form-group">
+            <label for="admin-setting-curs-eur" style="font-weight: 700; display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+              <span>Curs Valutar Oficial BNR (RON / EUR):</span>
+              <button id="admin-btn-sync-bnr" type="button" class="k-btn k-btn-secondary k-btn-sm" style="padding: 2px 8px; font-size: 11px;">
+                <svg class="icon-svg" viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"></polyline><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path></svg>
+                <span>Sincronizează Curs BNR</span>
+              </button>
+            </label>
+            <input type="number" id="admin-setting-curs-eur" class="form-input" style="width: 100%;" step="0.0001" value="5.2542">
+            <span style="font-size: 11px; color: var(--text-muted); display: block; margin-top: 4px;" id="admin-bnr-sync-status">
+              Preluat oficial de la Banca Națională a României (curs.bnr.ro).
+            </span>
+          </div>
+
+          <div class="form-group">
+            <label for="admin-setting-tva" style="font-weight: 700; display: block; margin-bottom: 6px;">
+              Cotă TVA Implicită (%):
+            </label>
+            <select id="admin-setting-tva" class="form-select" style="width: 100%;">
+              <option value="21" selected>21% (Cota standard România)</option>
+              <option value="0">0% (Taxare Inversă / Livrare Intracomunitară B2B)</option>
+            </select>
+            <span style="font-size: 11px; color: var(--text-muted); display: block; margin-top: 4px;">
+              Cota aplicată automat ofertelor și centralizatoarelor generate.
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 2. Technological Rules & Thresholds -->
+      <div class="enterprise-card" style="padding: 20px; margin-bottom: 20px;">
+        <h2 style="font-size: 15px; font-weight: 700; color: var(--text-main); margin-bottom: 4px;">
+          Reguli & Praguri Tehnologice Fabrică (Standard SR EN 1505 / 1506)
+        </h2>
+        <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 16px;">
+          Determină automat grosimea tablei, profilul flanșei, densitatea și accesoriile de montaj conform formulelor din Excel.
+        </p>
+
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; margin-bottom: 16px;">
+          <div class="form-group">
+            <label for="admin-setting-flansa-prag" style="font-weight: 700; display: block; margin-bottom: 6px;">
+              Prag Perimetru Flanșă [mm]:
+            </label>
+            <input type="number" id="admin-setting-flansa-prag" class="form-input" style="width: 100%;" step="100" value="3500">
+            <span style="font-size: 11px; color: var(--text-muted); display: block; margin-top: 4px;">
+              ≤ 3500 mm: FLANSA20 (Șuruburi M8) | > 3500 mm: FLANSA30 (Șuruburi M10)
+            </span>
+          </div>
+
+          <div class="form-group">
+            <label for="admin-setting-grosime-prag1" style="font-weight: 700; display: block; margin-bottom: 6px;">
+              Prag Dimensiune Max. Tablă 0.6 mm [mm]:
+            </label>
+            <input type="number" id="admin-setting-grosime-prag1" class="form-input" style="width: 100%;" step="50" value="500">
+            <span style="font-size: 11px; color: var(--text-muted); display: block; margin-top: 4px;">
+              Dacă max(A, B) ≤ 500 mm se recomandă tablă zincată de 0.6 mm.
+            </span>
+          </div>
+
+          <div class="form-group">
+            <label for="admin-setting-grosime-prag2" style="font-weight: 700; display: block; margin-bottom: 6px;">
+              Prag Dimensiune Max. Tablă 0.8 mm [mm]:
+            </label>
+            <input type="number" id="admin-setting-grosime-prag2" class="form-input" style="width: 100%;" step="50" value="1000">
+            <span style="font-size: 11px; color: var(--text-muted); display: block; margin-top: 4px;">
+              Dacă max(A, B) ≤ 1000 mm: 0.8 mm | Peste 1000 mm: 1.0 mm.
+            </span>
+          </div>
+
+          <div class="form-group">
+            <label for="admin-setting-density-06" style="font-weight: 700; display: block; margin-bottom: 6px;">
+              Densitate Tablă 0.6 mm [kg/m²]:
+            </label>
+            <input type="number" id="admin-setting-density-06" class="form-input" style="width: 100%;" step="0.01" value="4.71">
+            <span style="font-size: 11px; color: var(--text-muted); display: block; margin-top: 4px;">
+              Greutate specifică standard oțel zincat 0.6 mm.
+            </span>
+          </div>
+
+          <div class="form-group">
+            <label for="admin-setting-density-08" style="font-weight: 700; display: block; margin-bottom: 6px;">
+              Densitate Tablă 0.8 mm [kg/m²]:
+            </label>
+            <input type="number" id="admin-setting-density-08" class="form-input" style="width: 100%;" step="0.01" value="6.28">
+            <span style="font-size: 11px; color: var(--text-muted); display: block; margin-top: 4px;">
+              Greutate specifică standard oțel zincat 0.8 mm.
+            </span>
+          </div>
+
+          <div class="form-group">
+            <label for="admin-setting-density-10" style="font-weight: 700; display: block; margin-bottom: 6px;">
+              Densitate Tablă 1.0 mm [kg/m²]:
+            </label>
+            <input type="number" id="admin-setting-density-10" class="form-input" style="width: 100%;" step="0.01" value="7.85">
+            <span style="font-size: 11px; color: var(--text-muted); display: block; margin-top: 4px;">
+              Greutate specifică standard oțel zincat 1.0 mm.
+            </span>
+          </div>
+
+          <div class="form-group">
+            <label for="admin-setting-clips-step" style="font-weight: 700; display: block; margin-bottom: 6px;">
+              Pas Montaj Clipsuri Flanșă [mm]:
+            </label>
+            <input type="number" id="admin-setting-clips-step" class="form-input" style="width: 100%;" step="25" value="350">
+            <span style="font-size: 11px; color: var(--text-muted); display: block; margin-top: 4px;">
+              Număr clipsuri = Perimetru [mm] / 350 * Cantitate.
+            </span>
+          </div>
+
+          <div class="form-group">
+            <label for="admin-setting-silicon-step" style="font-weight: 700; display: block; margin-bottom: 6px;">
+              Consum Silicon HVAC [buc piese / tub]:
+            </label>
+            <input type="number" id="admin-setting-silicon-step" class="form-input" style="width: 100%;" step="1" value="18">
+            <span style="font-size: 11px; color: var(--text-muted); display: block; margin-top: 4px;">
+              Normă tehnologică atelier: 1 cartuș mastic siliconic la fiecare 18 piese.
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 3. Spiro Circular Pricing Matrix -->
+      <div class="enterprise-card" style="padding: 20px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 10px;">
+          <div>
+            <h2 style="font-size: 15px; font-weight: 700; color: var(--text-main); margin-bottom: 4px;">
+              Matrice Prețuri Tubulatură Circulară Spiro (Ø100 - Ø1250)
+            </h2>
+            <p style="font-size: 12px; color: var(--text-muted);">
+              Prețuri de catalog în Euro pentru tubulatură Spiro și fitinguri pe toate diametrele standardizate conform normativului DIN EN 1506.
+            </p>
+          </div>
+          <button id="admin-btn-save-all-settings" class="k-btn k-btn-primary">
+            <svg class="icon-svg" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            <span>Salvează Toți Parametrii & Matricea Spiro</span>
+          </button>
+        </div>
+
+        <div class="table-scroll-container">
+          <table class="spiro-matrix-table">
+            <thead>
+              <tr>
+                <th style="text-align: center;">Diametru [mm]</th>
+                <th>Tub Spiro [€/ml]</th>
+                <th>Cot 90° [€]</th>
+                <th>Cot 45° [€]</th>
+                <th>Teu 90° [€]</th>
+                <th>Reducție [€]</th>
+                <th>Ștuț [€]</th>
+                <th>Capac [€]</th>
+                <th>Clapetă [€]</th>
+              </tr>
+            </thead>
+            <tbody id="admin-spiro-matrix-tbody">
+              <!-- Dynamically populated from API parameters -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================================================================
+         TAB 4: VERSIONARE PE ANI & SNAPSHOT IMUABIL (2026, 2027...)
+         ================================================================== -->
+    <div id="admin-tab-ani" class="tab-pane" role="tabpanel">
+      <!-- Year Controls Grid -->
+      <div class="year-management-grid">
+        <!-- Card 1: Active Year Switcher -->
+        <div class="year-card">
+          <div class="year-card-title">
+            <svg class="icon-svg" viewBox="0 0 24 24" style="stroke: #16a34a;"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+            <span>An de Lucru Activ în Fabrică</span>
+            <span class="badge-year-active" id="admin-year-current-pill">2026 ACTIV</span>
+          </div>
+          <p class="year-card-desc">
+            Anul curent utilizat pentru noile comenzi emise și parametrii de calcul aplicați automat.
+          </p>
+          <div style="display: flex; gap: 10px; align-items: center;">
+            <select id="admin-select-active-year" class="form-select" style="flex: 1; font-weight: 700;">
+              <option value="2026" selected>Anul 2026</option>
+            </select>
+            <button id="admin-btn-activate-year" class="k-btn k-btn-primary" style="white-space: nowrap;">
+              <span>Activează Anul</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Card 2: Clone & Initialize New Year -->
+        <div class="year-card">
+          <div class="year-card-title">
+            <svg class="icon-svg" viewBox="0 0 24 24" style="stroke: var(--kronvent-blue);"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path><rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect></svg>
+            <span>Inițializează An Nou (Clonare Configurație)</span>
+          </div>
+          <p class="year-card-desc">
+            Copiază instantaneu nomenclatorul, formulele și prețurile din anul curent ca punct de plecare pentru noul an.
+          </p>
+          <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+            <input type="number" id="admin-input-new-year" class="form-input" style="width: 100px; font-weight: 700;" value="2027" min="2024" max="2035">
+            <select id="admin-select-clone-from" class="form-select" style="flex: 1;">
+              <option value="2026">Clonează din 2026</option>
+            </select>
+            <button id="admin-btn-clone-year" class="k-btn k-btn-success" style="white-space: nowrap;">
+              <svg class="icon-svg" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+              <span>Inițializează An</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Configured Years Table -->
+      <div class="enterprise-card" style="padding: 20px; margin-bottom: 20px;">
+        <h2 style="font-size: 15px; font-weight: 700; color: var(--text-main); margin-bottom: 4px;">
+          Ani Configurați în Sistemul ERP KronVent
+        </h2>
+        <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 14px;">
+          Fiecare an funcționează complet izolat. Comenzile istorice nu sunt modificate la ajustarea prețurilor în anii noi.
+        </p>
+
+        <div class="table-scroll-container">
+          <table class="enterprise-grid">
+            <thead>
+              <tr>
+                <th style="width: 110px;">An Fabricație</th>
+                <th style="width: 120px;">Status</th>
+                <th style="text-align: right;">Preț Bază [€/m²]</th>
+                <th style="text-align: right;">Curs EUR [RON]</th>
+                <th style="text-align: right;">Prag Flanșă [mm]</th>
+                <th style="text-align: right;">Comenzi Emise</th>
+                <th style="text-align: center; width: 140px;">Acțiuni</th>
+              </tr>
+            </thead>
+            <tbody id="admin-years-tbody">
+              <!-- Populated dynamically via JS -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Historical Orders & Immutable Calculation Snapshots -->
+      <div class="enterprise-card" style="padding: 20px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; flex-wrap: wrap; gap: 10px;">
+          <div>
+            <h2 style="font-size: 15px; font-weight: 700; color: var(--text-main); margin-bottom: 4px;">
+              Registru Comenzi & Garanția Imuabilității Financiare (Calculation Snapshot Pattern)
+            </h2>
+            <p style="font-size: 12px; color: var(--text-muted);">
+              Fiecare comandă salvată îngheață ireversibil în câmpul <code>calculation_snapshot</code> formula matematică, cotele, cursul BNR și prețurile exacte din momentul emiterii.
+            </p>
+          </div>
+          <span class="k-badge" style="background: rgba(34, 197, 94, 0.12); color: #15803d; border: 1px solid rgba(34, 197, 94, 0.3); font-weight: 700;">
+            100% AUDITABIL & CONFORM
+          </span>
+        </div>
+
+        <div class="table-scroll-container">
+          <table class="enterprise-grid">
+            <thead>
+              <tr>
+                <th style="width: 120px;">Nr. Comandă</th>
+                <th style="width: 70px; text-align: center;">An</th>
+                <th style="min-width: 160px;">Beneficiar / Client</th>
+                <th style="min-width: 160px;">Proiect HVAC</th>
+                <th style="width: 90px;">Data Emiterii</th>
+                <th style="width: 90px; text-align: right;">Suprafață [m²]</th>
+                <th style="width: 80px; text-align: right;">Piese [buc]</th>
+                <th style="width: 100px; text-align: right;">Total [€]</th>
+                <th style="width: 110px; text-align: right;">Total [RON]</th>
+                <th style="width: 160px; text-align: center;">Snapshot Imuabil</th>
+              </tr>
+            </thead>
+            <tbody id="admin-orders-tbody">
+              <!-- Populated dynamically via JS -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal Dialog: Immutable Snapshot JSON Viewer -->
+    <div id="admin-snapshot-modal" class="app-dialog-overlay" style="display: none;">
+      <div class="app-dialog-card snapshot-modal-card">
+        <div class="app-dialog-header" style="padding-bottom: 8px;">
+          <div class="app-dialog-icon icon-info">
+            <svg class="icon-svg" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+          </div>
+          <div style="flex: 1;">
+            <h3 class="app-dialog-title" id="snapshot-modal-title">Calculation Snapshot Imuabil</h3>
+            <p class="app-dialog-message" id="snapshot-modal-sub">Audit tehnic și financiar al comenzii istorice</p>
+          </div>
+          <button id="snapshot-modal-close-btn" class="k-btn-icon-header" title="Închide">
+            <svg class="icon-svg" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+          </button>
+        </div>
+
+        <div class="snapshot-modal-body">
+          <div class="snapshot-meta-pills" id="snapshot-modal-pills">
+            <!-- Dynamic pills (An, Curs BNR, Preț/mp, Cota TVA, Hash) -->
+          </div>
+
+          <pre class="snapshot-json-pre" id="snapshot-modal-json">
+            <!-- Pretty printed JSON -->
+          </pre>
+        </div>
+
+        <div class="app-dialog-actions" style="margin-top: 10px; border-top: 1px solid var(--border-light); padding-top: 12px;">
+          <button id="snapshot-modal-copy-btn" class="k-btn k-btn-secondary">
+            <svg class="icon-svg" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+            <span>Copiază JSON</span>
+          </button>
+          <button id="snapshot-modal-ok-btn" class="k-btn k-btn-primary">Închide Fereastra</button>
+        </div>
+      </div>
+    </div>
+
+      </div><!-- /.admin-content-container -->
+
+      <!-- Admin Footer (Bara de Jos) -->
+      <footer class="kronvent-client-footer">
+        <div class="footer-container">
+          <div class="footer-copy">
+            <strong>KronVent Brașov</strong> • Panou de Control & Editare Fișiere Producție HVAC • Mod Administrator Fabrică • Tel: <a href="tel:0725003187">0725 003 187</a> • Email: <a href="mailto:adrian@kronvent.ro">adrian@kronvent.ro</a>
+          </div>
+          <div class="footer-admin-link-box">
+            <a href="index.html" class="admin-discrete-link" title="Deschide portalul de client">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: -1px; margin-right: 5px;"><polyline points="15 18 9 12 15 6"/></svg>Înapoi la Portal Client
+            </a>
+          </div>
+        </div>
+      </footer>
+    </div><!-- /.admin-main-viewport -->
+  </div><!-- /.admin-app-shell -->
+
+  <script src="xlsx.full.min.js"></script>
+  <script src="admin.js?v=2026-multiyear-snapshot-v8"></script>
+</body>
+</html>

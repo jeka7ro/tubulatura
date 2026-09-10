@@ -1,0 +1,12 @@
+{
+  "name": "tubulatura-hvac",
+  "version": "1.0.0",
+  "description": "Sistem de calcul si centralizare tubulatura HVAC - Universal Comp Prod",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "keywords": ["hvac", "tubulatura", "calcul", "ventilatie"],
+  "author": "Universal Comp Prod",
+  "license": "ISC"
+}
